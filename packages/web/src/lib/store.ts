@@ -51,6 +51,25 @@ export interface ArchModel {
     category: string;
     source: string;
   }>;
+  businessProcesses: Array<{
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    dataSources: Array<{ name: string; type: string; format?: string; description: string }>;
+    steps: Array<{
+      order: number;
+      name: string;
+      description: string;
+      algorithm?: string;
+      symbolRef?: string;
+      inputData: string;
+      outputData: string;
+      details?: string[];
+    }>;
+    outputs: Array<{ name: string; type: string; format?: string; description: string }>;
+    relatedSymbols: string[];
+  }>;
 }
 
 interface AppState {

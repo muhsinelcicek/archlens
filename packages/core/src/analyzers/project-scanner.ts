@@ -15,7 +15,9 @@ import type {
   ApiEndpoint,
   DbEntity,
   DataFlow,
+  BusinessProcessInfo,
 } from "../models/index.js";
+import { ProcessDetector } from "./process-detector.js";
 
 export interface ScanOptions {
   rootDir: string;
@@ -73,7 +75,17 @@ export class ProjectScanner {
     // 8. Detect data flows
     const dataFlows = this.detectDataFlows(modules, relations, apiEndpoints);
 
-    // 9. Count lines
+    // 9. Detect business processes
+    // (need the partial model first)
+    const partialModel = {
+      project: { name: projectName, rootPath: rootDir, analyzedAt: new Date().toISOString(), version: "0.1.0" },
+      stats: { files: files.length, symbols: symbols.size, relations: relations.length, modules: modules.length, languages: languageCounts as Record<Language, number>, totalLines: 0 },
+      symbols, relations, modules, layers, dataFlows, apiEndpoints, dbEntities, techRadar, businessProcesses: [],
+    } as ArchitectureModel;
+    const processDetector = new ProcessDetector();
+    const businessProcesses = processDetector.detect(partialModel) as BusinessProcessInfo[];
+
+    // 10. Count lines
     let totalLines = 0;
     for (const file of files) {
       const content = fs.readFileSync(file, "utf-8");
@@ -103,6 +115,7 @@ export class ProjectScanner {
       apiEndpoints,
       dbEntities,
       techRadar,
+      businessProcesses,
     };
   }
 

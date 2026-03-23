@@ -19,6 +19,7 @@ export class JsonExporter {
       apiEndpoints: this.model.apiEndpoints,
       dbEntities: this.model.dbEntities,
       techRadar: this.model.techRadar,
+      businessProcesses: this.model.businessProcesses,
     };
   }
 
