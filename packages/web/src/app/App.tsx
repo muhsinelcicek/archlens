@@ -12,6 +12,8 @@ import {
   Loader2,
   AlertCircle,
   Zap,
+  Rocket,
+  ShieldCheck,
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +24,8 @@ const navItems = [
   { to: "/diagram/er-diagram", icon: Database, label: "ER Diagram" },
   { to: "/api", icon: Globe, label: "API Map" },
   { to: "/diagram/tech-radar", icon: Cpu, label: "Tech Radar" },
+  { to: "/onboard", icon: Rocket, label: "Onboarding" },
+  { to: "/drift", icon: ShieldCheck, label: "Health Check" },
   { to: "/modules", icon: Boxes, label: "Modules" },
 ];
 

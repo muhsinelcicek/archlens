@@ -18,6 +18,7 @@ import type {
   BusinessProcessInfo,
 } from "../models/index.js";
 import { ProcessDetector } from "./process-detector.js";
+import { ModuleResolver } from "./module-resolver.js";
 
 export interface ScanOptions {
   rootDir: string;
@@ -59,8 +60,9 @@ export class ProjectScanner {
       allImports.push(...result.imports);
     }
 
-    // 4. Resolve import relations
-    const importRelations = this.resolveImports(allImports, symbols);
+    // 4. Resolve import relations (using proper module resolver)
+    const resolver = new ModuleResolver(rootDir, files, symbols);
+    const importRelations = resolver.resolve(allImports);
     relations.push(...importRelations);
 
     // 5. Detect modules and layers
@@ -171,28 +173,6 @@ export class ProjectScanner {
     }
 
     return results;
-  }
-
-  private resolveImports(imports: ImportInfo[], symbols: Map<string, Symbol>): Relation[] {
-    const relations: Relation[] = [];
-
-    for (const imp of imports) {
-      for (const name of imp.names) {
-        // Try to find matching symbol
-        for (const [uid, sym] of symbols) {
-          if (sym.name === name || sym.name.endsWith(`.${name}`)) {
-            relations.push({
-              source: imp.sourceFile,
-              target: uid,
-              type: "imports",
-            });
-            break;
-          }
-        }
-      }
-    }
-
-    return relations;
   }
 
   private detectModules(files: string[], symbols: Map<string, Symbol>, rootDir: string): Module[] {
@@ -350,6 +330,34 @@ export class ProjectScanner {
     const dockerfilePath = path.join(rootDir, "Dockerfile");
     if (fs.existsSync(dockerfilePath)) {
       entries.push({ name: "Docker", category: "tool", ring: "adopt", source: "Dockerfile" });
+    }
+
+    // go.mod (Go)
+    const goModPath = path.join(rootDir, "go.mod");
+    if (fs.existsSync(goModPath)) {
+      entries.push({ name: "Go", category: "language", ring: "adopt", source: "go.mod" });
+      try {
+        const content = fs.readFileSync(goModPath, "utf-8");
+        const requires = content.matchAll(/\t(\S+)\s+v([\d.]+)/g);
+        for (const match of requires) {
+          entries.push({ name: match[1].split("/").pop() || match[1], version: match[2], category: "library", ring: "adopt", source: "go.mod" });
+        }
+      } catch { /* skip */ }
+    }
+
+    // pom.xml (Java/Maven)
+    const pomPath = path.join(rootDir, "pom.xml");
+    if (fs.existsSync(pomPath)) {
+      entries.push({ name: "Java (Maven)", category: "language", ring: "adopt", source: "pom.xml" });
+    }
+
+    // build.gradle (Java/Gradle)
+    const gradlePaths = ["build.gradle", "build.gradle.kts"];
+    for (const gp of gradlePaths) {
+      if (fs.existsSync(path.join(rootDir, gp))) {
+        entries.push({ name: "Java (Gradle)", category: "language", ring: "adopt", source: gp });
+        break;
+      }
     }
 
     // docker-compose
