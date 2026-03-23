@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+.env
+.env.local
+coverage/
+.gitnexus/
+.archlens/
+*.log
+.DS_Store
