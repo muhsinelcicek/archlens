@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useStore, type ArchModel } from "../lib/store.js";
 import { ArchGraph, type GraphNode, type GraphEdge } from "../components/ArchGraph.js";
+import { SigmaGraph, type GraphNode as SigmaNode, type GraphEdge as SigmaEdge } from "../components/SigmaGraph.js";
 import { ERDiagram } from "../components/ERDiagram.js";
 import { TechRadar } from "../components/TechRadar.js";
 import { Download, Info } from "lucide-react";
@@ -211,7 +212,7 @@ export function DiagramView() {
           <ArchGraph
             nodes={nodes}
             edges={edges}
-            layout="cola"
+            layout="cose"
             onNodeClick={setSelectedNode}
             className="h-[calc(100vh-220px)]"
           />
