@@ -4,6 +4,7 @@ import { analyzeCommand } from "./commands/analyze.js";
 import { serveCommand } from "./commands/serve.js";
 import { exportCommand } from "./commands/export.js";
 import { setupCommand } from "./commands/setup.js";
+import { driftCommand } from "./commands/drift.js";
 
 const program = new Command();
 
@@ -16,5 +17,6 @@ program.addCommand(analyzeCommand);
 program.addCommand(serveCommand);
 program.addCommand(exportCommand);
 program.addCommand(setupCommand);
+program.addCommand(driftCommand);
 
 program.parse();

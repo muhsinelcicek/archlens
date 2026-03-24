@@ -5,6 +5,7 @@ import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 import type { ArchitectureModel, BusinessProcessInfo } from "@archlens/core";
+import { GitDiffer } from "@archlens/core";
 
 // ─── Load Model ──────────────────────────────────────────────────────
 
@@ -439,116 +440,64 @@ server.tool(
 
 server.tool(
   "archlens_drift",
-  "Detect architecture drift: compare current git changes against the saved architecture model. Reports new dependencies, layer violations, and structural changes. Use before committing.",
+  "Detect architecture drift: compare current git changes against the saved architecture model. Reports changed symbols, new dependencies, layer violations, and module health. Uses real git diff.",
   {
     scope: z.enum(["staged", "unstaged", "all"]).default("all").describe("Which git changes to analyze"),
   },
   async ({ scope }) => {
     const result = findAndLoadModel();
     if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found." }] };
-    const { model } = result;
+    const { model, modelPath } = result;
+
+    const rootDir = path.dirname(path.dirname(modelPath));
+    const differ = new GitDiffer(rootDir, model);
+    const report = differ.generateReport(scope);
 
     const lines: string[] = [];
-    lines.push("# Architecture Drift Report\n");
+    lines.push(`# Architecture Drift Report`);
+    lines.push(`**Score: ${report.summary.score}/100** | Index age: ${report.indexAge}h\n`);
 
-    // Check index freshness
-    const indexDate = new Date(model.project.analyzedAt);
-    const now = new Date();
-    const hoursSinceIndex = (now.getTime() - indexDate.getTime()) / (1000 * 60 * 60);
-
-    if (hoursSinceIndex > 24) {
-      lines.push(`⚠️ **Index is ${Math.round(hoursSinceIndex)}h old.** Run \`archlens analyze\` for fresh results.\n`);
-    } else {
-      lines.push(`✅ Index is fresh (${Math.round(hoursSinceIndex)}h old).\n`);
-    }
-
-    // Architecture rules to check
-    lines.push("## Layer Dependency Rules");
-    lines.push("Checking for layer violations (lower layers should not depend on higher layers):\n");
-
-    const layerOrder = ["presentation", "api", "application", "domain", "infrastructure", "config"];
-    const violations: string[] = [];
-
-    for (const rel of model.relations) {
-      if (rel.type !== "imports") continue;
-      const srcMod = rel.source.split("/")[0];
-      const tgtSym = model.symbols.get(rel.target);
-      if (!tgtSym) continue;
-      const tgtMod = tgtSym.filePath.split("/")[0];
-      if (srcMod === tgtMod) continue;
-
-      const srcModule = model.modules.find((m) => m.name === srcMod);
-      const tgtModule = model.modules.find((m) => m.name === tgtMod);
-      if (!srcModule || !tgtModule) continue;
-
-      const srcLayerIdx = layerOrder.indexOf(srcModule.layer);
-      const tgtLayerIdx = layerOrder.indexOf(tgtModule.layer);
-
-      // Lower layer (higher index) depending on higher layer (lower index) = violation
-      if (srcLayerIdx > tgtLayerIdx && srcLayerIdx !== -1 && tgtLayerIdx !== -1) {
-        violations.push(`❌ **${srcModule.name}** (${srcModule.layer}) → **${tgtModule.name}** (${tgtModule.layer}): lower layer depends on higher layer`);
-      }
-    }
-
-    if (violations.length === 0) {
-      lines.push("✅ No layer violations detected.\n");
-    } else {
-      lines.push(`Found ${violations.length} violation(s):\n`);
-      for (const v of violations) {
-        lines.push(v);
+    // Changed files
+    if (report.changedFiles.length > 0) {
+      lines.push(`## Changed Files (${report.changedFiles.length})`);
+      for (const f of report.changedFiles.slice(0, 20)) {
+        const icon = f.status === "added" ? "+" : f.status === "deleted" ? "-" : "~";
+        lines.push(`- \`${icon}\` ${f.path}`);
       }
       lines.push("");
     }
 
-    // Circular dependencies
-    lines.push("## Circular Dependencies");
-    const moduleDeps = new Map<string, Set<string>>();
-    for (const rel of model.relations) {
-      if (rel.type !== "imports") continue;
-      const srcMod = rel.source.split("/")[0];
-      const tgtSym = model.symbols.get(rel.target);
-      if (!tgtSym) continue;
-      const tgtMod = tgtSym.filePath.split("/")[0];
-      if (srcMod !== tgtMod) {
-        if (!moduleDeps.has(srcMod)) moduleDeps.set(srcMod, new Set());
-        moduleDeps.get(srcMod)!.add(tgtMod);
-      }
-    }
-
-    const circular: string[] = [];
-    for (const [modA, depsA] of moduleDeps) {
-      for (const modB of depsA) {
-        if (moduleDeps.get(modB)?.has(modA)) {
-          const key = [modA, modB].sort().join(" ↔ ");
-          if (!circular.includes(key)) circular.push(key);
-        }
-      }
-    }
-
-    if (circular.length === 0) {
-      lines.push("✅ No circular dependencies.\n");
-    } else {
-      lines.push(`⚠️ ${circular.length} circular dependency pair(s):\n`);
-      for (const c of circular) {
-        lines.push(`- ${c}`);
+    // Symbol changes
+    if (report.symbolChanges.length > 0) {
+      const added = report.symbolChanges.filter((s) => s.type === "added").length;
+      const removed = report.symbolChanges.filter((s) => s.type === "removed").length;
+      const modified = report.symbolChanges.filter((s) => s.type === "modified").length;
+      lines.push(`## Symbol Changes`);
+      lines.push(`Added: ${added} | Removed: ${removed} | Modified: ${modified}\n`);
+      for (const sc of report.symbolChanges.slice(0, 15)) {
+        const icon = sc.type === "added" ? "+" : sc.type === "removed" ? "-" : "~";
+        lines.push(`- \`${icon}\` **${sc.name}** (${sc.kind}) in ${sc.filePath}`);
       }
       lines.push("");
     }
 
-    // Module size health
+    // Layer violations
+    if (report.layerViolations.length > 0) {
+      lines.push(`## ❌ Layer Violations (${report.layerViolations.length})`);
+      for (const v of report.layerViolations) {
+        lines.push(`- **${v.sourceModule}** (${v.sourceLayer}) → **${v.targetModule}** (${v.targetLayer})`);
+      }
+      lines.push("");
+    } else {
+      lines.push("## ✅ No layer violations\n");
+    }
+
+    // Module health
     lines.push("## Module Health");
-    for (const mod of model.modules) {
-      const issues: string[] = [];
-      if (mod.lineCount > 5000) issues.push(`large (${mod.lineCount.toLocaleString()} lines)`);
-      if (mod.symbols.length > 200) issues.push(`many symbols (${mod.symbols.length})`);
-      if (mod.fileCount > 50) issues.push(`many files (${mod.fileCount})`);
-
-      const status = issues.length === 0 ? "✅" : "⚠️";
-      lines.push(`${status} **${mod.name}/** — ${mod.fileCount} files, ${mod.lineCount.toLocaleString()} lines${issues.length > 0 ? ` — ${issues.join(", ")}` : ""}`);
+    for (const mod of report.moduleHealth) {
+      const icon = mod.healthy ? "✅" : "⚠️";
+      lines.push(`${icon} **${mod.name}/** — ${mod.files} files, ${mod.lines.toLocaleString()} lines${!mod.healthy ? ` — ${mod.issues.join(", ")}` : ""}`);
     }
-
-    lines.push("\n---");
-    lines.push(`Analyzed: ${model.project.analyzedAt}`);
 
     return { content: [{ type: "text" as const, text: lines.join("\n") }] };
   },
