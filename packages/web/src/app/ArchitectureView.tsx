@@ -315,6 +315,11 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
           <button onClick={onShowImpact} className="w-full flex items-center justify-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 py-2 text-xs font-medium hover:bg-red-500/20">
             <Target className="h-3.5 w-3.5" /> Show Impact
           </button>
+          {moduleEndpoints.length > 0 && (
+            <a href="/sequence" className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 py-2 text-xs font-medium hover:bg-blue-500/20">
+              <GitBranch className="h-3.5 w-3.5" /> Sequence Diagrams
+            </a>
+          )}
         </div>
       </div>
     );

@@ -20,6 +20,7 @@ const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/architecture", icon: Network, label: "Architecture" },
   { to: "/processes", icon: Zap, label: "Business Processes" },
+  { to: "/sequence", icon: GitBranch, label: "Sequence Diagrams" },
   { to: "/diagram/dependency-graph", icon: GitBranch, label: "Dependencies" },
   { to: "/diagram/er-diagram", icon: Database, label: "ER Diagram" },
   { to: "/api", icon: Globe, label: "API Map" },
