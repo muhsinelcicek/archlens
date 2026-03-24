@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import cytoscape, { type Core, type ElementDefinition, type Stylesheet } from "cytoscape";
 import dagre from "cytoscape-dagre";
 import cola from "cytoscape-cola";
@@ -25,6 +25,24 @@ export interface GraphEdge {
   weight?: number;
 }
 
+export interface ArchGraphHandle {
+  highlightImpact: (nodeId: string, maxDepth?: number) => ImpactResult;
+  clearHighlight: () => void;
+  selectNode: (nodeId: string) => void;
+  fitToView: () => void;
+  animateFlow: (nodeIds: string[], speed?: number) => void;
+  stopAnimation: () => void;
+  filterEdgeTypes: (types: string[]) => void;
+  showAllEdges: () => void;
+}
+
+export interface ImpactResult {
+  d1: string[]; // direct — WILL BREAK
+  d2: string[]; // indirect — LIKELY AFFECTED
+  d3: string[]; // transitive — MAY NEED TESTING
+  total: number;
+}
+
 interface ArchGraphProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -34,7 +52,7 @@ interface ArchGraphProps {
   onNodeDoubleClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
   className?: string;
-  showMinimap?: boolean;
+  impactMode?: boolean;
 }
 
 const layerColors: Record<string, { bg: string; border: string; text: string }> = {
@@ -66,18 +84,17 @@ function buildStylesheet(): Stylesheet[] {
         "text-valign": "center",
         "text-halign": "center",
         "font-size": "11px",
-        "font-family": "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
+        "font-family": "'JetBrains Mono', 'SF Mono', monospace",
         color: "#e4e4e7",
         "background-color": "#27272a",
         "border-width": 2,
         "border-color": "#52525b",
         "text-wrap": "wrap",
-        "text-max-width": "120px",
+        "text-max-width": "140px",
         shape: "roundrectangle",
         width: "label",
         height: "label",
         padding: "14px",
-        "text-margin-y": 0,
       },
     },
     {
@@ -96,64 +113,36 @@ function buildStylesheet(): Stylesheet[] {
         color: "#a1a1aa",
       },
     },
-    // Layer-specific node styles
     ...Object.entries(layerColors).map(
       ([group, colors]) =>
-        ({
-          selector: `node[group="${group}"]`,
-          style: {
-            "background-color": colors.bg,
-            "border-color": colors.border,
-            color: colors.text,
-          },
-        }) as Stylesheet,
+        ({ selector: `node[group="${group}"]`, style: { "background-color": colors.bg, "border-color": colors.border, color: colors.text } }) as Stylesheet,
     ),
-    // Parent group styles
     ...Object.entries(layerColors).map(
       ([group, colors]) =>
-        ({
-          selector: `node:parent[group="${group}"]`,
-          style: {
-            "background-color": colors.bg,
-            "background-opacity": 0.3,
-            "border-color": colors.border,
-            color: colors.text,
-          },
-        }) as Stylesheet,
+        ({ selector: `node:parent[group="${group}"]`, style: { "background-color": colors.bg, "background-opacity": 0.3, "border-color": colors.border, color: colors.text } }) as Stylesheet,
     ),
-    {
-      selector: "node:selected",
-      style: {
-        "border-width": 3,
-        "border-color": "#10b981",
-        "background-color": "#064e3b",
-        "z-index": 999,
-      },
-    },
-    {
-      selector: "node.highlighted",
-      style: {
-        "border-width": 3,
-        "border-color": "#fbbf24",
-        "z-index": 999,
-      },
-    },
-    {
-      selector: "node.dimmed",
-      style: {
-        opacity: 0.25,
-      },
-    },
+    { selector: "node:selected", style: { "border-width": 3, "border-color": "#10b981", "z-index": 999 } },
+    { selector: "node.highlighted", style: { "border-width": 3, "border-color": "#fbbf24", "z-index": 999 } },
+    { selector: "node.dimmed", style: { opacity: 0.15 } },
+    // Impact radius classes
+    { selector: "node.impact-d1", style: { "border-width": 4, "border-color": "#ef4444", "background-color": "#7f1d1d", color: "#fca5a5", "z-index": 998 } },
+    { selector: "node.impact-d2", style: { "border-width": 3, "border-color": "#f97316", "background-color": "#7c2d12", color: "#fdba74", "z-index": 997 } },
+    { selector: "node.impact-d3", style: { "border-width": 2, "border-color": "#eab308", "background-color": "#713f12", color: "#fde047", "z-index": 996 } },
+    { selector: "node.impact-source", style: { "border-width": 5, "border-color": "#fff", "background-color": "#dc2626", color: "#fff", "z-index": 999 } },
+    // Flow animation
+    { selector: "node.flow-active", style: { "border-width": 4, "border-color": "#22d3ee", "background-color": "#0e7490", color: "#fff", "z-index": 999 } },
+    { selector: "node.flow-done", style: { "border-width": 3, "border-color": "#06b6d4", "background-color": "#164e63", color: "#a5f3fc", "z-index": 998 } },
+    // Edges
     {
       selector: "edge",
       style: {
-        width: 1.5,
+        width: "data(displayWeight)",
         "line-color": "#3f3f46",
         "target-arrow-color": "#3f3f46",
         "target-arrow-shape": "triangle",
         "curve-style": "bezier",
         "arrow-scale": 0.8,
-        opacity: 0.7,
+        opacity: 0.6,
       },
     },
     {
@@ -161,82 +150,205 @@ function buildStylesheet(): Stylesheet[] {
       style: {
         label: "data(label)",
         "font-size": "9px",
-        color: "#71717a",
+        color: "#52525b",
         "text-rotation": "autorotate",
         "text-margin-y": -8,
       },
     },
-    // Edge type styles
     ...Object.entries(edgeTypeStyles).map(
       ([type, style]) =>
-        ({
-          selector: `edge[type="${type}"]`,
-          style: {
-            "line-color": style.color,
-            "target-arrow-color": style.color,
-            "line-style": style.style as "solid" | "dashed" | "dotted",
-          },
-        }) as Stylesheet,
+        ({ selector: `edge[type="${type}"]`, style: { "line-color": style.color, "target-arrow-color": style.color, "line-style": style.style as "solid" | "dashed" | "dotted" } }) as Stylesheet,
     ),
-    {
-      selector: "edge.highlighted",
-      style: {
-        width: 3,
-        opacity: 1,
-        "z-index": 999,
-      },
-    },
-    {
-      selector: "edge.dimmed",
-      style: {
-        opacity: 0.1,
-      },
-    },
+    { selector: "edge.highlighted", style: { width: 4, opacity: 1, "z-index": 999 } },
+    { selector: "edge.dimmed", style: { opacity: 0.05 } },
+    { selector: "edge.hidden-type", style: { display: "none" } },
+    { selector: "edge.impact-edge", style: { width: 3, opacity: 1, "line-color": "#ef4444", "target-arrow-color": "#ef4444", "z-index": 998 } },
+    { selector: "edge.flow-edge", style: { width: 4, opacity: 1, "line-color": "#22d3ee", "target-arrow-color": "#22d3ee", "line-style": "solid", "z-index": 999 } },
   ];
 }
 
-export function ArchGraph({
-  nodes,
-  edges,
-  layout = "dagre",
-  direction = "TB",
-  onNodeClick,
-  onNodeDoubleClick,
-  onNodeHover,
-  className = "",
-  showMinimap = false,
-}: ArchGraphProps) {
+export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function ArchGraph(
+  {
+    nodes,
+    edges,
+    layout = "dagre",
+    direction = "TB",
+    onNodeClick,
+    onNodeDoubleClick,
+    onNodeHover,
+    className = "",
+    impactMode = false,
+  },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
-  const minimapRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
+
+  // Expose imperative methods
+  useImperativeHandle(ref, () => ({
+    highlightImpact(nodeId: string, maxDepth = 3): ImpactResult {
+      const cy = cyRef.current;
+      if (!cy) return { d1: [], d2: [], d3: [], total: 0 };
+
+      cy.elements().removeClass("impact-source impact-d1 impact-d2 impact-d3 dimmed highlighted");
+
+      const source = cy.getElementById(nodeId);
+      if (source.empty()) return { d1: [], d2: [], d3: [], total: 0 };
+
+      source.addClass("impact-source");
+
+      // BFS from source following incoming edges (who depends on me)
+      const visited = new Map<string, number>(); // nodeId → depth
+      visited.set(nodeId, 0);
+      const queue: Array<{ id: string; depth: number }> = [{ id: nodeId, depth: 0 }];
+      const result: ImpactResult = { d1: [], d2: [], d3: [], total: 0 };
+
+      while (queue.length > 0) {
+        const { id, depth } = queue.shift()!;
+        if (depth >= maxDepth) continue;
+
+        // Find all nodes that import/call/depend on this node
+        const incomers = cy.getElementById(id).incomers("edge");
+        for (const edge of incomers) {
+          const sourceNode = edge.source();
+          const sourceId = sourceNode.id();
+          if (visited.has(sourceId)) continue;
+
+          const newDepth = depth + 1;
+          visited.set(sourceId, newDepth);
+
+          if (newDepth === 1) { result.d1.push(sourceId); sourceNode.addClass("impact-d1"); edge.addClass("impact-edge"); }
+          else if (newDepth === 2) { result.d2.push(sourceId); sourceNode.addClass("impact-d2"); }
+          else if (newDepth === 3) { result.d3.push(sourceId); sourceNode.addClass("impact-d3"); }
+
+          queue.push({ id: sourceId, depth: newDepth });
+        }
+
+        // Also follow outgoing for downstream impact
+        const outgoers = cy.getElementById(id).outgoers("edge");
+        for (const edge of outgoers) {
+          const targetNode = edge.target();
+          const targetId = targetNode.id();
+          if (visited.has(targetId)) continue;
+
+          const newDepth = depth + 1;
+          visited.set(targetId, newDepth);
+
+          if (newDepth === 1) { result.d1.push(targetId); targetNode.addClass("impact-d1"); edge.addClass("impact-edge"); }
+          else if (newDepth === 2) { result.d2.push(targetId); targetNode.addClass("impact-d2"); }
+          else if (newDepth === 3) { result.d3.push(targetId); targetNode.addClass("impact-d3"); }
+
+          queue.push({ id: targetId, depth: newDepth });
+        }
+      }
+
+      // Dim unaffected nodes
+      cy.nodes().forEach((n) => {
+        if (!visited.has(n.id())) n.addClass("dimmed");
+      });
+      cy.edges().forEach((e) => {
+        if (!e.hasClass("impact-edge")) e.addClass("dimmed");
+      });
+
+      result.total = result.d1.length + result.d2.length + result.d3.length;
+      return result;
+    },
+
+    clearHighlight() {
+      cyRef.current?.elements().removeClass("impact-source impact-d1 impact-d2 impact-d3 dimmed highlighted flow-active flow-done flow-edge impact-edge hidden-type");
+    },
+
+    selectNode(nodeId: string) {
+      const cy = cyRef.current;
+      if (!cy) return;
+      cy.elements().removeClass("highlighted dimmed");
+      const node = cy.getElementById(nodeId);
+      if (node.nonempty()) {
+        node.select();
+        const neighborhood = node.neighborhood().add(node);
+        cy.elements().not(neighborhood).addClass("dimmed");
+        neighborhood.addClass("highlighted");
+        cy.animate({ center: { eles: node }, zoom: cy.zoom() }, { duration: 300 });
+      }
+    },
+
+    fitToView() {
+      cyRef.current?.fit(undefined, 40);
+    },
+
+    animateFlow(nodeIds: string[], speed = 800) {
+      const cy = cyRef.current;
+      if (!cy) return;
+
+      cy.elements().removeClass("flow-active flow-done flow-edge dimmed");
+      cy.elements().addClass("dimmed");
+
+      let step = 0;
+      const animate = () => {
+        if (step >= nodeIds.length) return;
+
+        const nodeId = nodeIds[step];
+        const node = cy.getElementById(nodeId);
+        if (node.nonempty()) {
+          if (step > 0) {
+            const prevNode = cy.getElementById(nodeIds[step - 1]);
+            prevNode.removeClass("flow-active").addClass("flow-done");
+            // Highlight edge between prev and current
+            const connecting = prevNode.edgesTo(node).add(node.edgesTo(prevNode));
+            connecting.removeClass("dimmed").addClass("flow-edge");
+          }
+          node.removeClass("dimmed").addClass("flow-active");
+          cy.animate({ center: { eles: node } }, { duration: 200 });
+        }
+
+        step++;
+        animationRef.current = window.setTimeout(animate, speed);
+      };
+
+      animate();
+    },
+
+    stopAnimation() {
+      if (animationRef.current) {
+        clearTimeout(animationRef.current);
+        animationRef.current = null;
+      }
+      cyRef.current?.elements().removeClass("flow-active flow-done flow-edge dimmed");
+    },
+
+    filterEdgeTypes(types: string[]) {
+      const cy = cyRef.current;
+      if (!cy) return;
+      cy.edges().forEach((e) => {
+        const edgeType = e.data("type");
+        if (types.length > 0 && !types.includes(edgeType)) {
+          e.addClass("hidden-type");
+        } else {
+          e.removeClass("hidden-type");
+        }
+      });
+    },
+
+    showAllEdges() {
+      cyRef.current?.edges().removeClass("hidden-type");
+    },
+  }));
 
   const initGraph = useCallback(() => {
     if (!containerRef.current) return;
+    if (cyRef.current) cyRef.current.destroy();
 
-    // Destroy previous instance
-    if (cyRef.current) {
-      cyRef.current.destroy();
-    }
-
-    // Build elements
     const elements: ElementDefinition[] = [];
-
-    // Add compound parent nodes for groups
     const groups = new Set(nodes.filter((n) => n.parent).map((n) => n.parent!));
+
     for (const group of groups) {
       const groupNode = nodes.find((n) => n.id === group);
-      elements.push({
-        data: {
-          id: group,
-          label: groupNode?.label || group,
-          group: groupNode?.group || "default",
-        },
-      });
+      elements.push({ data: { id: group, label: groupNode?.label || group, group: groupNode?.group || "default" } });
     }
 
-    // Add nodes
     for (const node of nodes) {
-      if (groups.has(node.id) && !node.parent) continue; // Already added as parent
+      if (groups.has(node.id) && !node.parent) continue;
       elements.push({
         data: {
           id: node.id,
@@ -248,15 +360,16 @@ export function ArchGraph({
       });
     }
 
-    // Add edges
     for (const edge of edges) {
+      const w = edge.weight || 1;
       elements.push({
         data: {
           source: edge.source,
           target: edge.target,
           label: edge.label,
           type: edge.type || "depends_on",
-          weight: edge.weight || 1,
+          weight: w,
+          displayWeight: Math.min(1 + Math.log2(w + 1), 6), // log scale 1-6px
         },
       });
     }
@@ -268,33 +381,22 @@ export function ArchGraph({
       layout: {
         name: layout,
         ...(layout === "dagre"
-          ? {
-              rankDir: direction,
-              nodeSep: 60,
-              rankSep: 80,
-              edgeSep: 20,
-              padding: 40,
-            }
+          ? { rankDir: direction, nodeSep: 60, rankSep: 80, edgeSep: 20, padding: 40 }
           : layout === "cola"
-            ? {
-                nodeSpacing: 80,
-                edgeLength: 150,
-                animate: false,
-                padding: 40,
-              }
+            ? { nodeSpacing: 80, edgeLength: 150, animate: false, padding: 40 }
             : { padding: 40 }),
       } as cytoscape.LayoutOptions,
-      minZoom: 0.2,
-      maxZoom: 3,
+      minZoom: 0.15,
+      maxZoom: 4,
       wheelSensitivity: 0.3,
     });
 
     // Interactions
     cy.on("tap", "node", (e) => {
       const node = e.target;
-      onNodeClick?.(node.id());
+      if (impactMode) return; // Impact mode handles its own click
 
-      // Highlight connected nodes
+      onNodeClick?.(node.id());
       cy.elements().removeClass("highlighted dimmed");
       const neighborhood = node.neighborhood().add(node);
       cy.elements().not(neighborhood).addClass("dimmed");
@@ -302,20 +404,19 @@ export function ArchGraph({
     });
 
     cy.on("dbltap", "node", (e) => {
-      const node = e.target;
-      onNodeDoubleClick?.(node.id());
+      onNodeDoubleClick?.(e.target.id());
     });
 
     cy.on("tap", (e) => {
       if (e.target === cy) {
-        cy.elements().removeClass("highlighted dimmed");
+        cy.elements().removeClass("highlighted dimmed impact-source impact-d1 impact-d2 impact-d3 impact-edge");
+        onNodeClick?.("");
       }
     });
 
     cy.on("mouseover", "node", (e) => {
-      const node = e.target;
       containerRef.current!.style.cursor = "pointer";
-      onNodeHover?.(node.id());
+      onNodeHover?.(e.target.id());
     });
 
     cy.on("mouseout", "node", () => {
@@ -323,15 +424,29 @@ export function ArchGraph({
       onNodeHover?.(null);
     });
 
-    // Fit to container
-    cy.fit(undefined, 40);
+    // Edge hover tooltip
+    cy.on("mouseover", "edge", (e) => {
+      const edge = e.target;
+      const w = edge.data("weight") || 1;
+      const t = edge.data("type") || "?";
+      edge.style("label", `${t} (${w})`);
+      edge.style("font-size", "10px");
+      edge.style("color", "#a1a1aa");
+    });
 
+    cy.on("mouseout", "edge", (e) => {
+      const edge = e.target;
+      edge.style("label", edge.data("label") || "");
+    });
+
+    cy.fit(undefined, 40);
     cyRef.current = cy;
-  }, [nodes, edges, layout, direction, onNodeClick, onNodeHover]);
+  }, [nodes, edges, layout, direction, onNodeClick, onNodeDoubleClick, onNodeHover, impactMode]);
 
   useEffect(() => {
     initGraph();
     return () => {
+      if (animationRef.current) clearTimeout(animationRef.current);
       cyRef.current?.destroy();
     };
   }, [initGraph]);
@@ -346,50 +461,19 @@ export function ArchGraph({
 
       {/* Zoom Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-        <button
-          onClick={handleZoomIn}
-          className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 text-sm backdrop-blur-sm transition-colors"
-        >
-          +
-        </button>
-        <button
-          onClick={handleZoomOut}
-          className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 text-sm backdrop-blur-sm transition-colors"
-        >
-          -
-        </button>
-        <button
-          onClick={handleFit}
-          className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 backdrop-blur-sm transition-colors"
-          title="Fit to view"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-          </svg>
+        <button onClick={handleZoomIn} className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 text-sm backdrop-blur-sm">+</button>
+        <button onClick={handleZoomOut} className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 text-sm backdrop-blur-sm">-</button>
+        <button onClick={handleFit} className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 backdrop-blur-sm" title="Fit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
         </button>
       </div>
 
-      {/* Legend */}
-      <div className="absolute top-4 left-4 bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 rounded-lg p-3 text-xs space-y-1.5">
-        {Object.entries(layerColors)
-          .filter(([key]) => key !== "default")
-          .map(([layer, colors]) => (
-            <div key={layer} className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-sm border"
-                style={{ backgroundColor: colors.bg, borderColor: colors.border }}
-              />
-              <span className="text-zinc-400 capitalize">{layer}</span>
-            </div>
-          ))}
-      </div>
-
-      {showMinimap && (
-        <div
-          ref={minimapRef}
-          className="absolute bottom-4 left-4 w-32 h-24 bg-zinc-900/90 border border-zinc-800 rounded-lg overflow-hidden"
-        />
+      {/* Impact Mode indicator */}
+      {impactMode && (
+        <div className="absolute top-4 right-4 bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-sm">
+          IMPACT MODE — click a node to see blast radius
+        </div>
       )}
     </div>
   );
-}
+});

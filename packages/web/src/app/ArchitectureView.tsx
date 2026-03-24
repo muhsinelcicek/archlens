@@ -1,18 +1,17 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useStore, type ArchModel } from "../lib/store.js";
-import { ArchGraph, type GraphNode, type GraphEdge } from "../components/ArchGraph.js";
+import { ArchGraph, type GraphNode, type GraphEdge, type ArchGraphHandle, type ImpactResult } from "../components/ArchGraph.js";
+import { DependencyMatrix } from "../components/DependencyMatrix.js";
+import { FeatureTracer } from "../components/FeatureTracer.js";
 import {
-  ChevronRight, ArrowLeft, Files, Code2, GitBranch,
+  ChevronRight, ChevronDown, ArrowLeft, Search, Code2, GitBranch,
   Box, Braces, FunctionSquare, FileCode, Eye, Layers, Zap,
+  Target, AlertTriangle, CheckCircle2, Globe, Database, Cpu,
+  Filter, Grid3x3,
 } from "lucide-react";
 
 type ViewLevel = "system" | "module" | "file";
-
-interface BreadcrumbItem {
-  level: ViewLevel;
-  id: string;
-  label: string;
-}
+interface Breadcrumb { level: ViewLevel; id: string; label: string }
 
 const layerMeta: Record<string, { color: string; label: string }> = {
   presentation: { color: "#10b981", label: "Presentation" },
@@ -24,72 +23,21 @@ const layerMeta: Record<string, { color: string; label: string }> = {
   unknown: { color: "#52525b", label: "Other" },
 };
 
-const symbolIcons: Record<string, React.ReactNode> = {
-  class: <Box className="h-3.5 w-3.5" />,
-  function: <FunctionSquare className="h-3.5 w-3.5" />,
-  interface: <Braces className="h-3.5 w-3.5" />,
-  method: <FunctionSquare className="h-3.5 w-3.5" />,
-  type_alias: <Braces className="h-3.5 w-3.5" />,
-  enum: <Braces className="h-3.5 w-3.5" />,
-  route: <GitBranch className="h-3.5 w-3.5" />,
-  component: <Eye className="h-3.5 w-3.5" />,
-};
+// ─── Graph Builders ──────────────────────────────────────────────────
 
-function getSymbolsForModule(model: ArchModel, moduleName: string) {
-  const entries = Object.entries(model.symbols) as [string, Record<string, unknown>][];
-  return entries.filter(([, sym]) => {
-    const fp = sym.filePath as string;
-    return fp?.startsWith(moduleName + "/") || fp === moduleName;
-  });
-}
-
-function getFilesForModule(model: ArchModel, moduleName: string): Map<string, Array<[string, Record<string, unknown>]>> {
-  const symbols = getSymbolsForModule(model, moduleName);
-  const fileMap = new Map<string, Array<[string, Record<string, unknown>]>>();
-
-  for (const [uid, sym] of symbols) {
-    const fp = sym.filePath as string;
-    if (!fileMap.has(fp)) fileMap.set(fp, []);
-    fileMap.get(fp)!.push([uid, sym]);
-  }
-
-  return fileMap;
-}
-
-function getSymbolsForFile(model: ArchModel, filePath: string) {
-  const entries = Object.entries(model.symbols) as [string, Record<string, unknown>][];
-  return entries.filter(([, sym]) => (sym.filePath as string) === filePath);
-}
-
-function getRelationsForSymbols(model: ArchModel, symbolUids: Set<string>) {
-  return model.relations.filter(
-    (r) => symbolUids.has(r.source) || symbolUids.has(r.target),
-  );
-}
-
-// ─── System Level ────────────────────────────────────────────────────
-
-function buildSystemGraph(model: ArchModel): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildSystemGraph(model: ArchModel, edgeFilters: Set<string>): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
-  const layerOrder = ["presentation", "api", "application", "domain", "infrastructure", "config", "unknown"];
-  for (const layer of layerOrder) {
+  for (const layer of ["presentation", "api", "application", "domain", "infrastructure", "config", "unknown"]) {
     const mods = model.modules.filter((m) => m.layer === layer);
     if (mods.length === 0) continue;
-
-    nodes.push({
-      id: `layer-${layer}`,
-      label: layerMeta[layer]?.label || layer,
-      group: layer,
-      type: "layer",
-    });
-
+    nodes.push({ id: `layer-${layer}`, label: layerMeta[layer]?.label || layer, group: layer, type: "layer" });
     for (const mod of mods) {
       nodes.push({
         id: mod.name,
         label: mod.name,
-        sublabel: `${mod.fileCount} files  |  ${mod.lineCount.toLocaleString()} LOC  |  ${mod.symbols.length} symbols`,
+        sublabel: `${mod.fileCount}f | ${mod.lineCount.toLocaleString()}L | ${mod.symbols.length}s`,
         group: layer,
         parent: `layer-${layer}`,
         type: "module",
@@ -97,550 +45,539 @@ function buildSystemGraph(model: ArchModel): { nodes: GraphNode[]; edges: GraphE
     }
   }
 
-  const edgeSet = new Set<string>();
+  // Weighted edges
+  const edgeMap = new Map<string, { count: number; types: Record<string, number> }>();
   for (const rel of model.relations) {
-    if (rel.type !== "imports") continue;
+    if (edgeFilters.size > 0 && !edgeFilters.has(rel.type)) continue;
     const srcMod = rel.source.split("/")[0];
     const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
     if (!tgtSym) continue;
     const tgtMod = (tgtSym.filePath as string)?.split("/")[0];
-    if (srcMod && tgtMod && srcMod !== tgtMod) {
-      const key = `${srcMod}->${tgtMod}`;
-      if (!edgeSet.has(key)) {
-        edgeSet.add(key);
-        edges.push({ source: srcMod, target: tgtMod, type: "imports" });
-      }
-    }
+    if (!srcMod || !tgtMod || srcMod === tgtMod) continue;
+    const key = `${srcMod}→${tgtMod}`;
+    if (!edgeMap.has(key)) edgeMap.set(key, { count: 0, types: {} });
+    const e = edgeMap.get(key)!;
+    e.count++;
+    e.types[rel.type] = (e.types[rel.type] || 0) + 1;
+  }
+
+  for (const [key, data] of edgeMap) {
+    const [src, tgt] = key.split("→");
+    const mainType = Object.entries(data.types).sort((a, b) => b[1] - a[1])[0]?.[0] || "imports";
+    edges.push({ source: src, target: tgt, type: mainType, weight: data.count, label: `${data.count}` });
   }
 
   return { nodes, edges };
 }
-
-// ─── Module Level ────────────────────────────────────────────────────
 
 function buildModuleGraph(model: ArchModel, moduleName: string): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
+  const files = new Map<string, number>();
 
-  const fileMap = getFilesForModule(model, moduleName);
-  const allUids = new Set<string>();
-
-  // Group files by subdirectory
-  const dirs = new Map<string, string[]>();
-  for (const fp of fileMap.keys()) {
-    const parts = fp.split("/");
-    const dir = parts.length > 2 ? parts.slice(0, 2).join("/") : parts[0];
-    if (!dirs.has(dir)) dirs.set(dir, []);
-    dirs.get(dir)!.push(fp);
-  }
-
-  // If there are subdirectories, create parent nodes
-  const hasSubdirs = dirs.size > 1;
-
-  if (hasSubdirs) {
-    for (const [dir] of dirs) {
-      if (dir !== moduleName) {
-        nodes.push({
-          id: `dir-${dir}`,
-          label: dir.replace(moduleName + "/", ""),
-          group: "config",
-          type: "directory",
-        });
-      }
+  for (const [, sym] of Object.entries(model.symbols) as Array<[string, Record<string, unknown>]>) {
+    const fp = sym.filePath as string;
+    if (fp?.startsWith(moduleName + "/")) {
+      files.set(fp, (files.get(fp) || 0) + 1);
     }
   }
 
-  for (const [fp, symbols] of fileMap) {
+  for (const [fp, symCount] of files) {
     const fileName = fp.split("/").pop() || fp;
-    const symbolCount = symbols.length;
-    const kinds = [...new Set(symbols.map(([, s]) => s.kind as string))];
-
-    const parts = fp.split("/");
-    const dir = parts.length > 2 ? parts.slice(0, 2).join("/") : parts[0];
-    const parent = hasSubdirs && dir !== moduleName ? `dir-${dir}` : undefined;
-
-    // Determine node group based on content
-    let group = "default";
-    if (kinds.includes("class")) group = "domain";
-    else if (kinds.includes("function") && symbols.some(([, s]) => (s.annotations as string[])?.some((a: string) => a.includes("app.")))) group = "api";
-    else if (kinds.includes("component")) group = "presentation";
-    else if (fileName.includes("model") || fileName.includes("schema")) group = "infrastructure";
-    else if (fileName.includes("config") || fileName.includes("settings")) group = "config";
-
-    nodes.push({
-      id: fp,
-      label: fileName,
-      sublabel: `${symbolCount} symbols  |  ${kinds.join(", ")}`,
-      group,
-      type: "file",
-      parent,
-    });
-
-    for (const [uid] of symbols) {
-      allUids.add(uid);
-    }
+    nodes.push({ id: fp, label: fileName, sublabel: `${symCount} symbols`, group: "default", type: "file" });
   }
 
-  // Edges: file-to-file imports
-  const fileEdgeSet = new Set<string>();
+  const edgeSet = new Set<string>();
   for (const rel of model.relations) {
     if (rel.type !== "imports") continue;
-    const srcFile = rel.source;
     const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
     if (!tgtSym) continue;
+    const srcFile = rel.source;
     const tgtFile = tgtSym.filePath as string;
-
-    if (fileMap.has(srcFile) && fileMap.has(tgtFile) && srcFile !== tgtFile) {
-      const key = `${srcFile}->${tgtFile}`;
-      if (!fileEdgeSet.has(key)) {
-        fileEdgeSet.add(key);
-        edges.push({ source: srcFile, target: tgtFile, type: "imports" });
-      }
-    }
-  }
-
-  // Edges: calls between files
-  for (const rel of model.relations) {
-    if (rel.type !== "calls") continue;
-    if (allUids.has(rel.source) && allUids.has(rel.target)) {
-      const srcSym = model.symbols[rel.source] as Record<string, unknown> | undefined;
-      const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
-      if (srcSym && tgtSym) {
-        const srcFile = srcSym.filePath as string;
-        const tgtFile = tgtSym.filePath as string;
-        if (fileMap.has(srcFile) && fileMap.has(tgtFile) && srcFile !== tgtFile) {
-          const key = `call:${srcFile}->${tgtFile}`;
-          if (!fileEdgeSet.has(key)) {
-            fileEdgeSet.add(key);
-            edges.push({ source: srcFile, target: tgtFile, type: "calls" });
-          }
-        }
-      }
+    if (files.has(srcFile) && files.has(tgtFile) && srcFile !== tgtFile) {
+      const key = `${srcFile}→${tgtFile}`;
+      if (!edgeSet.has(key)) { edgeSet.add(key); edges.push({ source: srcFile, target: tgtFile, type: "imports" }); }
     }
   }
 
   return { nodes, edges };
 }
 
-// ─── File Level ──────────────────────────────────────────────────────
+// ─── Smart Detail Panel ──────────────────────────────────────────────
 
-function buildFileGraph(model: ArchModel, filePath: string): { nodes: GraphNode[]; edges: GraphEdge[] } {
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
-
-  const symbols = getSymbolsForFile(model, filePath);
-
-  for (const [uid, sym] of symbols) {
-    const kind = sym.kind as string;
-    const name = sym.name as string;
-    const startLine = sym.startLine as number;
-    const endLine = sym.endLine as number;
-    const visibility = sym.visibility as string;
-
-    let group = "default";
-    if (kind === "class") group = "domain";
-    else if (kind === "function") group = "api";
-    else if (kind === "interface" || kind === "type_alias") group = "application";
-    else if (kind === "method") group = "presentation";
-    else if (kind === "enum") group = "config";
-
-    nodes.push({
-      id: uid,
-      label: name,
-      sublabel: `${kind}  |  L${startLine}-${endLine}  |  ${visibility}`,
-      group,
-      type: kind,
-    });
-  }
-
-  const symbolUids = new Set(symbols.map(([uid]) => uid));
-  const rels = getRelationsForSymbols(model, symbolUids);
-
-  for (const rel of rels) {
-    if (symbolUids.has(rel.source) && symbolUids.has(rel.target)) {
-      edges.push({
-        source: rel.source,
-        target: rel.target,
-        type: rel.type,
-        label: rel.type,
-      });
-    }
-  }
-
-  return { nodes, edges };
-}
-
-// ─── Detail Panel ────────────────────────────────────────────────────
-
-function DetailPanel({
-  model,
-  selectedId,
-  level,
-  onDrillDown,
-}: {
+function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown, onShowImpact }: {
   model: ArchModel;
   selectedId: string;
   level: ViewLevel;
+  impactResult: ImpactResult | null;
   onDrillDown: (id: string, label: string, level: ViewLevel) => void;
+  onShowImpact: () => void;
 }) {
-  if (level === "system") {
-    const mod = model.modules.find((m) => m.name === selectedId);
-    if (!mod) return null;
-    const config = layerMeta[mod.layer] || layerMeta.unknown;
-    const fileMap = getFilesForModule(model, mod.name);
-    const files = [...fileMap.keys()].sort();
+  const mod = model.modules.find((m) => m.name === selectedId);
+  if (!mod && level === "system") return null;
+
+  if (level === "system" && mod) {
+    const color = layerMeta[mod.layer]?.color || "#52525b";
+
+    // Calculate coupling
+    let ca = 0, ce = 0;
+    for (const rel of model.relations) {
+      if (rel.type !== "imports") continue;
+      const srcMod = rel.source.split("/")[0];
+      const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
+      if (!tgtSym) continue;
+      const tgtMod = (tgtSym.filePath as string)?.split("/")[0];
+      if (srcMod === tgtMod) continue;
+      if (tgtMod === mod.name) ca++;
+      if (srcMod === mod.name) ce++;
+    }
+    const instability = ca + ce > 0 ? (ce / (ca + ce)).toFixed(2) : "0";
+
+    // Dependencies
+    const dependsOn = new Map<string, number>();
+    const dependedBy = new Map<string, number>();
+    for (const rel of model.relations) {
+      if (rel.type !== "imports") continue;
+      const srcMod = rel.source.split("/")[0];
+      const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
+      if (!tgtSym) continue;
+      const tgtMod = (tgtSym.filePath as string)?.split("/")[0];
+      if (srcMod === tgtMod) continue;
+      if (srcMod === mod.name) dependsOn.set(tgtMod, (dependsOn.get(tgtMod) || 0) + 1);
+      if (tgtMod === mod.name) dependedBy.set(srcMod, (dependedBy.get(srcMod) || 0) + 1);
+    }
+
+    // API endpoints for this module
+    const moduleEndpoints = model.apiEndpoints.filter((ep) => ep.filePath.startsWith(mod.name + "/"));
+
+    // DB entities for this module
+    const moduleEntities = model.dbEntities.filter((e) => e.filePath?.startsWith(mod.name + "/"));
+
+    // Health
+    const issues: string[] = [];
+    if (mod.lineCount > 5000) issues.push(`Large (${mod.lineCount.toLocaleString()} LOC)`);
+    if (mod.symbols.length > 200) issues.push(`Many symbols (${mod.symbols.length})`);
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 text-xs">
+        {/* Header */}
         <div>
           <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: config.color }} />
-            <h3 className="font-mono font-bold text-lg" style={{ color: config.color }}>{mod.name}/</h3>
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+            <h3 className="font-mono font-bold text-base" style={{ color }}>{mod.name}/</h3>
           </div>
-          <span className="text-xs rounded-full px-2 py-0.5 mt-1 inline-block" style={{ backgroundColor: `${config.color}20`, color: config.color }}>
-            {config.label} Layer
+          <span className="text-[10px] rounded-full px-2 py-0.5 mt-1 inline-block" style={{ backgroundColor: `${color}20`, color }}>
+            {layerMeta[mod.layer]?.label} Layer
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-lg bg-zinc-800/50 p-2">
-            <div className="text-lg font-bold text-zinc-200">{mod.fileCount}</div>
-            <div className="text-[10px] text-zinc-600">files</div>
+        {/* Metrics */}
+        <Section title="METRICS">
+          <div className="grid grid-cols-2 gap-2">
+            <Metric label="Files" value={mod.fileCount} />
+            <Metric label="Symbols" value={mod.symbols.length} />
+            <Metric label="Lines" value={mod.lineCount.toLocaleString()} />
+            <Metric label="Language" value={mod.language} />
+            <Metric label="Coupling (Ca/Ce)" value={`${ca}/${ce}`} />
+            <Metric label="Instability" value={instability} color={Number(instability) > 0.7 ? "#ef4444" : Number(instability) > 0.4 ? "#f59e0b" : "#10b981"} />
           </div>
-          <div className="rounded-lg bg-zinc-800/50 p-2">
-            <div className="text-lg font-bold text-zinc-200">{mod.symbols.length}</div>
-            <div className="text-[10px] text-zinc-600">symbols</div>
-          </div>
-          <div className="rounded-lg bg-zinc-800/50 p-2">
-            <div className="text-lg font-bold text-zinc-200">{mod.lineCount.toLocaleString()}</div>
-            <div className="text-[10px] text-zinc-600">lines</div>
-          </div>
-        </div>
+        </Section>
 
-        <button
-          onClick={() => onDrillDown(mod.name, mod.name, "module")}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-sm font-medium hover:bg-archlens-500/20 transition-colors"
-        >
-          <Eye className="h-4 w-4" />
-          Explore Module
-        </button>
+        {/* Impact Result */}
+        {impactResult && impactResult.total > 0 && (
+          <Section title="IMPACT RADIUS">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> <span className="text-red-400">d=1 WILL BREAK: {impactResult.d1.length}</span></div>
+              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /> <span className="text-orange-400">d=2 LIKELY AFFECTED: {impactResult.d2.length}</span></div>
+              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> <span className="text-yellow-400">d=3 MAY NEED TEST: {impactResult.d3.length}</span></div>
+              <div className="text-zinc-500 mt-1">Total: {impactResult.total} affected</div>
+            </div>
+          </Section>
+        )}
 
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Files ({files.length})</h4>
-          <div className="space-y-1 max-h-[300px] overflow-y-auto">
-            {files.map((fp) => {
-              const symbolCount = fileMap.get(fp)?.length || 0;
-              const fileName = fp.split("/").pop();
-              return (
-                <button
-                  key={fp}
-                  onClick={() => onDrillDown(fp, fileName || fp, "file")}
-                  className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-zinc-800/50 transition-colors group"
-                >
-                  <FileCode className="h-3.5 w-3.5 text-zinc-600 group-hover:text-archlens-400" />
-                  <span className="text-xs font-mono text-zinc-400 group-hover:text-zinc-200 truncate flex-1">{fp}</span>
-                  <span className="text-[10px] text-zinc-600">{symbolCount}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (level === "module") {
-    // File selected within module view
-    const symbols = getSymbolsForFile(model, selectedId);
-    const fileName = selectedId.split("/").pop();
-
-    return (
-      <div className="space-y-4">
-        <div>
-          <h3 className="font-mono font-bold text-sm text-zinc-200">{fileName}</h3>
-          <p className="text-[11px] text-zinc-600 font-mono mt-0.5">{selectedId}</p>
-        </div>
-
-        <button
-          onClick={() => onDrillDown(selectedId, fileName || selectedId, "file")}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-sm font-medium hover:bg-archlens-500/20 transition-colors"
-        >
-          <Eye className="h-4 w-4" />
-          Explore File Symbols
-        </button>
-
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Symbols ({symbols.length})</h4>
-          <div className="space-y-1 max-h-[400px] overflow-y-auto">
-            {symbols.map(([uid, sym]) => {
-              const kind = sym.kind as string;
-              const name = sym.name as string;
-              const vis = sym.visibility as string;
-              return (
-                <div key={uid} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-zinc-800/30">
-                  <span className="text-zinc-500">{symbolIcons[kind] || <Code2 className="h-3.5 w-3.5" />}</span>
-                  <span className="text-xs font-mono text-zinc-300 flex-1 truncate">{name}</span>
-                  <span className="text-[10px] text-zinc-600">{kind}</span>
-                  {vis === "private" && <span className="text-[9px] text-red-500/60">priv</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // File level — show symbol details
-  const sym = model.symbols[selectedId] as Record<string, unknown> | undefined;
-  if (!sym) return null;
-
-  return (
-    <div className="space-y-3">
-      <div>
-        <div className="flex items-center gap-2">
-          {symbolIcons[sym.kind as string] || <Code2 className="h-4 w-4 text-zinc-400" />}
-          <h3 className="font-mono font-bold text-sm text-zinc-200">{sym.name as string}</h3>
-        </div>
-        <div className="flex gap-2 mt-1.5">
-          <span className="text-[10px] rounded-full px-2 py-0.5 bg-zinc-800 text-zinc-400">{sym.kind as string}</span>
-          <span className="text-[10px] rounded-full px-2 py-0.5 bg-zinc-800 text-zinc-400">{sym.visibility as string}</span>
-          <span className="text-[10px] rounded-full px-2 py-0.5 bg-zinc-800 text-zinc-400">L{sym.startLine as number}-{sym.endLine as number}</span>
-        </div>
-      </div>
-
-      {(sym.extends as string[])?.length > 0 && (
-        <div>
-          <h4 className="text-[10px] text-zinc-600 uppercase mb-1">Extends</h4>
-          {(sym.extends as string[]).map((e: string) => (
-            <span key={e} className="text-xs font-mono text-amber-400">{e}</span>
-          ))}
-        </div>
-      )}
-
-      {(sym.params as Array<{ name: string; type?: string }>)?.length > 0 && (
-        <div>
-          <h4 className="text-[10px] text-zinc-600 uppercase mb-1">Parameters</h4>
-          <div className="space-y-0.5">
-            {(sym.params as Array<{ name: string; type?: string }>).map((p) => (
-              <div key={p.name} className="text-xs font-mono">
-                <span className="text-zinc-300">{p.name}</span>
-                {p.type && <span className="text-zinc-600">: {p.type}</span>}
+        {/* Depends On */}
+        <Section title={`DEPENDS ON (${dependsOn.size})`}>
+          {dependsOn.size === 0 ? <span className="text-zinc-600">No dependencies (root module)</span> :
+            [...dependsOn.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => (
+              <div key={name} className="flex items-center justify-between py-0.5">
+                <span className="text-zinc-300 font-mono">→ {name}</span>
+                <span className="text-zinc-600">{count} refs</span>
               </div>
             ))}
-          </div>
-        </div>
-      )}
+        </Section>
 
-      {sym.returnType && (
-        <div>
-          <h4 className="text-[10px] text-zinc-600 uppercase mb-1">Returns</h4>
-          <span className="text-xs font-mono text-blue-400">{sym.returnType as string}</span>
+        {/* Depended By */}
+        <Section title={`DEPENDED BY (${dependedBy.size})`}>
+          {dependedBy.size === 0 ? <span className="text-zinc-600">Leaf module (no dependents)</span> :
+            [...dependedBy.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => (
+              <div key={name} className="flex items-center justify-between py-0.5">
+                <span className="text-zinc-300 font-mono">← {name}</span>
+                <span className="text-zinc-600">{count} refs</span>
+              </div>
+            ))}
+        </Section>
+
+        {/* API Endpoints */}
+        {moduleEndpoints.length > 0 && (
+          <Section title={`API ENDPOINTS (${moduleEndpoints.length})`}>
+            {moduleEndpoints.slice(0, 10).map((ep, i) => {
+              const mc: Record<string, string> = { GET: "text-blue-400", POST: "text-emerald-400", PUT: "text-amber-400", DELETE: "text-red-400" };
+              return <div key={i} className="font-mono py-0.5"><span className={`${mc[ep.method] || "text-zinc-400"} w-7 inline-block`}>{ep.method}</span> <span className="text-zinc-400">{ep.path}</span></div>;
+            })}
+          </Section>
+        )}
+
+        {/* DB Entities */}
+        {moduleEntities.length > 0 && (
+          <Section title={`DB TABLES (${moduleEntities.length})`}>
+            {moduleEntities.map((e) => <div key={e.name} className="font-mono text-emerald-400 py-0.5">{e.name} <span className="text-zinc-600">{e.columns.length} cols</span></div>)}
+          </Section>
+        )}
+
+        {/* Health */}
+        <Section title="HEALTH">
+          {issues.length === 0
+            ? <div className="flex items-center gap-1.5 text-emerald-400"><CheckCircle2 className="h-3 w-3" /> All checks passed</div>
+            : issues.map((issue, i) => <div key={i} className="flex items-center gap-1.5 text-amber-400"><AlertTriangle className="h-3 w-3" /> {issue}</div>)
+          }
+        </Section>
+
+        {/* Actions */}
+        <div className="space-y-1.5 pt-2">
+          <button onClick={() => onDrillDown(mod.name, mod.name, "module")} className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-xs font-medium hover:bg-archlens-500/20">
+            <Eye className="h-3.5 w-3.5" /> Explore Module
+          </button>
+          <button onClick={onShowImpact} className="w-full flex items-center justify-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 py-2 text-xs font-medium hover:bg-red-500/20">
+            <Target className="h-3.5 w-3.5" /> Show Impact
+          </button>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  // File/symbol level — simpler panel
+  const symbols = Object.entries(model.symbols).filter(([, s]) => (s as Record<string, unknown>).filePath === selectedId) as Array<[string, Record<string, unknown>]>;
+  if (symbols.length === 0 && level !== "system") {
+    return <div className="text-zinc-600 text-xs">No data for selection</div>;
+  }
+
+  return (
+    <div className="space-y-3 text-xs">
+      <h3 className="font-mono font-bold text-sm text-zinc-200">{selectedId.split("/").pop()}</h3>
+      <p className="text-[10px] text-zinc-600 font-mono">{selectedId}</p>
+      <button onClick={() => onDrillDown(selectedId, selectedId.split("/").pop() || selectedId, "file")} className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-xs font-medium hover:bg-archlens-500/20">
+        <Eye className="h-3.5 w-3.5" /> Explore Symbols
+      </button>
+      <Section title={`SYMBOLS (${symbols.length})`}>
+        {symbols.slice(0, 20).map(([uid, sym]) => (
+          <div key={uid} className="flex items-center gap-2 py-0.5">
+            <span className="text-zinc-500">{sym.kind as string}</span>
+            <span className="text-zinc-300 font-mono truncate">{sym.name as string}</span>
+          </div>
+        ))}
+      </Section>
     </div>
   );
 }
 
-// ─── Main Architecture View ──────────────────────────────────────────
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">{title}</h4>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function Metric({ label, value, color }: { label: string; value: string | number; color?: string }) {
+  return (
+    <div className="rounded-md bg-zinc-800/50 px-2 py-1.5">
+      <div className="text-sm font-bold" style={{ color: color || "#e4e4e7" }}>{value}</div>
+      <div className="text-[9px] text-zinc-600">{label}</div>
+    </div>
+  );
+}
+
+// ─── Main View ───────────────────────────────────────────────────────
 
 export function ArchitectureView() {
   const { model } = useStore();
-  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
-    { level: "system", id: "root", label: "System" },
-  ]);
+  const graphRef = useRef<ArchGraphHandle>(null);
+
+  const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ level: "system", id: "root", label: "System" }]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [impactMode, setImpactMode] = useState(false);
+  const [impactResult, setImpactResult] = useState<ImpactResult | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [edgeFilters, setEdgeFilters] = useState<Set<string>>(new Set());
+  const [bottomTab, setBottomTab] = useState<"trace" | "matrix">("trace");
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   const currentLevel = breadcrumbs[breadcrumbs.length - 1];
 
   const drillDown = useCallback((id: string, label: string, level: ViewLevel) => {
     setBreadcrumbs((prev) => [...prev, { level, id, label }]);
     setSelectedNode(null);
+    setImpactResult(null);
+    setImpactMode(false);
   }, []);
 
   const navigateTo = useCallback((index: number) => {
     setBreadcrumbs((prev) => prev.slice(0, index + 1));
     setSelectedNode(null);
+    setImpactResult(null);
   }, []);
-
-  const goBack = useCallback(() => {
-    if (breadcrumbs.length > 1) {
-      setBreadcrumbs((prev) => prev.slice(0, -1));
-      setSelectedNode(null);
-    }
-  }, [breadcrumbs.length]);
 
   const handleNodeClick = useCallback((nodeId: string) => {
+    if (!nodeId) { setSelectedNode(null); setImpactResult(null); return; }
     setSelectedNode(nodeId);
-  }, []);
+    if (impactMode && graphRef.current) {
+      const result = graphRef.current.highlightImpact(nodeId);
+      setImpactResult(result);
+    }
+  }, [impactMode]);
 
-  const handleNodeDoubleClick = useCallback(
-    (nodeId: string) => {
-      if (!model) return;
-      if (currentLevel.level === "system") {
-        const mod = model.modules.find((m) => m.name === nodeId);
-        if (mod) drillDown(nodeId, nodeId, "module");
-      } else if (currentLevel.level === "module") {
-        const sym = model.symbols[nodeId] as Record<string, unknown> | undefined;
-        if (sym || nodeId.includes("/")) {
-          drillDown(nodeId, nodeId.split("/").pop() || nodeId, "file");
-        }
+  const handleNodeDoubleClick = useCallback((nodeId: string) => {
+    if (!model) return;
+    if (currentLevel.level === "system") {
+      const mod = model.modules.find((m) => m.name === nodeId);
+      if (mod) drillDown(nodeId, nodeId, "module");
+    } else if (currentLevel.level === "module") {
+      drillDown(nodeId, nodeId.split("/").pop() || nodeId, "file");
+    }
+  }, [model, currentLevel.level, drillDown]);
+
+  const handleShowImpact = useCallback(() => {
+    if (selectedNode && graphRef.current) {
+      setImpactMode(true);
+      const result = graphRef.current.highlightImpact(selectedNode);
+      setImpactResult(result);
+    }
+  }, [selectedNode]);
+
+  const toggleEdgeFilter = useCallback((type: string) => {
+    setEdgeFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      if (graphRef.current) {
+        if (next.size > 0) graphRef.current.filterEdgeTypes([...next]);
+        else graphRef.current.showAllEdges();
       }
-    },
-    [model, currentLevel.level, drillDown],
-  );
+      return next;
+    });
+  }, []);
 
   const graphData = useMemo(() => {
     if (!model) return { nodes: [], edges: [] };
-
-    switch (currentLevel.level) {
-      case "system":
-        return buildSystemGraph(model);
-      case "module":
-        return buildModuleGraph(model, currentLevel.id);
-      case "file":
-        return buildFileGraph(model, currentLevel.id);
-      default:
-        return { nodes: [], edges: [] };
-    }
-  }, [model, currentLevel]);
+    if (currentLevel.level === "system") return buildSystemGraph(model, edgeFilters);
+    if (currentLevel.level === "module") return buildModuleGraph(model, currentLevel.id);
+    return { nodes: [], edges: [] };
+  }, [model, currentLevel, edgeFilters]);
 
   if (!model) return null;
 
-  const levelLabels: Record<ViewLevel, string> = {
-    system: "System Architecture — click a module to inspect, double-click to drill down",
-    module: `Module: ${currentLevel.id} — files & internal dependencies`,
-    file: `File: ${currentLevel.id} — symbols & relationships`,
-  };
+  // Navigator data
+  const filteredModules = searchQuery
+    ? model.modules.filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : model.modules;
+
+  const edgeTypes = [...new Set(model.relations.map((r) => r.type))];
 
   return (
     <div className="flex h-full">
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-800/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {breadcrumbs.length > 1 && (
-                <button
-                  onClick={goBack}
-                  className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-              )}
-              <div>
-                <h2 className="text-lg font-bold">System Architecture</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">{levelLabels[currentLevel.level]}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-zinc-600">{graphData.nodes.length} nodes</span>
-              <span className="text-zinc-700">|</span>
-              <span className="text-zinc-600">{graphData.edges.length} edges</span>
-            </div>
+      {/* LEFT: Navigator Panel */}
+      <aside className="w-52 border-r border-zinc-800/50 bg-zinc-950 flex flex-col overflow-hidden">
+        {/* Search */}
+        <div className="p-2 border-b border-zinc-800/50">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-600" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search..."
+              className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 py-1.5 pl-7 pr-2 text-[11px] text-zinc-300 placeholder:text-zinc-700 outline-none focus:border-archlens-500/30"
+            />
           </div>
+        </div>
 
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-1 mt-3">
-            {breadcrumbs.map((crumb, i) => (
+        {/* Module Tree */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 px-1 mb-1">Modules</div>
+          {filteredModules.map((mod) => {
+            const color = layerMeta[mod.layer]?.color || "#52525b";
+            const isSelected = selectedNode === mod.name;
+            const isExpanded = expandedModules.has(mod.name);
+
+            return (
+              <div key={mod.name}>
+                <button
+                  onClick={() => {
+                    setSelectedNode(mod.name);
+                    graphRef.current?.selectNode(mod.name);
+                    setExpandedModules((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(mod.name)) next.delete(mod.name);
+                      else next.add(mod.name);
+                      return next;
+                    });
+                  }}
+                  className={`w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] transition-colors ${isSelected ? "bg-archlens-500/10 text-archlens-400" : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300"}`}
+                >
+                  {isExpanded ? <ChevronDown className="h-3 w-3 flex-shrink-0 text-zinc-600" /> : <ChevronRight className="h-3 w-3 flex-shrink-0 text-zinc-600" />}
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                  <span className="font-mono truncate">{mod.name}</span>
+                  <span className="ml-auto text-[9px] text-zinc-700">{mod.fileCount}</span>
+                </button>
+
+                {isExpanded && (
+                  <div className="ml-5 space-y-0.5 mt-0.5">
+                    {Object.entries(model.symbols)
+                      .filter(([, s]) => (s as Record<string, unknown>).filePath?.toString().startsWith(mod.name + "/"))
+                      .reduce((files, [, s]) => {
+                        const fp = (s as Record<string, unknown>).filePath as string;
+                        if (!files.includes(fp)) files.push(fp);
+                        return files;
+                      }, [] as string[])
+                      .slice(0, 15)
+                      .map((fp) => (
+                        <button
+                          key={fp}
+                          onClick={() => { setSelectedNode(fp); }}
+                          className={`w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] transition-colors ${selectedNode === fp ? "text-archlens-400" : "text-zinc-600 hover:text-zinc-400"}`}
+                        >
+                          <FileCode className="h-2.5 w-2.5 flex-shrink-0" />
+                          <span className="font-mono truncate">{fp.split("/").pop()}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Edge Filters */}
+        <div className="p-2 border-t border-zinc-800/50">
+          <div className="flex items-center gap-1 mb-1.5">
+            <Filter className="h-3 w-3 text-zinc-600" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600">Relations</span>
+          </div>
+          <div className="space-y-0.5">
+            {edgeTypes.slice(0, 6).map((type) => {
+              const active = edgeFilters.size === 0 || edgeFilters.has(type);
+              return (
+                <button
+                  key={type}
+                  onClick={() => toggleEdgeFilter(type)}
+                  className={`flex items-center gap-1.5 w-full px-1.5 py-0.5 rounded text-[10px] transition-colors ${active ? "text-zinc-300" : "text-zinc-700"}`}
+                >
+                  <div className={`w-2 h-2 rounded-sm ${active ? "" : "opacity-30"}`} style={{ backgroundColor: active ? (edgeFilters.size > 0 ? "#10b981" : "#52525b") : "#27272a" }} />
+                  {type}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+
+      {/* CENTER + BOTTOM */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar */}
+        <div className="px-4 py-2 border-b border-zinc-800/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {breadcrumbs.length > 1 && (
+              <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-zinc-800 text-zinc-500"><ArrowLeft className="h-3.5 w-3.5" /></button>
+            )}
+            {breadcrumbs.map((c, i) => (
               <div key={i} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight className="h-3 w-3 text-zinc-700" />}
-                <button
-                  onClick={() => navigateTo(i)}
-                  className={`text-xs font-mono px-2 py-0.5 rounded transition-colors ${
-                    i === breadcrumbs.length - 1
-                      ? "bg-archlens-500/10 text-archlens-400 border border-archlens-500/20"
-                      : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
-                  }`}
-                >
-                  {crumb.label}
+                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/10 text-archlens-400" : "text-zinc-500 hover:text-zinc-300"}`}>
+                  {c.label}
                 </button>
               </div>
             ))}
           </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-zinc-600">{graphData.nodes.length}n {graphData.edges.length}e</span>
+            <button
+              onClick={() => {
+                setImpactMode(!impactMode);
+                if (impactMode) { graphRef.current?.clearHighlight(); setImpactResult(null); }
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-zinc-800 text-zinc-500 hover:text-zinc-300 border border-zinc-700"}`}
+            >
+              <Target className="h-3 w-3" />
+              Impact
+            </button>
+          </div>
         </div>
 
         {/* Graph */}
-        <div className="flex-1">
+        <div className="flex-1 min-h-0">
           <ArchGraph
+            ref={graphRef}
             nodes={graphData.nodes}
             edges={graphData.edges}
             layout={currentLevel.level === "file" ? "cola" : "dagre"}
             direction={currentLevel.level === "system" ? "TB" : "LR"}
             onNodeClick={handleNodeClick}
             onNodeDoubleClick={handleNodeDoubleClick}
+            impactMode={impactMode}
             className="h-full"
           />
         </div>
 
-        {/* Business Flow Panel — bottom strip */}
-        {model.dataFlows.length > 0 && currentLevel.level === "system" && (
-          <BusinessFlowPanel model={model} />
+        {/* Bottom Panel */}
+        {currentLevel.level === "system" && (
+          <div className="border-t border-zinc-800/50 bg-zinc-900/30">
+            <div className="flex items-center gap-0.5 px-4 pt-1">
+              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-zinc-800 text-archlens-400" : "text-zinc-600 hover:text-zinc-400"}`}>
+                <Zap className="h-3 w-3 inline mr-1" />Feature Tracing
+              </button>
+              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-zinc-800 text-archlens-400" : "text-zinc-600 hover:text-zinc-400"}`}>
+                <Grid3x3 className="h-3 w-3 inline mr-1" />Dependency Matrix
+              </button>
+            </div>
+            <div className="px-4 pb-3 pt-2 max-h-[250px] overflow-auto">
+              {bottomTab === "trace" && (
+                <FeatureTracer model={model} graphRef={graphRef} />
+              )}
+              {bottomTab === "matrix" && (
+                <DependencyMatrix
+                  model={model}
+                  onCellClick={(src, tgt) => {
+                    // Highlight the edge between these modules
+                    graphRef.current?.clearHighlight();
+                    graphRef.current?.selectNode(src);
+                  }}
+                />
+              )}
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Detail Sidebar */}
-      <aside className="w-80 border-l border-zinc-800/50 bg-zinc-950 overflow-y-auto">
-        <div className="p-4">
+      {/* RIGHT: Detail Panel */}
+      <aside className="w-72 border-l border-zinc-800/50 bg-zinc-950 overflow-y-auto">
+        <div className="p-3">
           {selectedNode ? (
-            <DetailPanel
+            <SmartDetailPanel
               model={model}
               selectedId={selectedNode}
               level={currentLevel.level}
+              impactResult={impactResult}
               onDrillDown={drillDown}
+              onShowImpact={handleShowImpact}
             />
           ) : (
             <div className="text-center py-12">
               <Layers className="h-8 w-8 text-zinc-800 mx-auto mb-3" />
-              <p className="text-xs text-zinc-600">Click a node to see details</p>
+              <p className="text-[11px] text-zinc-600">Click a node to inspect</p>
               <p className="text-[10px] text-zinc-700 mt-1">Double-click to drill down</p>
-            </div>
-          )}
-
-          {/* API Endpoints Summary in sidebar */}
-          {currentLevel.level === "system" && model.apiEndpoints.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-zinc-800/50">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
-                API Endpoints ({model.apiEndpoints.length})
-              </h4>
-              <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                {model.apiEndpoints.slice(0, 20).map((ep, i) => {
-                  const methodColors: Record<string, string> = {
-                    GET: "text-blue-400", POST: "text-emerald-400",
-                    PUT: "text-amber-400", DELETE: "text-red-400",
-                  };
-                  return (
-                    <div key={i} className="flex items-center gap-2 text-[11px] font-mono py-0.5">
-                      <span className={`w-8 font-bold ${methodColors[ep.method] || "text-zinc-400"}`}>
-                        {ep.method}
-                      </span>
-                      <span className="text-zinc-400 truncate">{ep.path}</span>
-                    </div>
-                  );
-                })}
-                {model.apiEndpoints.length > 20 && (
-                  <p className="text-[10px] text-zinc-600 mt-1">+{model.apiEndpoints.length - 20} more</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* DB Entities Summary in sidebar */}
-          {currentLevel.level === "system" && model.dbEntities.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-zinc-800/50">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
-                Database Entities ({model.dbEntities.length})
-              </h4>
-              <div className="space-y-1">
-                {model.dbEntities.map((entity) => (
-                  <div key={entity.name} className="flex items-center justify-between text-[11px] font-mono py-0.5">
-                    <span className="text-emerald-400">{entity.name}</span>
-                    <span className="text-zinc-600">{entity.columns.length} cols</span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-[10px] text-zinc-700">Enable Impact mode for blast radius</p>
             </div>
           )}
         </div>
@@ -648,68 +585,3 @@ export function ArchitectureView() {
     </div>
   );
 }
-
-// ─── Business Flow Panel ─────────────────────────────────────────────
-
-function BusinessFlowPanel({ model }: { model: ArchModel }) {
-  const [expanded, setExpanded] = useState(true);
-
-  return (
-    <div className="border-t border-zinc-800/50 bg-zinc-900/30">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-6 py-2 text-left hover:bg-zinc-800/30 transition-colors"
-      >
-        <Zap className="h-3.5 w-3.5 text-amber-500" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-          Business Flows ({model.dataFlows.length})
-        </span>
-        <ChevronRight className={`h-3 w-3 text-zinc-600 ml-auto transition-transform ${expanded ? "rotate-90" : ""}`} />
-      </button>
-
-      {expanded && (
-        <div className="px-6 pb-4 space-y-3">
-          {model.dataFlows.map((flow) => (
-            <div key={flow.id} className="rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-zinc-200">{flow.name}</span>
-                {flow.description && (
-                  <span className="text-[10px] text-zinc-600">— {flow.description}</span>
-                )}
-              </div>
-              {/* Flow steps as a horizontal pipeline */}
-              <div className="flex items-center gap-0 overflow-x-auto pb-1">
-                {flow.steps.map((step, i) => (
-                  <div key={i} className="flex items-center gap-0 flex-shrink-0">
-                    {/* Source node */}
-                    {i === 0 && (
-                      <div className="rounded-md bg-zinc-800 border border-zinc-700 px-2.5 py-1 text-[11px] font-mono text-zinc-300">
-                        {step.source}
-                      </div>
-                    )}
-                    {/* Arrow with action label */}
-                    <div className="flex flex-col items-center mx-1">
-                      <span className="text-[9px] text-zinc-600 whitespace-nowrap mb-0.5">{step.action}</span>
-                      <div className="flex items-center">
-                        <div className="w-8 h-px bg-archlens-500/50" />
-                        <div className="w-0 h-0 border-l-[5px] border-l-archlens-500/50 border-y-[3px] border-y-transparent" />
-                      </div>
-                      {step.dataType && (
-                        <span className="text-[8px] text-zinc-700 mt-0.5">[{step.dataType}]</span>
-                      )}
-                    </div>
-                    {/* Target node */}
-                    <div className="rounded-md bg-zinc-800 border border-zinc-700 px-2.5 py-1 text-[11px] font-mono text-zinc-300">
-                      {step.target}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
