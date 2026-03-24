@@ -3,6 +3,7 @@ import Graph from "graphology";
 import Sigma from "sigma";
 import EdgeCurveProgram from "@sigma/edge-curve";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
+import forceAtlas2 from "graphology-layout-forceatlas2";
 import { useTheme } from "../lib/theme.js";
 
 // Re-export types for compatibility
@@ -419,7 +420,9 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
 
     // ── Start Force Layout ──
     if (nodes.length > 2) {
-      const settings = getFA2Settings(nodes.length);
+      const inferred = forceAtlas2.inferSettings(graph);
+      const custom = getFA2Settings(nodes.length);
+      const settings = { ...inferred, ...custom };
       const fa2 = new FA2Layout(graph, { settings });
       fa2.start();
       layoutRef.current = fa2;

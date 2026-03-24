@@ -209,10 +209,9 @@ export function DiagramView() {
       case "dependency-graph": {
         const { nodes, edges } = buildDependencyGraph(model);
         return (
-          <ArchGraph
-            nodes={nodes}
-            edges={edges}
-            layout="cose"
+          <SigmaGraph
+            nodes={nodes as SigmaNode[]}
+            edges={edges as SigmaEdge[]}
             onNodeClick={setSelectedNode}
             className="h-[calc(100vh-220px)]"
           />
