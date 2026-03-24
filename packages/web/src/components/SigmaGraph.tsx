@@ -327,7 +327,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
         originalColor: colors.border,
         originalSize: size,
         group: node.group,
-        type: node.type,
+        nodeType: node.type,
       });
 
       nodeIndex++;
@@ -362,6 +362,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
 
     // Create Sigma renderer
     const sigma = new Sigma(graph, containerRef.current, {
+      allowInvalidContainer: true,
       defaultEdgeType: "curved",
       edgeProgramClasses: { curved: EdgeCurveProgram },
       renderEdgeLabels: false,
@@ -440,8 +441,10 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
   }, [nodes, edges, onNodeClick, onNodeDoubleClick, onNodeHover, impactMode, selectedNode]);
 
   useEffect(() => {
-    initGraph();
+    // Delay to ensure container is mounted and sized
+    const timer = setTimeout(initGraph, 100);
     return () => {
+      clearTimeout(timer);
       if (animationRef.current) clearTimeout(animationRef.current);
       if (layoutRef.current) { layoutRef.current.kill(); layoutRef.current = null; }
       if (sigmaRef.current) { sigmaRef.current.kill(); sigmaRef.current = null; }
