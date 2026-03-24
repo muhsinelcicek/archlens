@@ -115,6 +115,12 @@ function buildModuleGraph(model: ArchModel, moduleName: string): { nodes: GraphN
 // ─── Code Panel ──────────────────────────────────────────────────────
 
 function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId: string; level: ViewLevel }) {
+  // Check if selectedId is a file path (has extension) — show code viewer regardless of level
+  const isFilePath = selectedId.includes("/") && /\.\w+$/.test(selectedId);
+  if (isFilePath) {
+    return <FileCodeViewer filePath={selectedId} model={model} />;
+  }
+
   if (level === "system") {
     const mod = model.modules.find((m) => m.name === selectedId);
     if (!mod) return null;

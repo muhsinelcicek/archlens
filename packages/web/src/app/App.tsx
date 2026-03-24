@@ -82,8 +82,8 @@ export function App() {
               onChange={(e) => switchProject(e.target.value)}
               className="mt-3 w-full rounded-lg bg-elevated border border-[#2a2a3a] px-2.5 py-1.5 text-xs font-mono text-archlens-300 outline-none cursor-pointer hover:border-archlens-500/40 transition-colors"
             >
-              {projects.map((p) => (
-                <option key={p.name} value={p.name}>{p.name} ({p.stats.files}f)</option>
+              {projects.map((p, i) => (
+                <option key={`${p.name}-${i}`} value={p.name}>{p.name} ({p.stats.files}f)</option>
               ))}
             </select>
           ) : model ? (
