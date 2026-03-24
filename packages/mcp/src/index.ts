@@ -5,7 +5,7 @@ import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 import type { ArchitectureModel, BusinessProcessInfo } from "@archlens/core";
-import { GitDiffer } from "@archlens/core";
+import { GitDiffer, SequenceTracer } from "@archlens/core";
 
 // ─── Load Model ──────────────────────────────────────────────────────
 
@@ -502,6 +502,276 @@ server.tool(
     return { content: [{ type: "text" as const, text: lines.join("\n") }] };
   },
 );
+
+// ─── Tool: archlens_sequence ──────────────────────────────────────────
+
+server.tool(
+  "archlens_sequence",
+  "Generate a sequence diagram for an API endpoint or function. Shows the full call chain: who calls whom, in what order, across which modules. Use to understand execution flow.",
+  {
+    target: z.string().describe("API endpoint path (e.g., '/api/sales/monthly') or function/class name"),
+    method: z.string().optional().describe("HTTP method for endpoint matching (GET, POST, etc.)"),
+  },
+  async ({ target, method }) => {
+    const result = findAndLoadModel();
+    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found." }] };
+    const { model } = result;
+
+    const tracer = new SequenceTracer(model);
+    const lines: string[] = [];
+
+    // Try matching as API endpoint
+    const endpoint = model.apiEndpoints.find((ep) =>
+      ep.path.includes(target) && (!method || ep.method === method.toUpperCase()),
+    );
+
+    let diagram;
+    if (endpoint) {
+      diagram = tracer.traceEndpoint(endpoint);
+    } else {
+      // Try matching as symbol
+      let matchedUid: string | undefined;
+      for (const [uid, sym] of model.symbols) {
+        if (sym.name === target || sym.name.includes(target)) {
+          matchedUid = uid;
+          break;
+        }
+      }
+      if (matchedUid) {
+        diagram = tracer.traceSymbol(matchedUid);
+      }
+    }
+
+    if (!diagram || diagram.steps.length === 0) {
+      lines.push(`No sequence found for "${target}".`);
+      lines.push("\nAvailable API endpoints:");
+      for (const ep of model.apiEndpoints.slice(0, 15)) {
+        lines.push(`  ${ep.method} ${ep.path}`);
+      }
+      return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+    }
+
+    lines.push(`# Sequence Diagram: ${diagram.title}\n`);
+
+    // Participants
+    lines.push("## Participants");
+    for (const p of diagram.participants) {
+      lines.push(`- **${p.name}** (${p.module}) [${p.kind}]`);
+    }
+    lines.push("");
+
+    // Steps as sequence
+    lines.push("## Call Sequence");
+    for (const step of diagram.steps) {
+      const indent = "  ".repeat(step.depth);
+      const arrow = step.from === "Client" ? "→" : step.to === "Client" ? "←" : "→";
+      const moduleInfo = step.fromModule !== step.toModule ? ` [${step.fromModule} → ${step.toModule}]` : "";
+      lines.push(`${indent}${step.from} ${arrow} ${step.to}: \`${step.action}\`${moduleInfo}`);
+      if (step.returnType) {
+        lines.push(`${indent}  returns: ${step.returnType}`);
+      }
+    }
+
+    // Mermaid format
+    lines.push("\n## Mermaid Sequence Diagram");
+    lines.push("```mermaid");
+    lines.push("sequenceDiagram");
+    for (const p of diagram.participants) {
+      lines.push(`  participant ${p.name.replace(/[^a-zA-Z0-9_]/g, "_")}`);
+    }
+    for (const step of diagram.steps) {
+      const from = step.from.replace(/[^a-zA-Z0-9_]/g, "_");
+      const to = step.to.replace(/[^a-zA-Z0-9_]/g, "_");
+      const arrow = step.to === "Client" ? "-->>" : "->>";
+      lines.push(`  ${from}${arrow}${to}: ${step.action}`);
+    }
+    lines.push("```");
+
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+  },
+);
+
+// ─── Tool: archlens_explain ──────────────────────────────────────────
+
+server.tool(
+  "archlens_explain",
+  "Generate a comprehensive explanation of a module, class, or function. Describes what it does, its dependencies, its role in the architecture, and related business processes. Use to understand unfamiliar code.",
+  {
+    target: z.string().describe("Module name, class name, or file path to explain"),
+  },
+  async ({ target }) => {
+    const result = findAndLoadModel();
+    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found." }] };
+    const { model } = result;
+
+    const lines: string[] = [];
+    const processes = (model.businessProcesses || []) as BusinessProcessInfo[];
+
+    // Try as module
+    const mod = model.modules.find((m) => m.name.toLowerCase() === target.toLowerCase() || m.name.toLowerCase().includes(target.toLowerCase()));
+    if (mod) {
+      lines.push(`# ${mod.name}\n`);
+      lines.push(`**Layer:** ${mod.layer}`);
+      lines.push(`**Language:** ${mod.language}`);
+      lines.push(`**Size:** ${mod.fileCount} files, ${mod.lineCount.toLocaleString()} lines, ${mod.symbols.length} symbols\n`);
+
+      // What it does
+      lines.push("## What does this module do?\n");
+
+      // Find symbols in this module
+      const moduleSymbols: Array<{ uid: string; sym: any }> = [];
+      for (const uid of mod.symbols) {
+        const sym = model.symbols.get(uid);
+        if (sym) moduleSymbols.push({ uid, sym });
+      }
+
+      const classes = moduleSymbols.filter((s) => s.sym.kind === "class");
+      const functions = moduleSymbols.filter((s) => s.sym.kind === "function");
+      const interfaces = moduleSymbols.filter((s) => s.sym.kind === "interface");
+      const methods = moduleSymbols.filter((s) => s.sym.kind === "method");
+
+      if (classes.length > 0) {
+        lines.push(`This module defines **${classes.length} classes**:`);
+        for (const c of classes.slice(0, 10)) {
+          const classMethods = methods.filter((m) => m.sym.name.startsWith(c.sym.name + "."));
+          const inherited = c.sym.extends?.join(", ");
+          const implemented = c.sym.implements?.join(", ");
+          lines.push(`- **${c.sym.name}**${inherited ? ` extends ${inherited}` : ""}${implemented ? ` implements ${implemented}` : ""} — ${classMethods.length} methods`);
+        }
+        lines.push("");
+      }
+
+      if (interfaces.length > 0) {
+        lines.push(`Defines **${interfaces.length} interfaces**: ${interfaces.map((i) => i.sym.name).join(", ")}\n`);
+      }
+
+      // API endpoints in this module
+      const moduleFiles = new Set(moduleSymbols.map((s) => s.sym.filePath));
+      const endpoints = model.apiEndpoints.filter((ep) => moduleFiles.has(ep.filePath));
+      if (endpoints.length > 0) {
+        lines.push(`## API Endpoints (${endpoints.length})\n`);
+        for (const ep of endpoints) {
+          lines.push(`- \`${ep.method} ${ep.path}\``);
+        }
+        lines.push("");
+      }
+
+      // DB entities
+      const entities = model.dbEntities.filter((e) => moduleFiles.has((e as any).filePath));
+      if (entities.length > 0) {
+        lines.push(`## Database Entities (${entities.length})\n`);
+        for (const e of entities) {
+          lines.push(`- **${e.name}** — ${e.columns.length} columns`);
+        }
+        lines.push("");
+      }
+
+      // Dependencies
+      const dependsOn = new Set<string>();
+      const dependedBy = new Set<string>();
+      for (const rel of model.relations) {
+        if (rel.type === "composes") continue;
+        const srcMod = findModuleForUid(model, rel.source);
+        const tgtSym = model.symbols.get(rel.target);
+        const tgtMod = tgtSym ? findModuleForUid(model, rel.target) : undefined;
+        if (srcMod === mod.name && tgtMod && tgtMod !== mod.name) dependsOn.add(tgtMod);
+        if (tgtMod === mod.name && srcMod && srcMod !== mod.name) dependedBy.add(srcMod);
+      }
+
+      lines.push(`## Dependencies\n`);
+      lines.push(`**Depends on (${dependsOn.size}):** ${[...dependsOn].join(", ") || "none (leaf module)"}`);
+      lines.push(`**Depended by (${dependedBy.size}):** ${[...dependedBy].join(", ") || "none (no dependents)"}\n`);
+
+      // Related business processes
+      const relatedProcesses = processes.filter((p) =>
+        p.relatedSymbols.some((uid) => mod.symbols.includes(uid)) ||
+        p.name.toLowerCase().includes(mod.name.toLowerCase()),
+      );
+      if (relatedProcesses.length > 0) {
+        lines.push(`## Related Business Processes\n`);
+        for (const p of relatedProcesses) {
+          lines.push(`### ${p.name}`);
+          lines.push(p.description);
+          lines.push(`Pipeline: ${p.steps.map((s) => s.name).join(" → ")}\n`);
+        }
+      }
+
+      return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+    }
+
+    // Try as symbol
+    let matchedSym: any = null;
+    let matchedUid = "";
+    for (const [uid, sym] of model.symbols) {
+      if (sym.name === target || sym.name.includes(target)) {
+        matchedSym = sym;
+        matchedUid = uid;
+        break;
+      }
+    }
+
+    if (matchedSym) {
+      lines.push(`# ${matchedSym.name}\n`);
+      lines.push(`**Kind:** ${matchedSym.kind}`);
+      lines.push(`**File:** ${matchedSym.filePath}:${matchedSym.startLine}-${matchedSym.endLine}`);
+      lines.push(`**Visibility:** ${matchedSym.visibility}`);
+      if (matchedSym.extends?.length) lines.push(`**Extends:** ${matchedSym.extends.join(", ")}`);
+      if (matchedSym.implements?.length) lines.push(`**Implements:** ${matchedSym.implements.join(", ")}`);
+      if (matchedSym.params?.length) {
+        lines.push(`\n**Parameters:**`);
+        for (const p of matchedSym.params) {
+          lines.push(`- ${p.name}${p.type ? `: ${p.type}` : ""}${p.optional ? " (optional)" : ""}`);
+        }
+      }
+      if (matchedSym.returnType) lines.push(`**Returns:** ${matchedSym.returnType}`);
+
+      // Callers and callees
+      const callers = model.relations.filter((r) => r.target === matchedUid && r.type !== "composes");
+      const callees = model.relations.filter((r) => r.source === matchedUid && r.type !== "composes");
+
+      if (callers.length > 0) {
+        lines.push(`\n## Called by (${callers.length})`);
+        for (const r of callers.slice(0, 10)) {
+          const src = model.symbols.get(r.source);
+          lines.push(`- [${r.type}] ${src?.name || r.source}`);
+        }
+      }
+
+      if (callees.length > 0) {
+        lines.push(`\n## Calls (${callees.length})`);
+        for (const r of callees.slice(0, 10)) {
+          const tgt = model.symbols.get(r.target);
+          lines.push(`- [${r.type}] ${tgt?.name || r.target}`);
+        }
+      }
+
+      return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+    }
+
+    lines.push(`No module or symbol found matching "${target}".`);
+    lines.push("\nAvailable modules: " + model.modules.map((m) => m.name).join(", "));
+
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+  },
+);
+
+// Helper for explain tool
+function findModuleForUid(model: ArchitectureModel, uid: string): string | undefined {
+  for (const mod of model.modules) {
+    if (mod.symbols.includes(uid)) return mod.name;
+  }
+  // Try via file path
+  const sym = model.symbols.get(uid);
+  if (sym) {
+    for (const mod of model.modules) {
+      for (const mUid of mod.symbols) {
+        const mSym = model.symbols.get(mUid);
+        if (mSym && mSym.filePath === sym.filePath) return mod.name;
+      }
+    }
+  }
+  return undefined;
+}
 
 // ─── Resources ───────────────────────────────────────────────────────
 
