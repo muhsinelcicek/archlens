@@ -72,25 +72,69 @@ export interface ArchModel {
   }>;
 }
 
+export interface ProjectInfo {
+  name: string;
+  repoUrl: string;
+  analyzedAt: string;
+  stats: { files: number; symbols: number; modules: number; lines: number };
+}
+
 interface AppState {
   model: ArchModel | null;
   diagrams: Record<string, string>;
+  projects: ProjectInfo[];
+  activeProject: string | null;
   loading: boolean;
   error: string | null;
   activeView: string;
   setActiveView: (view: string) => void;
+  fetchProjects: () => Promise<void>;
+  switchProject: (name: string) => Promise<void>;
   fetchModel: () => Promise<void>;
   fetchDiagrams: () => Promise<void>;
 }
 
-export const useStore = create<AppState>((set) => ({
+export const useStore = create<AppState>((set, get) => ({
   model: null,
   diagrams: {},
+  projects: [],
+  activeProject: null,
   loading: false,
   error: null,
   activeView: "dashboard",
 
   setActiveView: (view) => set({ activeView: view }),
+
+  fetchProjects: async () => {
+    try {
+      const res = await fetch("/api/projects");
+      if (res.ok) {
+        const projects = await res.json();
+        set({ projects });
+      }
+    } catch { /* silent */ }
+  },
+
+  switchProject: async (name: string) => {
+    set({ loading: true, activeProject: name });
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(name)}/model`);
+      if (res.ok) {
+        const model = await res.json();
+        set({ model, loading: false });
+        // Also fetch diagrams
+        const dRes = await fetch(`/api/projects/${encodeURIComponent(name)}/diagrams`);
+        if (dRes.ok) {
+          const diagrams = await dRes.json();
+          set({ diagrams });
+        }
+      } else {
+        set({ loading: false, error: "Failed to load project" });
+      }
+    } catch (err) {
+      set({ error: (err as Error).message, loading: false });
+    }
+  },
 
   fetchModel: async () => {
     set({ loading: true, error: null });

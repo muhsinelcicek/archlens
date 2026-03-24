@@ -30,12 +30,13 @@ const navItems = [
 ];
 
 export function App() {
-  const { model, loading, error, fetchModel, fetchDiagrams } = useStore();
+  const { model, loading, error, projects, activeProject, fetchModel, fetchDiagrams, fetchProjects, switchProject } = useStore();
 
   useEffect(() => {
     fetchModel();
     fetchDiagrams();
-  }, [fetchModel, fetchDiagrams]);
+    fetchProjects();
+  }, [fetchModel, fetchDiagrams, fetchProjects]);
 
   if (loading) {
     return (
@@ -89,7 +90,20 @@ export function App() {
               </h1>
             </div>
           </div>
-          {model && (
+          {/* Project Selector */}
+          {projects.length > 1 ? (
+            <select
+              value={activeProject || model?.project.name || ""}
+              onChange={(e) => switchProject(e.target.value)}
+              className="mt-3 w-full rounded-md bg-[#333333] border border-[#383838] px-2.5 py-1.5 text-xs font-mono text-archlens-400 outline-none cursor-pointer hover:border-archlens-500/30"
+            >
+              {projects.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name} ({p.stats.files}f)
+                </option>
+              ))}
+            </select>
+          ) : model && (
             <div className="mt-3 rounded-md bg-[#2c2c2c]/50 border border-[#383838] px-2.5 py-1.5">
               <p className="text-xs font-mono text-archlens-400 truncate">{model.project.name}</p>
             </div>

@@ -4,44 +4,111 @@ import fs from "node:fs";
 import http from "node:http";
 import chalk from "chalk";
 
-export const serveCommand = new Command("serve")
-  .description("Start interactive web dashboard")
-  .option("-p, --port <port>", "Port number", "4848")
-  .option("-d, --data <dir>", "ArchLens data directory", ".archlens")
-  .action(async (options) => {
-    const dataDir = path.resolve(options.data);
-    const modelPath = path.join(dataDir, "model.json");
+const ARCHLENS_HOME = path.join(process.env.HOME || "~", ".archlens");
+const REGISTRY_PATH = path.join(ARCHLENS_HOME, "registry.json");
 
-    if (!fs.existsSync(modelPath)) {
-      console.error(chalk.red("No analysis data found. Run `archlens analyze` first."));
-      process.exit(1);
+interface ProjectEntry {
+  name: string;
+  repoUrl: string;
+  localPath: string;
+  analyzedAt: string;
+  stats: { files: number; symbols: number; modules: number; lines: number };
+}
+
+function loadRegistry(): ProjectEntry[] {
+  if (!fs.existsSync(REGISTRY_PATH)) return [];
+  try { return JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf-8")); } catch { return []; }
+}
+
+export const serveCommand = new Command("serve")
+  .description("Start interactive web dashboard (multi-project)")
+  .option("-p, --port <port>", "Port number", "4848")
+  .option("-d, --data <dir>", "Single project data directory (optional)")
+  .action(async (options) => {
+    const port = parseInt(options.port, 10);
+
+    // Load all projects from registry
+    const registry = loadRegistry();
+
+    // Also check for --data flag (single project mode)
+    let singleModel: unknown = null;
+    let singleDiagrams: Record<string, string> = {};
+    if (options.data) {
+      const modelPath = path.join(options.data, "model.json");
+      if (fs.existsSync(modelPath)) {
+        singleModel = JSON.parse(fs.readFileSync(modelPath, "utf-8"));
+        const diagramDir = path.join(options.data, "diagrams");
+        if (fs.existsSync(diagramDir)) {
+          for (const file of fs.readdirSync(diagramDir)) {
+            if (file.endsWith(".mmd")) {
+              singleDiagrams[file.replace(".mmd", "")] = fs.readFileSync(path.join(diagramDir, file), "utf-8");
+            }
+          }
+        }
+      }
     }
 
-    const port = parseInt(options.port, 10);
-    const model = JSON.parse(fs.readFileSync(modelPath, "utf-8"));
-
     const server = http.createServer((req, res) => {
-      // CORS headers
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-      if (req.method === "OPTIONS") {
-        res.writeHead(204);
-        res.end();
-        return;
-      }
+      if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
       const url = new URL(req.url || "/", `http://localhost:${port}`);
 
-      switch (url.pathname) {
-        case "/api/model":
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(model));
-          break;
+      // ─── Multi-project endpoints ───────────────────────────
 
-        case "/api/diagrams": {
-          const diagramDir = path.join(dataDir, "diagrams");
+      // List all projects
+      if (url.pathname === "/api/projects") {
+        const projects = registry.map((p) => ({
+          name: p.name,
+          repoUrl: p.repoUrl,
+          analyzedAt: p.analyzedAt,
+          stats: p.stats,
+        }));
+
+        // If single-mode, add that too
+        if (singleModel) {
+          const m = singleModel as { project?: { name?: string }; stats?: Record<string, unknown> };
+          projects.unshift({
+            name: m.project?.name || "local",
+            repoUrl: "local",
+            analyzedAt: new Date().toISOString(),
+            stats: (m.stats || {}) as ProjectEntry["stats"],
+          });
+        }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(projects));
+        return;
+      }
+
+      // Get specific project model
+      const projectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/model$/);
+      if (projectMatch) {
+        const projectName = decodeURIComponent(projectMatch[1]);
+        const project = registry.find((p) => p.name === projectName);
+
+        if (project) {
+          const modelPath = path.join(project.localPath, ".archlens", "model.json");
+          if (fs.existsSync(modelPath)) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(fs.readFileSync(modelPath, "utf-8"));
+            return;
+          }
+        }
+        res.writeHead(404); res.end("Project not found"); return;
+      }
+
+      // Get specific project diagrams
+      const diagramMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/diagrams$/);
+      if (diagramMatch) {
+        const projectName = decodeURIComponent(diagramMatch[1]);
+        const project = registry.find((p) => p.name === projectName);
+
+        if (project) {
+          const diagramDir = path.join(project.localPath, ".archlens", "diagrams");
           const diagrams: Record<string, string> = {};
           if (fs.existsSync(diagramDir)) {
             for (const file of fs.readdirSync(diagramDir)) {
@@ -52,33 +119,74 @@ export const serveCommand = new Command("serve")
           }
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(diagrams));
-          break;
+          return;
         }
-
-        case "/api/architecture": {
-          const archPath = path.join(dataDir, "ARCHITECTURE.md");
-          if (fs.existsSync(archPath)) {
-            res.writeHead(200, { "Content-Type": "text/markdown" });
-            res.end(fs.readFileSync(archPath, "utf-8"));
-          } else {
-            res.writeHead(404);
-            res.end("Not found");
-          }
-          break;
-        }
-
-        default:
-          res.writeHead(404);
-          res.end("Not found");
+        res.writeHead(404); res.end("Project not found"); return;
       }
+
+      // ─── Legacy single-project endpoints ───────────────────
+
+      if (url.pathname === "/api/model") {
+        if (singleModel) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(singleModel));
+        } else if (registry.length > 0) {
+          // Serve first project by default
+          const first = registry[0];
+          const modelPath = path.join(first.localPath, ".archlens", "model.json");
+          if (fs.existsSync(modelPath)) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(fs.readFileSync(modelPath, "utf-8"));
+          } else {
+            res.writeHead(404); res.end("No model found");
+          }
+        } else {
+          res.writeHead(404); res.end("No projects");
+        }
+        return;
+      }
+
+      if (url.pathname === "/api/diagrams") {
+        if (Object.keys(singleDiagrams).length > 0) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(singleDiagrams));
+        } else if (registry.length > 0) {
+          const first = registry[0];
+          const diagramDir = path.join(first.localPath, ".archlens", "diagrams");
+          const diagrams: Record<string, string> = {};
+          if (fs.existsSync(diagramDir)) {
+            for (const file of fs.readdirSync(diagramDir)) {
+              if (file.endsWith(".mmd")) {
+                diagrams[file.replace(".mmd", "")] = fs.readFileSync(path.join(diagramDir, file), "utf-8");
+              }
+            }
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(diagrams));
+        } else {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end("{}");
+        }
+        return;
+      }
+
+      res.writeHead(404); res.end("Not found");
     });
 
     server.listen(port, () => {
       console.log(chalk.cyan(`\n  ArchLens Dashboard API running on http://localhost:${port}`));
-      console.log(chalk.dim(`  Data: ${dataDir}\n`));
-      console.log(chalk.dim("  Endpoints:"));
-      console.log(chalk.dim("  GET /api/model      — Full architecture model"));
-      console.log(chalk.dim("  GET /api/diagrams   — Mermaid diagrams"));
-      console.log(chalk.dim("  GET /api/architecture — Markdown report\n"));
+      if (options.data) {
+        console.log(chalk.dim(`  Single project: ${options.data}`));
+      }
+      if (registry.length > 0) {
+        console.log(chalk.dim(`  Registered projects: ${registry.length}`));
+        for (const p of registry) {
+          console.log(chalk.dim(`    • ${p.name} (${p.stats.files} files)`));
+        }
+      }
+      console.log(chalk.dim("\n  Endpoints:"));
+      console.log(chalk.dim("  GET /api/projects           — List all projects"));
+      console.log(chalk.dim("  GET /api/projects/:name/model — Project model"));
+      console.log(chalk.dim("  GET /api/model              — Default project model\n"));
     });
   });
