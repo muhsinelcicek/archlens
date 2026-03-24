@@ -11,6 +11,7 @@ export const analyzeCommand = new Command("analyze")
   .argument("[path]", "Path to the project root", ".")
   .option("--include-tests", "Include test files in analysis", false)
   .option("--output <dir>", "Output directory for results", ".archlens")
+  .option("--force", "Force full re-scan (skip incremental cache)", false)
   .option("--json", "Output raw JSON to stdout")
   .action(async (targetPath: string, options) => {
     const rootDir = path.resolve(targetPath);
@@ -33,11 +34,16 @@ export const analyzeCommand = new Command("analyze")
       const model = await scanner.scan({
         rootDir,
         includeTests: options.includeTests,
+        force: options.force,
       });
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
-      spinner.succeed(chalk.green(`Analysis complete (${duration}s)`));
+      const scanStats = scanner.lastScanStats;
+      const incrementalInfo = scanStats && scanStats.cached > 0
+        ? ` — ${scanStats.parsed} parsed, ${scanStats.cached} cached`
+        : "";
+      spinner.succeed(chalk.green(`Analysis complete (${duration}s)${incrementalInfo}`));
 
       // Output JSON to stdout if requested
       if (options.json) {

@@ -19,11 +19,16 @@ import type {
 } from "../models/index.js";
 import { ProcessDetector } from "./process-detector.js";
 import { ModuleResolver } from "./module-resolver.js";
+import { IncrementalCache } from "./incremental-cache.js";
 
 export interface ScanOptions {
   rootDir: string;
   includeTests?: boolean;
   ignorePatterns?: string[];
+  /** Use incremental analysis if cache available (default: true) */
+  incremental?: boolean;
+  /** Force full re-scan even if cache exists */
+  force?: boolean;
 }
 
 /**
@@ -31,17 +36,68 @@ export interface ScanOptions {
  * Scans a project, parses all files, and builds the ArchitectureModel.
  */
 export class ProjectScanner {
+  /** Incremental scan metadata — set after scan completes */
+  public lastScanStats?: { total: number; parsed: number; cached: number; deleted: number };
+
   async scan(options: ScanOptions): Promise<ArchitectureModel> {
     const { rootDir } = options;
     const projectName = path.basename(rootDir);
+    const outputDir = path.join(rootDir, ".archlens");
+    const useIncremental = (options.incremental !== false) && !options.force;
 
     // 1. Discover files
     const files = await this.discoverFiles(options);
 
-    // 2. Parse all files
-    const allResults = await this.parseFiles(files, options);
+    // 1.5 Incremental check
+    const cache = new IncrementalCache(rootDir, outputDir);
+    let filesToParse: string[];
+    let previousModel: ArchitectureModel | null = null;
 
-    // 3. Build unified model
+    if (useIncremental && cache.isAvailable) {
+      const diff = cache.diff(files);
+
+      if (diff.unchanged.length > 0 && !diff.configChanged) {
+        // Load previous model
+        const modelPath = path.join(outputDir, "model.json");
+        if (fs.existsSync(modelPath)) {
+          try {
+            const raw = JSON.parse(fs.readFileSync(modelPath, "utf-8"));
+            raw.symbols = new Map(Object.entries(raw.symbols || {}));
+            previousModel = raw as ArchitectureModel;
+          } catch { /* full scan fallback */ }
+        }
+      }
+
+      filesToParse = [...diff.modified, ...diff.added];
+      this.lastScanStats = {
+        total: files.length,
+        parsed: filesToParse.length,
+        cached: diff.unchanged.length,
+        deleted: diff.deleted.length,
+      };
+
+      // Remove deleted file symbols from previous model
+      if (previousModel && diff.deleted.length > 0) {
+        for (const delPath of diff.deleted) {
+          for (const [uid, sym] of previousModel.symbols) {
+            if (sym.filePath === delPath) {
+              previousModel.symbols.delete(uid);
+            }
+          }
+          previousModel.relations = previousModel.relations.filter(
+            (r) => r.source !== delPath,
+          );
+        }
+      }
+    } else {
+      filesToParse = files;
+      this.lastScanStats = { total: files.length, parsed: files.length, cached: 0, deleted: 0 };
+    }
+
+    // 2. Parse files (only changed ones in incremental mode)
+    const allResults = await this.parseFiles(filesToParse, options);
+
+    // 3. Build unified model (merge with cached data if incremental)
     const symbols = new Map<string, Symbol>();
     const relations: Relation[] = [];
     const apiEndpoints: ApiEndpoint[] = [];
@@ -49,6 +105,35 @@ export class ProjectScanner {
     const allImports: ImportInfo[] = [];
     const languageCounts: Record<string, number> = {};
 
+    // Merge cached symbols from unchanged files
+    if (previousModel) {
+      const parsedFiles = new Set(filesToParse.map((f) => path.relative(rootDir, f)));
+      for (const [uid, sym] of previousModel.symbols) {
+        if (!parsedFiles.has(sym.filePath)) {
+          symbols.set(uid, sym);
+          languageCounts[sym.language] = (languageCounts[sym.language] || 0) + 1;
+        }
+      }
+      // Merge cached relations from unchanged files
+      for (const rel of previousModel.relations) {
+        if (!parsedFiles.has(rel.source)) {
+          relations.push(rel);
+        }
+      }
+      // Merge cached endpoints/entities from unchanged files
+      for (const ep of previousModel.apiEndpoints) {
+        if (!parsedFiles.has(ep.filePath)) {
+          apiEndpoints.push(ep);
+        }
+      }
+      for (const ent of previousModel.dbEntities) {
+        if (!parsedFiles.has(ent.filePath)) {
+          dbEntities.push(ent);
+        }
+      }
+    }
+
+    // Add newly parsed results
     for (const result of allResults) {
       for (const sym of result.symbols) {
         symbols.set(sym.uid, sym);
@@ -93,6 +178,9 @@ export class ProjectScanner {
       const content = fs.readFileSync(file, "utf-8");
       totalLines += content.split("\n").length;
     }
+
+    // 11. Save file hashes for incremental analysis
+    cache.save(files);
 
     return {
       project: {

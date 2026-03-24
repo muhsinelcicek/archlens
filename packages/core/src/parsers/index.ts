@@ -5,6 +5,8 @@ export { PythonParser } from "./python-parser.js";
 export { GoParser } from "./go-parser.js";
 export { JavaParser } from "./java-parser.js";
 export { SwiftParser } from "./swift-parser.js";
+export { RustParser } from "./rust-parser.js";
+export { CSharpParser } from "./csharp-parser.js";
 
 import type { Language } from "../models/index.js";
 import { BaseParser } from "./base-parser.js";
@@ -13,8 +15,18 @@ import { PythonParser } from "./python-parser.js";
 import { GoParser } from "./go-parser.js";
 import { JavaParser } from "./java-parser.js";
 import { SwiftParser } from "./swift-parser.js";
+import { RustParser } from "./rust-parser.js";
+import { CSharpParser } from "./csharp-parser.js";
 
-const parsers: BaseParser[] = [new TypeScriptParser(), new PythonParser(), new GoParser(), new JavaParser(), new SwiftParser()];
+const parsers: BaseParser[] = [
+  new TypeScriptParser(),
+  new PythonParser(),
+  new GoParser(),
+  new JavaParser(),
+  new SwiftParser(),
+  new RustParser(),
+  new CSharpParser(),
+];
 
 export function getParserForFile(filePath: string): BaseParser | undefined {
   return parsers.find((p) => p.canParse(filePath));
