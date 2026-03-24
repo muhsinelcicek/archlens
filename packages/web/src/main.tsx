@@ -11,7 +11,12 @@ import { ProcessView } from "./app/ProcessView.js";
 import { SequenceView } from "./app/SequenceView.js";
 import { OnboardView } from "./app/OnboardView.js";
 import { DriftView } from "./app/DriftView.js";
+import { SettingsView } from "./app/SettingsView.js";
+import { initTheme } from "./lib/theme.js";
 import "./index.css";
+
+// Apply saved theme
+initTheme();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -26,6 +31,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="onboard" element={<OnboardView />} />
           <Route path="drift" element={<DriftView />} />
           <Route path="modules" element={<ModulesView />} />
+          <Route path="settings" element={<SettingsView />} />
           <Route path="endpoints" element={<ApiMapView />} />
         </Route>
       </Routes>

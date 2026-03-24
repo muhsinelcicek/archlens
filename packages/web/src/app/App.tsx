@@ -3,8 +3,9 @@ import { Outlet, NavLink } from "react-router-dom";
 import { useStore } from "../lib/store.js";
 import {
   LayoutDashboard, Network, Database, GitBranch, Boxes, Cpu,
-  Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck,
+  Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, Settings,
 } from "lucide-react";
+import { useTheme } from "../lib/theme.js";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -18,10 +19,12 @@ const navItems = [
   { to: "/onboard", icon: Rocket, label: "Onboarding" },
   { to: "/drift", icon: ShieldCheck, label: "Health Check" },
   { to: "/modules", icon: Boxes, label: "Modules" },
+  { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export function App() {
   const { model, loading, error, projects, activeProject, fetchModel, fetchDiagrams, fetchProjects, switchProject } = useStore();
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchModel();
@@ -58,9 +61,9 @@ export function App() {
   }
 
   return (
-    <div className="flex h-screen bg-void text-[#e4e4ed] overflow-hidden">
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: theme.colors.void, color: theme.colors.textPrimary }}>
       {/* ── Sidebar ── */}
-      <aside className="w-56 border-r border-[#1e1e2a] bg-surface flex flex-col">
+      <aside className="w-56 flex flex-col" style={{ backgroundColor: theme.colors.surface, borderRight: `1px solid ${theme.colors.borderSubtle}` }}>
         {/* Logo */}
         <div className="p-4 border-b border-[#1e1e2a]">
           <div className="flex items-center gap-2.5">
@@ -132,7 +135,7 @@ export function App() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 overflow-y-auto bg-deep">
+      <main className="flex-1 overflow-y-auto" style={{ backgroundColor: theme.colors.deep }}>
         <Outlet />
       </main>
     </div>

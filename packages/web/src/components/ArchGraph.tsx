@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape";
 import dagre from "cytoscape-dagre";
+import { useTheme } from "../lib/theme.js";
 import cola from "cytoscape-cola";
 
 cytoscape.use(dagre);
@@ -207,6 +208,7 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
   { nodes, edges, layout = "dagre", direction = "TB", onNodeClick, onNodeDoubleClick, onNodeHover, className = "", impactMode = false },
   ref,
 ) {
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const animationRef = useRef<number | null>(null);
@@ -401,8 +403,8 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
         ref={containerRef}
         className="w-full h-full rounded-xl"
         style={{
-          background: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 60%), linear-gradient(to bottom, #06060a, #0a0a10)",
-          backgroundImage: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 60%), radial-gradient(circle, #1a1a2e 0.8px, transparent 0.8px)",
+          background: theme.graphBg,
+          backgroundImage: `${theme.graphBg}, ${theme.graphGrid}`,
           backgroundSize: "100% 100%, 20px 20px",
         }}
       />
