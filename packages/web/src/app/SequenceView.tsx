@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useStore } from "../lib/store.js";
+import { useStore, type ArchModel } from "../lib/store.js";
 import { ArrowRight, Play, ChevronDown, ChevronRight, Globe, FunctionSquare, Lightbulb } from "lucide-react";
 
 interface SequenceStep {
@@ -24,10 +24,10 @@ const moduleColors: Record<string, string> = {
   external: "#06b6d4", unknown: "#71717a",
 };
 
-function traceEndpoint(model: ReturnType<typeof useStore>["model"], method: string, path: string): Sequence | null {
+function traceEndpoint(model: ArchModel | null, method: string, path: string): Sequence | null {
   if (!model) return null;
 
-  const ep = model.apiEndpoints.find((e) => e.method === method && e.path === path);
+  const ep = model.apiEndpoints.find((e: { method: string; path: string }) => e.method === method && e.path === path);
   if (!ep) return null;
 
   const handlerSym = model.symbols[ep.handler] as Record<string, unknown> | undefined;
@@ -88,7 +88,7 @@ function traceEndpoint(model: ReturnType<typeof useStore>["model"], method: stri
 
   traceFrom(ep.handler, 1);
 
-  steps.push({ from: handlerName, to: "Client", action: "Response", fromModule: handlerModule, toModule: "external", depth: 0, returnType: ep.responseType });
+  steps.push({ from: handlerName, to: "Client", action: "Response", fromModule: handlerModule, toModule: "external", depth: 0 });
 
   return { title: `${method} ${path}`, participants, steps };
 }
