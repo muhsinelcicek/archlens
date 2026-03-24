@@ -264,13 +264,44 @@ export class ProjectScanner {
   }
 
   private detectModules(files: string[], symbols: Map<string, Symbol>, rootDir: string): Module[] {
-    // Group files by top-level directory
+    // Smart module detection — handles monorepos and microservice layouts
     const moduleMap = new Map<string, { files: string[]; symbols: string[] }>();
+
+    // First pass: detect if we have a "container" directory (src/, packages/, apps/, services/)
+    const containerDirs = new Set(["src", "packages", "apps", "services", "libs", "modules", "projects"]);
+    const topLevelDirs = new Map<string, number>(); // dir → file count
 
     for (const file of files) {
       const rel = path.relative(rootDir, file);
       const parts = rel.split(path.sep);
-      const moduleName = parts.length > 1 ? parts[0] : "root";
+      if (parts.length > 1) {
+        topLevelDirs.set(parts[0], (topLevelDirs.get(parts[0]) || 0) + 1);
+      }
+    }
+
+    // Check if a single top-level dir contains most files (monorepo pattern)
+    const totalFiles = files.length;
+    const dominantDir = [...topLevelDirs.entries()].find(([dir, count]) =>
+      containerDirs.has(dir.toLowerCase()) && count > totalFiles * 0.6,
+    );
+
+    // If a container dir dominates, use 2nd-level dirs as modules
+    const useSecondLevel = !!dominantDir;
+    const containerName = dominantDir?.[0];
+
+    for (const file of files) {
+      const rel = path.relative(rootDir, file);
+      const parts = rel.split(path.sep);
+
+      let moduleName: string;
+      if (useSecondLevel && parts[0] === containerName && parts.length > 2) {
+        // src/Basket.API/foo.cs → "Basket.API"
+        moduleName = parts[1];
+      } else if (parts.length > 1) {
+        moduleName = parts[0];
+      } else {
+        moduleName = "root";
+      }
 
       if (!moduleMap.has(moduleName)) {
         moduleMap.set(moduleName, { files: [], symbols: [] });
@@ -278,10 +309,17 @@ export class ProjectScanner {
       moduleMap.get(moduleName)!.files.push(file);
     }
 
-    // Assign symbols to modules
+    // Assign symbols to modules (same logic as file grouping)
     for (const [uid, sym] of symbols) {
       const parts = sym.filePath.split(path.sep);
-      const moduleName = parts.length > 1 ? parts[0] : "root";
+      let moduleName: string;
+      if (useSecondLevel && parts[0] === containerName && parts.length > 2) {
+        moduleName = parts[1];
+      } else if (parts.length > 1) {
+        moduleName = parts[0];
+      } else {
+        moduleName = "root";
+      }
       moduleMap.get(moduleName)?.symbols.push(uid);
     }
 
@@ -316,7 +354,15 @@ export class ProjectScanner {
     const name = moduleName.toLowerCase();
     const allPaths = files.map((f) => f.toLowerCase()).join(" ");
 
-    if (/^(frontend|web|ui|client|app|pages|components|views)/.test(name)) return "presentation";
+    // .NET patterns: Basket.API, Ordering.Domain, etc.
+    if (/\.api$/.test(name) || /\.web$/.test(name)) return "api";
+    if (/\.domain$/.test(name) || /\.core$/.test(name)) return "domain";
+    if (/\.infrastructure$/.test(name) || /\.data$/.test(name)) return "infrastructure";
+    if (/\.ui$/.test(name) || /\.blazor$/.test(name) || /\.client$/.test(name)) return "presentation";
+    if (/\.servicedefaults$/.test(name) || /\.apphost$/.test(name)) return "config";
+    if (/processor$/i.test(name)) return "application";
+
+    if (/^(frontend|web|ui|client|app|pages|components|views|webapp|clientapp)/.test(name)) return "presentation";
     if (/^(api|routes|controllers|endpoints|handlers)/.test(name)) return "api";
     if (/^(services?|usecases?|application)/.test(name)) return "application";
     if (/^(models?|domain|entities|core)/.test(name)) return "domain";

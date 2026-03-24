@@ -151,7 +151,7 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
     const moduleEndpoints = model.apiEndpoints.filter((ep) => ep.filePath.startsWith(mod.name + "/"));
 
     // DB entities for this module
-    const moduleEntities = model.dbEntities.filter((e) => e.filePath?.startsWith(mod.name + "/"));
+    const moduleEntities = model.dbEntities.filter((e) => (e as unknown as { filePath?: string }).filePath?.startsWith(mod.name + "/"));
 
     // Health
     const issues: string[] = [];

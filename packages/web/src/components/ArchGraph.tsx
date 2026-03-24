@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
-import cytoscape, { type Core, type ElementDefinition, type Stylesheet } from "cytoscape";
+import cytoscape, { type Core, type ElementDefinition } from "cytoscape";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Stylesheet = any;
 import dagre from "cytoscape-dagre";
 import cola from "cytoscape-cola";
 
@@ -84,7 +86,6 @@ function buildStylesheet(): Stylesheet[] {
         "text-valign": "center",
         "text-halign": "center",
         "font-size": "11px",
-        "font-family": "'JetBrains Mono', 'SF Mono', monospace",
         color: "#e4e4e7",
         "background-color": "#27272a",
         "border-width": 2,
@@ -92,8 +93,8 @@ function buildStylesheet(): Stylesheet[] {
         "text-wrap": "wrap",
         "text-max-width": "140px",
         shape: "roundrectangle",
-        width: "label",
-        height: "label",
+        width: 160,
+        height: 50,
         padding: "14px",
       },
     },
@@ -360,7 +361,14 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
       });
     }
 
+    // Collect valid node IDs
+    const validNodeIds = new Set(elements.map((e) => e.data.id).filter(Boolean));
+
     for (const edge of edges) {
+      // Skip edges with nonexistent source or target
+      if (!validNodeIds.has(edge.source) || !validNodeIds.has(edge.target)) continue;
+      if (edge.source === edge.target) continue; // skip self-loops
+
       const w = edge.weight || 1;
       elements.push({
         data: {
@@ -369,7 +377,7 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
           label: edge.label,
           type: edge.type || "depends_on",
           weight: w,
-          displayWeight: Math.min(1 + Math.log2(w + 1), 6), // log scale 1-6px
+          displayWeight: Math.min(1 + Math.log2(w + 1), 6),
         },
       });
     }
@@ -388,7 +396,7 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
       } as cytoscape.LayoutOptions,
       minZoom: 0.15,
       maxZoom: 4,
-      wheelSensitivity: 0.3,
+      wheelSensitivity: 1,
     });
 
     // Interactions
