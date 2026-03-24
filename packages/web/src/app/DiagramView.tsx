@@ -252,7 +252,7 @@ export function DiagramView() {
         return null; // Handled by ApiMapView
 
       default:
-        return <div className="text-[#707070] p-8">Unknown diagram type: {type}</div>;
+        return <div className="text-[#5a5a70] p-8">Unknown diagram type: {type}</div>;
     }
   };
 
@@ -261,7 +261,7 @@ export function DiagramView() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-bold">{info.title}</h2>
-          <p className="text-sm text-[#707070] mt-1 flex items-center gap-1.5">
+          <p className="text-sm text-[#5a5a70] mt-1 flex items-center gap-1.5">
             <Info className="h-3.5 w-3.5" />
             {info.description}
           </p>
@@ -270,7 +270,7 @@ export function DiagramView() {
           {diagrams[type] && (
             <button
               onClick={handleDownloadMermaid}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#383838] hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-elevated hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm transition-colors"
             >
               <Download className="h-4 w-4" />
               Export .mmd
@@ -282,11 +282,11 @@ export function DiagramView() {
       {/* Selected Node Info */}
       {selectedNode && (
         <div className="rounded-lg border border-archlens-500/30 bg-archlens-500/5 px-4 py-2 text-sm">
-          <span className="text-[#888888]">Selected:</span>{" "}
+          <span className="text-[#8888a0]">Selected:</span>{" "}
           <span className="font-mono text-archlens-400">{selectedNode}</span>
           <button
             onClick={() => setSelectedNode(null)}
-            className="ml-3 text-[#606060] hover:text-[#888888]"
+            className="ml-3 text-[#5a5a70] hover:text-[#8888a0]"
           >
             Clear
           </button>
@@ -294,7 +294,7 @@ export function DiagramView() {
       )}
 
       {/* Diagram */}
-      <div className="rounded-xl border border-[#404040] overflow-hidden">
+      <div className="rounded-xl border border-[#2a2a3a] overflow-hidden">
         {renderDiagram()}
       </div>
     </div>

@@ -1,14 +1,74 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @theme {
-  --color-archlens-50: #ecfdf5;
-  --color-archlens-100: #d1fae5;
-  --color-archlens-200: #a7f3d0;
-  --color-archlens-300: #6ee7b7;
-  --color-archlens-400: #34d399;
-  --color-archlens-500: #10b981;
-  --color-archlens-600: #059669;
-  --color-archlens-700: #047857;
-  --color-archlens-800: #065f46;
-  --color-archlens-900: #064e3b;
+  --color-archlens-50: #f0e6ff;
+  --color-archlens-100: #d9c2ff;
+  --color-archlens-200: #b794ff;
+  --color-archlens-300: #9966ff;
+  --color-archlens-400: #7c3aed;
+  --color-archlens-500: #6d28d9;
+  --color-archlens-600: #5b21b6;
+  --color-archlens-700: #4c1d95;
+  --color-archlens-800: #3b0764;
+  --color-archlens-900: #2e1065;
+
+  --color-void: #06060a;
+  --color-deep: #0a0a10;
+  --color-surface: #101018;
+  --color-elevated: #16161f;
+  --color-hover: #1c1c28;
+}
+
+* {
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a10;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a3a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a4a;
+}
+
+/* Animations */
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.6); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-breathe { animation: breathe 3s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Selection */
+::selection {
+  background: rgba(124, 58, 237, 0.3);
+  color: #e4e4ed;
+}
+
+body {
+  background: #06060a;
+  color: #e4e4ed;
 }

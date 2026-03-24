@@ -128,7 +128,7 @@ export function SequenceView() {
     <div className="p-6 lg:p-8 space-y-6 max-w-[1100px]">
       <div>
         <h2 className="text-2xl font-bold">Sequence Diagrams</h2>
-        <p className="text-sm text-[#707070] mt-1">
+        <p className="text-sm text-[#5a5a70] mt-1">
           Select an API endpoint to trace its execution flow — who calls whom, in what order, across modules.
         </p>
       </div>
@@ -142,10 +142,10 @@ export function SequenceView() {
             onChange={(e) => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)}
             placeholder="Search endpoints... (e.g. /api/sales, GET)"
-            className="w-full rounded-lg border border-[#404040] bg-[#333333] py-2.5 px-4 text-sm text-[#d4d4d4] placeholder:text-[#606060] outline-none focus:border-archlens-500/30"
+            className="w-full rounded-lg border border-[#2a2a3a] bg-elevated py-2.5 px-4 text-sm text-[#e4e4ed] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/30"
           />
           {showDropdown && filtered.length > 0 && (
-            <div className="absolute z-50 mt-1 w-full bg-[#2c2c2c] border border-[#404040] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+            <div className="absolute z-50 mt-1 w-full bg-surface border border-[#2a2a3a] rounded-lg shadow-xl max-h-60 overflow-y-auto">
               {filtered.slice(0, 20).map((ep, i) => {
                 const key = `${ep.method}:${ep.path}`;
                 const mc: Record<string, string> = { GET: "text-blue-400", POST: "text-emerald-400", PUT: "text-amber-400", DELETE: "text-red-400" };
@@ -153,10 +153,10 @@ export function SequenceView() {
                   <button
                     key={i}
                     onClick={() => { setSelectedEndpoint(key); setShowDropdown(false); setSearch(`${ep.method} ${ep.path}`); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-[#383838] transition-colors ${selectedEndpoint === key ? "bg-[#383838]" : ""}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-elevated transition-colors ${selectedEndpoint === key ? "bg-elevated" : ""}`}
                   >
-                    <span className={`font-mono font-bold w-10 ${mc[ep.method] || "text-[#888888]"}`}>{ep.method}</span>
-                    <span className="font-mono text-[#b0b0b0]">{ep.path}</span>
+                    <span className={`font-mono font-bold w-10 ${mc[ep.method] || "text-[#8888a0]"}`}>{ep.method}</span>
+                    <span className="font-mono text-[#8888a0]">{ep.path}</span>
                   </button>
                 );
               })}
@@ -168,7 +168,7 @@ export function SequenceView() {
       {/* Sequence Diagram */}
       {sequence ? (
         <div className="space-y-4">
-          <h3 className="text-lg font-bold text-[#e8e8e8]">{sequence.title}</h3>
+          <h3 className="text-lg font-bold text-[#e4e4ed]">{sequence.title}</h3>
 
           {/* Participants */}
           <div className="flex gap-2 flex-wrap">
@@ -180,13 +180,13 @@ export function SequenceView() {
               >
                 {p.kind === "actor" ? <Globe className="h-3 w-3" style={{ color: getColor(p.module) }} /> : <FunctionSquare className="h-3 w-3" style={{ color: getColor(p.module) }} />}
                 <span className="font-mono font-medium" style={{ color: getColor(p.module) }}>{p.name}</span>
-                <span className="text-[#606060]">{p.module}</span>
+                <span className="text-[#5a5a70]">{p.module}</span>
               </div>
             ))}
           </div>
 
           {/* Sequence Steps — Visual Timeline */}
-          <div className="rounded-xl border border-[#404040] bg-[#2a2a2a] p-5 space-y-0">
+          <div className="rounded-xl border border-[#2a2a3a] bg-deep p-5 space-y-0">
             {sequence.steps.map((step, i) => {
               const fromColor = getColor(step.fromModule || "unknown");
               const toColor = getColor(step.toModule || "unknown");
@@ -229,7 +229,7 @@ export function SequenceView() {
 
                   {/* Action label */}
                   <div className="flex-1 min-w-0">
-                    <span className={`text-[11px] font-mono ${isReturn ? "text-[#606060] italic" : "text-[#888888]"}`}>
+                    <span className={`text-[11px] font-mono ${isReturn ? "text-[#5a5a70] italic" : "text-[#8888a0]"}`}>
                       {step.action}
                     </span>
                     {isCrossModule && !isReturn && (
@@ -244,10 +244,10 @@ export function SequenceView() {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#404040] bg-[#2a2a2a] p-12 text-center">
+        <div className="rounded-xl border border-[#2a2a3a] bg-deep p-12 text-center">
           <Play className="h-10 w-10 text-[#404040] mx-auto mb-3" />
-          <p className="text-[#707070]">Select an API endpoint to generate a sequence diagram</p>
-          <p className="text-[#505050] text-sm mt-1">{endpoints.length} endpoints available</p>
+          <p className="text-[#5a5a70]">Select an API endpoint to generate a sequence diagram</p>
+          <p className="text-[#5a5a70] text-sm mt-1">{endpoints.length} endpoints available</p>
         </div>
       )}
     </div>

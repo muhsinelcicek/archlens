@@ -28,11 +28,11 @@ export function Dashboard() {
       <div className="flex items-end justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">{model.project.name}</h2>
-          <p className="text-[#707070] text-sm mt-1">
+          <p className="text-[#5a5a70] text-sm mt-1">
             Architecture analysis / {new Date(model.project.analyzedAt).toLocaleDateString("tr-TR")}
           </p>
         </div>
-        <div className="text-right text-xs text-[#606060]">
+        <div className="text-right text-xs text-[#5a5a70]">
           <div>ArchLens v{model.project.version}</div>
           <div className="font-mono">{model.project.rootPath}</div>
         </div>
@@ -86,16 +86,16 @@ export function Dashboard() {
       </div>
 
       {/* Languages */}
-      <section className="rounded-xl border border-[#404040] bg-[#333333] p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#888888] mb-4">Languages</h3>
+      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">Languages</h3>
         <LanguageBar languages={stats.languages} totalSymbols={stats.symbols} />
       </section>
 
       {/* Architecture Layers — Visual Stack */}
-      <section className="rounded-xl border border-[#404040] bg-[#333333] p-6 backdrop-blur-sm">
+      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
         <div className="flex items-center gap-2 mb-5">
-          <Layers className="h-4 w-4 text-[#707070]" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#888888]">Architecture Layers</h3>
+          <Layers className="h-4 w-4 text-[#5a5a70]" />
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0]">Architecture Layers</h3>
         </div>
 
         <div className="space-y-2">
@@ -123,8 +123,8 @@ export function Dashboard() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium capitalize text-[#d4d4d4]">{layer}</span>
-                      <span className="text-xs text-[#606060]">{mods.length} modules</span>
+                      <span className="font-medium capitalize text-[#e4e4ed]">{layer}</span>
+                      <span className="text-xs text-[#5a5a70]">{mods.length} modules</span>
                     </div>
                     {/* Modules */}
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -135,7 +135,7 @@ export function Dashboard() {
                           style={{ backgroundColor: `${config.color}15`, color: config.color }}
                         >
                           {mod.name}/
-                          <span className="ml-1 text-[#707070]">{mod.fileCount}f</span>
+                          <span className="ml-1 text-[#5a5a70]">{mod.fileCount}f</span>
                         </span>
                       ))}
                     </div>
@@ -143,13 +143,13 @@ export function Dashboard() {
 
                   {/* Bar */}
                   <div className="hidden sm:flex items-center gap-3 w-40">
-                    <div className="flex-1 h-1.5 rounded-full bg-[#383838] overflow-hidden">
+                    <div className="flex-1 h-1.5 rounded-full bg-elevated overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{ width: `${pct}%`, backgroundColor: config.color }}
                       />
                     </div>
-                    <span className="text-xs text-[#707070] w-12 text-right tabular-nums">
+                    <span className="text-xs text-[#5a5a70] w-12 text-right tabular-nums">
                       {totalLines.toLocaleString()}
                     </span>
                   </div>
@@ -161,8 +161,8 @@ export function Dashboard() {
       </section>
 
       {/* Modules Detail Grid */}
-      <section className="rounded-xl border border-[#404040] bg-[#333333] p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#888888] mb-4">Modules</h3>
+      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">Modules</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sortedModules.map((mod) => {
             const config = layerConfig[mod.layer] || layerConfig.config;
@@ -185,19 +185,19 @@ export function Dashboard() {
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <div className="text-xl font-bold text-[#d4d4d4]">{mod.fileCount}</div>
-                      <div className="text-[10px] text-[#606060] uppercase">files</div>
+                      <div className="text-xl font-bold text-[#e4e4ed]">{mod.fileCount}</div>
+                      <div className="text-[10px] text-[#5a5a70] uppercase">files</div>
                     </div>
                     <div>
-                      <div className="text-xl font-bold text-[#d4d4d4]">{mod.symbols.length}</div>
-                      <div className="text-[10px] text-[#606060] uppercase">symbols</div>
+                      <div className="text-xl font-bold text-[#e4e4ed]">{mod.symbols.length}</div>
+                      <div className="text-[10px] text-[#5a5a70] uppercase">symbols</div>
                     </div>
                     <div>
-                      <div className="text-xl font-bold text-[#d4d4d4]">{mod.lineCount.toLocaleString()}</div>
-                      <div className="text-[10px] text-[#606060] uppercase">lines</div>
+                      <div className="text-xl font-bold text-[#e4e4ed]">{mod.lineCount.toLocaleString()}</div>
+                      <div className="text-[10px] text-[#5a5a70] uppercase">lines</div>
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-[#606060] font-mono">{mod.language}</div>
+                  <div className="mt-2 text-xs text-[#5a5a70] font-mono">{mod.language}</div>
                 </div>
               </div>
             );
@@ -206,18 +206,18 @@ export function Dashboard() {
       </section>
 
       {/* Tech Stack */}
-      <section className="rounded-xl border border-[#404040] bg-[#333333] p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#888888] mb-4">Tech Stack</h3>
+      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">Tech Stack</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {techRadar.slice(0, 24).map((tech) => (
             <div
               key={tech.name}
-              className="flex items-center gap-2.5 rounded-lg border border-[#404040] bg-[#373737] px-3 py-2.5 text-sm transition-colors hover:border-zinc-700 hover:bg-[#3d3d3d]"
+              className="flex items-center gap-2.5 rounded-lg border border-[#2a2a3a] bg-elevated px-3 py-2.5 text-sm transition-colors hover:border-zinc-700 hover:bg-hover"
             >
               <div className="h-2 w-2 rounded-full bg-archlens-500" />
-              <span className="text-[#b0b0b0] truncate">{tech.name}</span>
+              <span className="text-[#8888a0] truncate">{tech.name}</span>
               {tech.version && (
-                <span className="ml-auto text-[10px] text-[#606060] font-mono">{tech.version}</span>
+                <span className="ml-auto text-[10px] text-[#5a5a70] font-mono">{tech.version}</span>
               )}
             </div>
           ))}

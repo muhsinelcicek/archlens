@@ -56,10 +56,10 @@ export function ApiMapView() {
     return (
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-4">API Map</h2>
-        <div className="rounded-xl border border-[#404040] bg-[#333333] p-12 text-center">
-          <Globe className="h-12 w-12 text-[#505050] mx-auto mb-3" />
-          <p className="text-[#707070]">No API endpoints detected.</p>
-          <p className="text-[#606060] text-sm mt-1">Add FastAPI, Express, or NestJS routes to see them here.</p>
+        <div className="rounded-xl border border-[#2a2a3a] bg-elevated p-12 text-center">
+          <Globe className="h-12 w-12 text-[#5a5a70] mx-auto mb-3" />
+          <p className="text-[#5a5a70]">No API endpoints detected.</p>
+          <p className="text-[#5a5a70] text-sm mt-1">Add FastAPI, Express, or NestJS routes to see them here.</p>
         </div>
       </div>
     );
@@ -71,7 +71,7 @@ export function ApiMapView() {
       <div className="flex items-end justify-between">
         <div>
           <h2 className="text-2xl font-bold">API Map</h2>
-          <p className="text-sm text-[#707070] mt-1">
+          <p className="text-sm text-[#5a5a70] mt-1">
             {apiEndpoints.length} endpoints auto-discovered
           </p>
         </div>
@@ -86,7 +86,7 @@ export function ApiMapView() {
                 className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-mono font-bold ${style.badge}`}
               >
                 {method}
-                <span className="text-[#707070]">{count}</span>
+                <span className="text-[#5a5a70]">{count}</span>
               </span>
             );
           })}
@@ -95,13 +95,13 @@ export function ApiMapView() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#707070]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5a5a70]" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search endpoints... (e.g. /api/sales, POST)"
-          className="w-full rounded-lg border border-[#404040] bg-[#333333] py-2.5 pl-10 pr-4 text-sm text-[#d4d4d4] placeholder:text-[#606060] outline-none focus:border-archlens-500/50 focus:ring-1 focus:ring-archlens-500/20 transition-colors"
+          className="w-full rounded-lg border border-[#2a2a3a] bg-elevated py-2.5 pl-10 pr-4 text-sm text-[#e4e4ed] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/50 focus:ring-1 focus:ring-archlens-500/20 transition-colors"
         />
       </div>
 
@@ -111,19 +111,19 @@ export function ApiMapView() {
           const isExpanded = expandedGroups.has(prefix) || search.length > 0;
 
           return (
-            <div key={prefix} className="rounded-xl border border-[#404040] overflow-hidden">
+            <div key={prefix} className="rounded-xl border border-[#2a2a3a] overflow-hidden">
               {/* Group Header */}
               <button
                 onClick={() => toggleGroup(prefix)}
-                className="flex w-full items-center gap-3 px-4 py-3 bg-[#2e2e2e] hover:bg-[#383838]/80 transition-colors text-left"
+                className="flex w-full items-center gap-3 px-4 py-3 bg-surface hover:bg-elevated/80 transition-colors text-left"
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-[#707070]" />
+                  <ChevronDown className="h-4 w-4 text-[#5a5a70]" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-[#707070]" />
+                  <ChevronRight className="h-4 w-4 text-[#5a5a70]" />
                 )}
-                <span className="font-mono text-sm font-medium text-[#b0b0b0]">{prefix}</span>
-                <span className="ml-auto text-xs text-[#606060]">{endpoints.length} endpoints</span>
+                <span className="font-mono text-sm font-medium text-[#8888a0]">{prefix}</span>
+                <span className="ml-auto text-xs text-[#5a5a70]">{endpoints.length} endpoints</span>
               </button>
 
               {/* Endpoints */}
@@ -134,7 +134,7 @@ export function ApiMapView() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center gap-4 px-4 py-3 hover:bg-[#353535] transition-colors group"
+                        className="flex items-center gap-4 px-4 py-3 hover:bg-hover transition-colors group"
                       >
                         <span
                           className={`inline-flex w-[52px] justify-center rounded-md border px-1.5 py-0.5 text-[11px] font-bold font-mono ${style.badge}`}
@@ -142,9 +142,9 @@ export function ApiMapView() {
                           {ep.method}
                         </span>
 
-                        <span className="font-mono text-sm text-[#d4d4d4] flex-1">{ep.path}</span>
+                        <span className="font-mono text-sm text-[#e4e4ed] flex-1">{ep.path}</span>
 
-                        <span className="text-xs text-[#606060] font-mono flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs text-[#5a5a70] font-mono flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {ep.filePath}:{ep.line}
                           <ExternalLink className="h-3 w-3" />
                         </span>

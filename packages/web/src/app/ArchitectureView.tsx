@@ -255,29 +255,29 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> <span className="text-red-400">d=1 WILL BREAK: {impactResult.d1.length}</span></div>
               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /> <span className="text-orange-400">d=2 LIKELY AFFECTED: {impactResult.d2.length}</span></div>
               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> <span className="text-yellow-400">d=3 MAY NEED TEST: {impactResult.d3.length}</span></div>
-              <div className="text-[#707070] mt-1">Total: {impactResult.total} affected</div>
+              <div className="text-[#5a5a70] mt-1">Total: {impactResult.total} affected</div>
             </div>
           </Section>
         )}
 
         {/* Depends On */}
         <Section title={`DEPENDS ON (${dependsOn.size})`}>
-          {dependsOn.size === 0 ? <span className="text-[#606060]">No dependencies (root module)</span> :
+          {dependsOn.size === 0 ? <span className="text-[#5a5a70]">No dependencies (root module)</span> :
             [...dependsOn.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => (
               <div key={name} className="flex items-center justify-between py-0.5">
-                <span className="text-[#b0b0b0] font-mono">→ {name}</span>
-                <span className="text-[#606060]">{count} refs</span>
+                <span className="text-[#8888a0] font-mono">→ {name}</span>
+                <span className="text-[#5a5a70]">{count} refs</span>
               </div>
             ))}
         </Section>
 
         {/* Depended By */}
         <Section title={`DEPENDED BY (${dependedBy.size})`}>
-          {dependedBy.size === 0 ? <span className="text-[#606060]">Leaf module (no dependents)</span> :
+          {dependedBy.size === 0 ? <span className="text-[#5a5a70]">Leaf module (no dependents)</span> :
             [...dependedBy.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => (
               <div key={name} className="flex items-center justify-between py-0.5">
-                <span className="text-[#b0b0b0] font-mono">← {name}</span>
-                <span className="text-[#606060]">{count} refs</span>
+                <span className="text-[#8888a0] font-mono">← {name}</span>
+                <span className="text-[#5a5a70]">{count} refs</span>
               </div>
             ))}
         </Section>
@@ -287,7 +287,7 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
           <Section title={`API ENDPOINTS (${moduleEndpoints.length})`}>
             {moduleEndpoints.slice(0, 10).map((ep, i) => {
               const mc: Record<string, string> = { GET: "text-blue-400", POST: "text-emerald-400", PUT: "text-amber-400", DELETE: "text-red-400" };
-              return <div key={i} className="font-mono py-0.5"><span className={`${mc[ep.method] || "text-[#888888]"} w-7 inline-block`}>{ep.method}</span> <span className="text-[#888888]">{ep.path}</span></div>;
+              return <div key={i} className="font-mono py-0.5"><span className={`${mc[ep.method] || "text-[#8888a0]"} w-7 inline-block`}>{ep.method}</span> <span className="text-[#8888a0]">{ep.path}</span></div>;
             })}
           </Section>
         )}
@@ -295,7 +295,7 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
         {/* DB Entities */}
         {moduleEntities.length > 0 && (
           <Section title={`DB TABLES (${moduleEntities.length})`}>
-            {moduleEntities.map((e) => <div key={e.name} className="font-mono text-emerald-400 py-0.5">{e.name} <span className="text-[#606060]">{e.columns.length} cols</span></div>)}
+            {moduleEntities.map((e) => <div key={e.name} className="font-mono text-emerald-400 py-0.5">{e.name} <span className="text-[#5a5a70]">{e.columns.length} cols</span></div>)}
           </Section>
         )}
 
@@ -328,21 +328,21 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
   // File/symbol level — simpler panel
   const symbols = Object.entries(model.symbols).filter(([, s]) => (s as Record<string, unknown>).filePath === selectedId) as Array<[string, Record<string, unknown>]>;
   if (symbols.length === 0 && level !== "system") {
-    return <div className="text-[#606060] text-xs">No data for selection</div>;
+    return <div className="text-[#5a5a70] text-xs">No data for selection</div>;
   }
 
   return (
     <div className="space-y-3 text-xs">
-      <h3 className="font-mono font-bold text-sm text-[#d4d4d4]">{selectedId.split("/").pop()}</h3>
-      <p className="text-[10px] text-[#606060] font-mono">{selectedId}</p>
+      <h3 className="font-mono font-bold text-sm text-[#e4e4ed]">{selectedId.split("/").pop()}</h3>
+      <p className="text-[10px] text-[#5a5a70] font-mono">{selectedId}</p>
       <button onClick={() => onDrillDown(selectedId, selectedId.split("/").pop() || selectedId, "file")} className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-xs font-medium hover:bg-archlens-500/20">
         <Eye className="h-3.5 w-3.5" /> Explore Symbols
       </button>
       <Section title={`SYMBOLS (${symbols.length})`}>
         {symbols.slice(0, 20).map(([uid, sym]) => (
           <div key={uid} className="flex items-center gap-2 py-0.5">
-            <span className="text-[#707070]">{sym.kind as string}</span>
-            <span className="text-[#b0b0b0] font-mono truncate">{sym.name as string}</span>
+            <span className="text-[#5a5a70]">{sym.kind as string}</span>
+            <span className="text-[#8888a0] font-mono truncate">{sym.name as string}</span>
           </div>
         ))}
       </Section>
@@ -353,7 +353,7 @@ function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown,
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-[#606060] mb-1.5">{title}</h4>
+      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-[#5a5a70] mb-1.5">{title}</h4>
       <div>{children}</div>
     </div>
   );
@@ -361,9 +361,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Metric({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
-    <div className="rounded-md bg-[#3a3a3a] px-2 py-1.5">
+    <div className="rounded-md bg-hover px-2 py-1.5">
       <div className="text-sm font-bold" style={{ color: color || "#e4e4e7" }}>{value}</div>
-      <div className="text-[9px] text-[#606060]">{label}</div>
+      <div className="text-[9px] text-[#5a5a70]">{label}</div>
     </div>
   );
 }
@@ -460,24 +460,24 @@ export function ArchitectureView() {
   return (
     <div className="flex h-full">
       {/* LEFT: Navigator Panel */}
-      <aside className="w-52 border-r border-[#383838] bg-[#2c2c2c] flex flex-col overflow-hidden">
+      <aside className="w-52 border-r border-[#1e1e2a] bg-surface flex flex-col overflow-hidden">
         {/* Search */}
-        <div className="p-2 border-b border-[#383838]">
+        <div className="p-2 border-b border-[#1e1e2a]">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#606060]" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#5a5a70]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="w-full rounded-md border border-[#404040] bg-[#2c2c2c]/50 py-1.5 pl-7 pr-2 text-[11px] text-[#b0b0b0] placeholder:text-[#505050] outline-none focus:border-archlens-500/30"
+              className="w-full rounded-md border border-[#2a2a3a] bg-surface/50 py-1.5 pl-7 pr-2 text-[11px] text-[#8888a0] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/30"
             />
           </div>
         </div>
 
         {/* Module Tree */}
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          <div className="text-[9px] font-semibold uppercase tracking-wider text-[#606060] px-1 mb-1">Modules</div>
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-[#5a5a70] px-1 mb-1">Modules</div>
           {filteredModules.map((mod) => {
             const color = layerMeta[mod.layer]?.color || "#52525b";
             const isSelected = selectedNode === mod.name;
@@ -496,12 +496,12 @@ export function ArchitectureView() {
                       return next;
                     });
                   }}
-                  className={`w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] transition-colors ${isSelected ? "bg-archlens-500/10 text-archlens-400" : "text-[#888888] hover:bg-[#3a3a3a] hover:text-[#b0b0b0]"}`}
+                  className={`w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] transition-colors ${isSelected ? "bg-archlens-500/10 text-archlens-400" : "text-[#8888a0] hover:bg-hover hover:text-[#8888a0]"}`}
                 >
-                  {isExpanded ? <ChevronDown className="h-3 w-3 flex-shrink-0 text-[#606060]" /> : <ChevronRight className="h-3 w-3 flex-shrink-0 text-[#606060]" />}
+                  {isExpanded ? <ChevronDown className="h-3 w-3 flex-shrink-0 text-[#5a5a70]" /> : <ChevronRight className="h-3 w-3 flex-shrink-0 text-[#5a5a70]" />}
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                   <span className="font-mono truncate">{mod.name}</span>
-                  <span className="ml-auto text-[9px] text-[#505050]">{mod.fileCount}</span>
+                  <span className="ml-auto text-[9px] text-[#5a5a70]">{mod.fileCount}</span>
                 </button>
 
                 {isExpanded && (
@@ -518,7 +518,7 @@ export function ArchitectureView() {
                         <button
                           key={fp}
                           onClick={() => { setSelectedNode(fp); }}
-                          className={`w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] transition-colors ${selectedNode === fp ? "text-archlens-400" : "text-[#606060] hover:text-[#888888]"}`}
+                          className={`w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] transition-colors ${selectedNode === fp ? "text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
                         >
                           <FileCode className="h-2.5 w-2.5 flex-shrink-0" />
                           <span className="font-mono truncate">{fp.split("/").pop()}</span>
@@ -532,10 +532,10 @@ export function ArchitectureView() {
         </div>
 
         {/* Edge Filters */}
-        <div className="p-2 border-t border-[#383838]">
+        <div className="p-2 border-t border-[#1e1e2a]">
           <div className="flex items-center gap-1 mb-1.5">
-            <Filter className="h-3 w-3 text-[#606060]" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-[#606060]">Relations</span>
+            <Filter className="h-3 w-3 text-[#5a5a70]" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-[#5a5a70]">Relations</span>
           </div>
           <div className="space-y-0.5">
             {edgeTypes.slice(0, 6).map((type) => {
@@ -544,7 +544,7 @@ export function ArchitectureView() {
                 <button
                   key={type}
                   onClick={() => toggleEdgeFilter(type)}
-                  className={`flex items-center gap-1.5 w-full px-1.5 py-0.5 rounded text-[10px] transition-colors ${active ? "text-[#b0b0b0]" : "text-[#505050]"}`}
+                  className={`flex items-center gap-1.5 w-full px-1.5 py-0.5 rounded text-[10px] transition-colors ${active ? "text-[#8888a0]" : "text-[#5a5a70]"}`}
                 >
                   <div className={`w-2 h-2 rounded-sm ${active ? "" : "opacity-30"}`} style={{ backgroundColor: active ? (edgeFilters.size > 0 ? "#10b981" : "#52525b") : "#27272a" }} />
                   {type}
@@ -558,15 +558,15 @@ export function ArchitectureView() {
       {/* CENTER + BOTTOM */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="px-4 py-2 border-b border-[#383838] flex items-center justify-between">
+        <div className="px-4 py-2 border-b border-[#1e1e2a] flex items-center justify-between">
           <div className="flex items-center gap-2">
             {breadcrumbs.length > 1 && (
-              <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-[#383838] text-[#707070]"><ArrowLeft className="h-3.5 w-3.5" /></button>
+              <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-elevated text-[#5a5a70]"><ArrowLeft className="h-3.5 w-3.5" /></button>
             )}
             {breadcrumbs.map((c, i) => (
               <div key={i} className="flex items-center gap-1">
-                {i > 0 && <ChevronRight className="h-3 w-3 text-[#505050]" />}
-                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/10 text-archlens-400" : "text-[#707070] hover:text-[#b0b0b0]"}`}>
+                {i > 0 && <ChevronRight className="h-3 w-3 text-[#5a5a70]" />}
+                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/10 text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
                   {c.label}
                 </button>
               </div>
@@ -574,13 +574,13 @@ export function ArchitectureView() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#606060]">{graphData.nodes.length}n {graphData.edges.length}e</span>
+            <span className="text-[10px] text-[#5a5a70]">{graphData.nodes.length}n {graphData.edges.length}e</span>
             <button
               onClick={() => {
                 setImpactMode(!impactMode);
                 if (impactMode) { graphRef.current?.clearHighlight(); setImpactResult(null); }
               }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-[#383838] text-[#707070] hover:text-[#b0b0b0] border border-zinc-700"}`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-elevated text-[#5a5a70] hover:text-[#8888a0] border border-zinc-700"}`}
             >
               <Target className="h-3 w-3" />
               Impact
@@ -605,12 +605,12 @@ export function ArchitectureView() {
 
         {/* Bottom Panel */}
         {currentLevel.level === "system" && (
-          <div className="border-t border-[#383838] bg-[#2c2c2c]/30">
+          <div className="border-t border-[#1e1e2a] bg-surface/30">
             <div className="flex items-center gap-0.5 px-4 pt-1">
-              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-[#383838] text-archlens-400" : "text-[#606060] hover:text-[#888888]"}`}>
+              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-elevated text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
                 <Zap className="h-3 w-3 inline mr-1" />Feature Tracing
               </button>
-              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-[#383838] text-archlens-400" : "text-[#606060] hover:text-[#888888]"}`}>
+              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-elevated text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
                 <Grid3x3 className="h-3 w-3 inline mr-1" />Dependency Matrix
               </button>
             </div>
@@ -634,7 +634,7 @@ export function ArchitectureView() {
       </div>
 
       {/* RIGHT: Detail Panel */}
-      <aside className="w-72 border-l border-[#383838] bg-[#2c2c2c] overflow-y-auto">
+      <aside className="w-72 border-l border-[#1e1e2a] bg-surface overflow-y-auto">
         <div className="p-3">
           {selectedNode ? (
             <SmartDetailPanel
@@ -648,9 +648,9 @@ export function ArchitectureView() {
           ) : (
             <div className="text-center py-12">
               <Layers className="h-8 w-8 text-zinc-800 mx-auto mb-3" />
-              <p className="text-[11px] text-[#606060]">Click a node to inspect</p>
-              <p className="text-[10px] text-[#505050] mt-1">Double-click to drill down</p>
-              <p className="text-[10px] text-[#505050]">Enable Impact mode for blast radius</p>
+              <p className="text-[11px] text-[#5a5a70]">Click a node to inspect</p>
+              <p className="text-[10px] text-[#5a5a70] mt-1">Double-click to drill down</p>
+              <p className="text-[10px] text-[#5a5a70]">Enable Impact mode for blast radius</p>
             </div>
           )}
         </div>

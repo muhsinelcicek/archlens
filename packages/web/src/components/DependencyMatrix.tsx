@@ -100,17 +100,17 @@ export function DependencyMatrix({ model, onCellClick, className = "" }: Depende
         <table className="border-collapse text-[10px]">
           <thead>
             <tr>
-              <th className="p-1 text-[#606060] text-right w-24">from \ to</th>
+              <th className="p-1 text-[#5a5a70] text-right w-24">from \ to</th>
               {moduleNames.map((name) => (
                 <th key={name} className="p-1 w-20">
                   <div className="flex flex-col items-center gap-0.5">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getLayerColor(name) }} />
-                    <span className="text-[#888888] font-mono truncate max-w-[70px]" title={name}>{name}</span>
-                    <span className="text-[#606060]">Ca:{metrics.get(name)?.ca || 0}</span>
+                    <span className="text-[#8888a0] font-mono truncate max-w-[70px]" title={name}>{name}</span>
+                    <span className="text-[#5a5a70]">Ca:{metrics.get(name)?.ca || 0}</span>
                   </div>
                 </th>
               ))}
-              <th className="p-1 text-[#606060] w-12">I</th>
+              <th className="p-1 text-[#5a5a70] w-12">I</th>
             </tr>
           </thead>
           <tbody>
@@ -121,7 +121,7 @@ export function DependencyMatrix({ model, onCellClick, className = "" }: Depende
                 <tr key={row}>
                   <td className="p-1 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <span className="text-[#888888] font-mono truncate max-w-[70px]" title={row}>{row}</span>
+                      <span className="text-[#8888a0] font-mono truncate max-w-[70px]" title={row}>{row}</span>
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getLayerColor(row) }} />
                     </div>
                   </td>
@@ -134,7 +134,7 @@ export function DependencyMatrix({ model, onCellClick, className = "" }: Depende
                     return (
                       <td
                         key={col}
-                        className={`p-0 w-20 h-10 text-center relative cursor-pointer transition-all ${isSelf ? "bg-[#2c2c2c]" : ""}`}
+                        className={`p-0 w-20 h-10 text-center relative cursor-pointer transition-all ${isSelf ? "bg-surface" : ""}`}
                         style={{
                           backgroundColor: isSelf ? "#18181b" : getCellColor(cell),
                           outline: isHovered ? "2px solid #fff" : cell?.isViolation ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(63,63,70,0.3)",
@@ -147,15 +147,15 @@ export function DependencyMatrix({ model, onCellClick, className = "" }: Depende
                         {!isSelf && cell && cell.count > 0 && (
                           <span className="text-white font-bold text-xs">{cell.count}</span>
                         )}
-                        {isSelf && <span className="text-[#505050]">-</span>}
+                        {isSelf && <span className="text-[#5a5a70]">-</span>}
 
                         {/* Tooltip */}
                         {isHovered && cell && cell.count > 0 && (
-                          <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#2c2c2c] border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap text-left">
-                            <div className="text-xs font-bold text-[#d4d4d4]">{row} → {col}</div>
-                            <div className="text-[10px] text-[#888888] mt-1">{cell.count} dependencies</div>
+                          <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-surface border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap text-left">
+                            <div className="text-xs font-bold text-[#e4e4ed]">{row} → {col}</div>
+                            <div className="text-[10px] text-[#8888a0] mt-1">{cell.count} dependencies</div>
                             {Object.entries(cell.types).map(([type, count]) => (
-                              <div key={type} className="text-[10px] text-[#707070]">{type}: {count}</div>
+                              <div key={type} className="text-[10px] text-[#5a5a70]">{type}: {count}</div>
                             ))}
                             {cell.isViolation && <div className="text-[10px] text-red-400 mt-1">Layer violation!</div>}
                             {cell.isCircular && <div className="text-[10px] text-orange-400">Circular dependency!</div>}
@@ -177,7 +177,7 @@ export function DependencyMatrix({ model, onCellClick, className = "" }: Depende
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 text-[10px] text-[#707070]">
+      <div className="flex items-center gap-4 mt-3 text-[10px] text-[#5a5a70]">
         <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-indigo-500/50" /> Normal</div>
         <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-red-500/50" /> Layer violation</div>
         <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-orange-500/50" /> Circular</div>

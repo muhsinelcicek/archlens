@@ -401,9 +401,9 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
         ref={containerRef}
         className="w-full h-full rounded-xl"
         style={{
-          backgroundColor: "#0f172a",
-          backgroundImage: "radial-gradient(circle, #1e293b 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
+          background: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 60%), linear-gradient(to bottom, #06060a, #0a0a10)",
+          backgroundImage: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 60%), radial-gradient(circle, #1a1a2e 0.8px, transparent 0.8px)",
+          backgroundSize: "100% 100%, 20px 20px",
         }}
       />
 

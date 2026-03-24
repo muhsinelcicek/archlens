@@ -161,25 +161,25 @@ export function TechRadar({ entries, className = "" }: TechRadarProps) {
       {/* Tooltip */}
       {tooltipData && (
         <div
-          className="absolute pointer-events-none bg-[#2c2c2c] border border-zinc-700 rounded-lg px-3 py-2 shadow-xl z-50"
+          className="absolute pointer-events-none bg-surface border border-zinc-700 rounded-lg px-3 py-2 shadow-xl z-50"
           style={{ left: tooltipPos.x + 16, top: tooltipPos.y - 10 }}
         >
           <div className="font-mono text-sm text-white font-semibold">{tooltipData.name}</div>
           {tooltipData.version && (
-            <div className="text-xs text-[#888888]">v{tooltipData.version}</div>
+            <div className="text-xs text-[#8888a0]">v{tooltipData.version}</div>
           )}
-          <div className="text-xs text-[#707070] mt-1">
+          <div className="text-xs text-[#5a5a70] mt-1">
             {tooltipData.category} / {tooltipData.source}
           </div>
         </div>
       )}
 
       {/* Category Legend */}
-      <div className="absolute bottom-4 left-4 bg-[#2c2c2c]/90 backdrop-blur-sm border border-[#404040] rounded-lg p-3 flex flex-wrap gap-3">
+      <div className="absolute bottom-4 left-4 bg-surface/90 backdrop-blur-sm border border-[#2a2a3a] rounded-lg p-3 flex flex-wrap gap-3">
         {Object.entries(categoryConfig).map(([cat, config]) => (
           <div key={cat} className="flex items-center gap-1.5 text-xs">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: config.color }} />
-            <span className="text-[#888888] capitalize">{cat}</span>
+            <span className="text-[#8888a0] capitalize">{cat}</span>
           </div>
         ))}
       </div>
