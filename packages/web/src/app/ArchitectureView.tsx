@@ -1,97 +1,67 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useStore, type ArchModel } from "../lib/store.js";
-import { ArchGraph, type GraphNode, type GraphEdge, type ArchGraphHandle, type ImpactResult } from "../components/ArchGraph.js";
+import { SigmaGraph, type SigmaGraphHandle, type GraphNode, type GraphEdge, type ImpactResult } from "../components/SigmaGraph.js";
 import { DependencyMatrix } from "../components/DependencyMatrix.js";
 import { FeatureTracer } from "../components/FeatureTracer.js";
 import {
   ChevronRight, ChevronDown, ArrowLeft, Search, Code2, GitBranch,
   Box, Braces, FunctionSquare, FileCode, Eye, Layers, Zap,
   Target, AlertTriangle, CheckCircle2, Globe, Database, Cpu,
-  Filter, Grid3x3,
+  Filter, Grid3x3, File, Hash, ArrowUpRight,
 } from "lucide-react";
 
 type ViewLevel = "system" | "module" | "file";
 interface Breadcrumb { level: ViewLevel; id: string; label: string }
 
 const layerMeta: Record<string, { color: string; label: string }> = {
-  presentation: { color: "#10b981", label: "Presentation" },
-  api: { color: "#3b82f6", label: "API" },
-  application: { color: "#f59e0b", label: "Application" },
-  domain: { color: "#8b5cf6", label: "Domain" },
-  infrastructure: { color: "#ef4444", label: "Infrastructure" },
-  config: { color: "#6b7280", label: "Config" },
-  unknown: { color: "#52525b", label: "Other" },
+  presentation: { color: "#34d399", label: "Presentation" },
+  api: { color: "#60a5fa", label: "API" },
+  application: { color: "#fbbf24", label: "Application" },
+  domain: { color: "#a78bfa", label: "Domain" },
+  infrastructure: { color: "#f87171", label: "Infrastructure" },
+  config: { color: "#94a3b8", label: "Config" },
+  unknown: { color: "#6b7280", label: "Other" },
 };
 
-// ─── Graph Builders ──────────────────────────────────────────────────
+// ─── Build graphs ────────────────────────────────────────────────────
 
-function buildSystemGraph(model: ArchModel, edgeFilters: Set<string>): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildSystemGraph(model: ArchModel): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
-  for (const layer of ["presentation", "api", "application", "domain", "infrastructure", "config", "unknown"]) {
-    const mods = model.modules.filter((m) => m.layer === layer);
-    if (mods.length === 0) continue;
-    nodes.push({ id: `layer-${layer}`, label: layerMeta[layer]?.label || layer, group: layer, type: "layer" });
-    for (const mod of mods) {
-      nodes.push({
-        id: mod.name,
-        label: mod.name,
-        sublabel: `${mod.fileCount}f | ${mod.lineCount.toLocaleString()}L | ${mod.symbols.length}s`,
-        group: layer,
-        parent: `layer-${layer}`,
-        type: "module",
-      });
-    }
-  }
-
-  // Build file→module lookup from model
-  const fileToModule = new Map<string, string>();
   for (const mod of model.modules) {
-    for (const symUid of mod.symbols) {
-      const sym = model.symbols[symUid] as Record<string, unknown> | undefined;
-      if (sym) fileToModule.set(sym.filePath as string, mod.name);
-    }
+    nodes.push({
+      id: mod.name,
+      label: mod.name,
+      sublabel: `${mod.fileCount}f · ${mod.lineCount.toLocaleString()}L`,
+      group: mod.layer,
+      type: "module",
+    });
   }
 
-  // Also build uid→module lookup for non-file sources (symbols as source)
-  const uidToModule = new Map<string, string>();
+  // Build file→module lookup
+  const f2m = new Map<string, string>();
+  const u2m = new Map<string, string>();
   for (const mod of model.modules) {
     for (const uid of mod.symbols) {
-      uidToModule.set(uid, mod.name);
+      u2m.set(uid, mod.name);
+      const sym = model.symbols[uid] as Record<string, unknown> | undefined;
+      if (sym) f2m.set(sym.filePath as string, mod.name);
     }
   }
 
-  // Weighted edges — consider ALL relation types (imports, calls, extends, composes, implements)
   const edgeMap = new Map<string, { count: number; types: Record<string, number> }>();
   for (const rel of model.relations) {
-    if (edgeFilters.size > 0 && !edgeFilters.has(rel.type)) continue;
-    // Skip composes (internal class→method) — not useful for module-level graph
     if (rel.type === "composes") continue;
-
-    // Resolve source module: try file path first, then uid
-    const srcMod = fileToModule.get(rel.source) || uidToModule.get(rel.source);
-
-    // Resolve target module: try as symbol uid
+    const srcMod = f2m.get(rel.source) || u2m.get(rel.source);
     const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
-    let tgtMod: string | undefined;
-    if (tgtSym) {
-      tgtMod = fileToModule.get(tgtSym.filePath as string);
-    }
-    // If target is not a known symbol, try matching by name against module symbols
-    if (!tgtMod) {
-      tgtMod = uidToModule.get(rel.target);
-    }
-    // If target is a bare name (e.g., "BaseEntity"), find which module has it
+    let tgtMod = tgtSym ? f2m.get(tgtSym.filePath as string) : undefined;
+    if (!tgtMod) tgtMod = u2m.get(rel.target);
     if (!tgtMod && typeof rel.target === "string") {
       for (const [uid, sym] of Object.entries(model.symbols) as Array<[string, Record<string, unknown>]>) {
-        if (sym.name === rel.target) {
-          tgtMod = fileToModule.get(sym.filePath as string);
-          if (tgtMod) break;
-        }
+        if (sym.name === rel.target) { tgtMod = f2m.get(sym.filePath as string); if (tgtMod) break; }
       }
     }
-
     if (!srcMod || !tgtMod || srcMod === tgtMod) continue;
     const key = `${srcMod}→${tgtMod}`;
     if (!edgeMap.has(key)) edgeMap.set(key, { count: 0, types: {} });
@@ -103,7 +73,7 @@ function buildSystemGraph(model: ArchModel, edgeFilters: Set<string>): { nodes: 
   for (const [key, data] of edgeMap) {
     const [src, tgt] = key.split("→");
     const mainType = Object.entries(data.types).sort((a, b) => b[1] - a[1])[0]?.[0] || "imports";
-    edges.push({ source: src, target: tgt, type: mainType, weight: data.count, label: `${data.count}` });
+    edges.push({ source: src, target: tgt, type: mainType, weight: data.count });
   }
 
   return { nodes, edges };
@@ -112,276 +82,207 @@ function buildSystemGraph(model: ArchModel, edgeFilters: Set<string>): { nodes: 
 function buildModuleGraph(model: ArchModel, moduleName: string): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
-  const files = new Map<string, number>();
-
-  // Find files belonging to this module via module.symbols
   const mod = model.modules.find((m) => m.name === moduleName);
-  if (mod) {
-    for (const symUid of mod.symbols) {
-      const sym = model.symbols[symUid] as Record<string, unknown> | undefined;
-      if (sym) {
-        const fp = sym.filePath as string;
-        files.set(fp, (files.get(fp) || 0) + 1);
-      }
+  if (!mod) return { nodes, edges };
+
+  const files = new Map<string, number>();
+  for (const uid of mod.symbols) {
+    const sym = model.symbols[uid] as Record<string, unknown> | undefined;
+    if (sym) {
+      const fp = sym.filePath as string;
+      files.set(fp, (files.get(fp) || 0) + 1);
     }
   }
 
-  for (const [fp, symCount] of files) {
-    const fileName = fp.split("/").pop() || fp;
-    nodes.push({ id: fp, label: fileName, sublabel: `${symCount} symbols`, group: "default", type: "file" });
+  for (const [fp, count] of files) {
+    nodes.push({ id: fp, label: fp.split("/").pop() || fp, sublabel: `${count} symbols`, group: "default", type: "file" });
   }
 
   const edgeSet = new Set<string>();
   for (const rel of model.relations) {
-    if (rel.type !== "imports") continue;
+    if (rel.type !== "imports" && rel.type !== "calls") continue;
     const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
     if (!tgtSym) continue;
-    const srcFile = rel.source;
-    const tgtFile = tgtSym.filePath as string;
-    if (files.has(srcFile) && files.has(tgtFile) && srcFile !== tgtFile) {
-      const key = `${srcFile}→${tgtFile}`;
-      if (!edgeSet.has(key)) { edgeSet.add(key); edges.push({ source: srcFile, target: tgtFile, type: "imports" }); }
+    if (files.has(rel.source) && files.has(tgtSym.filePath as string) && rel.source !== tgtSym.filePath) {
+      const key = `${rel.source}→${tgtSym.filePath}`;
+      if (!edgeSet.has(key)) { edgeSet.add(key); edges.push({ source: rel.source, target: tgtSym.filePath as string, type: rel.type }); }
     }
   }
 
   return { nodes, edges };
 }
 
-// ─── Smart Detail Panel ──────────────────────────────────────────────
+// ─── Code Panel ──────────────────────────────────────────────────────
 
-function SmartDetailPanel({ model, selectedId, level, impactResult, onDrillDown, onShowImpact }: {
-  model: ArchModel;
-  selectedId: string;
-  level: ViewLevel;
-  impactResult: ImpactResult | null;
-  onDrillDown: (id: string, label: string, level: ViewLevel) => void;
-  onShowImpact: () => void;
-}) {
-  const mod = model.modules.find((m) => m.name === selectedId);
-  if (!mod && level === "system") return null;
+function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId: string; level: ViewLevel }) {
+  if (level === "system") {
+    const mod = model.modules.find((m) => m.name === selectedId);
+    if (!mod) return null;
+    const color = layerMeta[mod.layer]?.color || "#6b7280";
 
-  if (level === "system" && mod) {
-    const color = layerMeta[mod.layer]?.color || "#52525b";
+    // Find files and symbols
+    const fileSymbols = new Map<string, Array<{ uid: string; name: string; kind: string; line: number }>>();
+    for (const uid of mod.symbols) {
+      const sym = model.symbols[uid] as Record<string, unknown> | undefined;
+      if (!sym) continue;
+      const fp = sym.filePath as string;
+      if (!fileSymbols.has(fp)) fileSymbols.set(fp, []);
+      fileSymbols.get(fp)!.push({
+        uid,
+        name: sym.name as string,
+        kind: sym.kind as string,
+        line: (sym.startLine as number) || 0,
+      });
+    }
 
-    // Build file→module lookup
+    // Dependencies
     const f2m = new Map<string, string>();
+    const u2m = new Map<string, string>();
     for (const m of model.modules) {
       for (const uid of m.symbols) {
+        u2m.set(uid, m.name);
         const s = model.symbols[uid] as Record<string, unknown> | undefined;
         if (s) f2m.set(s.filePath as string, m.name);
       }
     }
 
-    // Also build uid→module for symbol-level relations
-    const u2m = new Map<string, string>();
-    for (const m of model.modules) {
-      for (const uid of m.symbols) u2m.set(uid, m.name);
-    }
-
-    // Calculate coupling — ALL relation types except composes
     let ca = 0, ce = 0;
     const dependsOn = new Map<string, number>();
     const dependedBy = new Map<string, number>();
-
     for (const rel of model.relations) {
       if (rel.type === "composes") continue;
-
       const srcMod = f2m.get(rel.source) || u2m.get(rel.source);
       const tgtSym = model.symbols[rel.target] as Record<string, unknown> | undefined;
-      let tgtMod = tgtSym ? f2m.get(tgtSym.filePath as string) : undefined;
-      if (!tgtMod) tgtMod = u2m.get(rel.target);
-      // Bare name resolution
-      if (!tgtMod && typeof rel.target === "string") {
-        for (const [uid, sym] of Object.entries(model.symbols) as Array<[string, Record<string, unknown>]>) {
-          if (sym.name === rel.target) { tgtMod = f2m.get(sym.filePath as string); if (tgtMod) break; }
-        }
-      }
-
+      let tgtMod = tgtSym ? f2m.get(tgtSym.filePath as string) : u2m.get(rel.target);
       if (!srcMod || !tgtMod || srcMod === tgtMod) continue;
       if (tgtMod === mod.name) { ca++; dependedBy.set(srcMod, (dependedBy.get(srcMod) || 0) + 1); }
       if (srcMod === mod.name) { ce++; dependsOn.set(tgtMod, (dependsOn.get(tgtMod) || 0) + 1); }
     }
     const instability = ca + ce > 0 ? (ce / (ca + ce)).toFixed(2) : "0";
 
-    // API endpoints for this module
-    // Find files for this module
+    // API endpoints
     const moduleFiles = new Set<string>();
     for (const uid of mod.symbols) {
       const s = model.symbols[uid] as Record<string, unknown> | undefined;
       if (s) moduleFiles.add(s.filePath as string);
     }
-    const moduleEndpoints = model.apiEndpoints.filter((ep) => moduleFiles.has(ep.filePath));
-
-    // DB entities for this module
-    const moduleEntities = model.dbEntities.filter((e) => {
-      const fp = (e as unknown as { filePath?: string }).filePath;
-      return fp ? moduleFiles.has(fp) : false;
-    });
-
-    // Health
-    const issues: string[] = [];
-    if (mod.lineCount > 5000) issues.push(`Large (${mod.lineCount.toLocaleString()} LOC)`);
-    if (mod.symbols.length > 200) issues.push(`Many symbols (${mod.symbols.length})`);
+    const endpoints = model.apiEndpoints.filter((ep) => moduleFiles.has(ep.filePath));
 
     return (
-      <div className="space-y-4 text-xs">
-        {/* Header */}
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
-            <h3 className="font-mono font-bold text-base" style={{ color }}>{mod.name}/</h3>
+      <div className="h-full flex flex-col">
+        {/* Module Header */}
+        <div className="p-4 border-b border-[#1e1e2a]">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}60` }} />
+            <h3 className="font-mono font-bold text-lg" style={{ color }}>{mod.name}/</h3>
           </div>
-          <span className="text-[10px] rounded-full px-2 py-0.5 mt-1 inline-block" style={{ backgroundColor: `${color}20`, color }}>
-            {layerMeta[mod.layer]?.label} Layer
-          </span>
+          <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${color}20`, color }}>{layerMeta[mod.layer]?.label}</span>
+
+          {/* Metrics row */}
+          <div className="grid grid-cols-4 gap-2 mt-3">
+            {[
+              { v: mod.fileCount, l: "files" },
+              { v: mod.symbols.length, l: "symbols" },
+              { v: mod.lineCount.toLocaleString(), l: "lines" },
+              { v: instability, l: "instab.", c: Number(instability) > 0.7 ? "#f87171" : Number(instability) > 0.4 ? "#fbbf24" : "#34d399" },
+            ].map((m) => (
+              <div key={m.l} className="bg-elevated rounded-lg p-2 text-center">
+                <div className="text-sm font-bold" style={{ color: m.c || "#e4e4ed" }}>{m.v}</div>
+                <div className="text-[8px] text-[#5a5a70] uppercase">{m.l}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Metrics */}
-        <Section title="METRICS">
-          <div className="grid grid-cols-2 gap-2">
-            <Metric label="Files" value={mod.fileCount} />
-            <Metric label="Symbols" value={mod.symbols.length} />
-            <Metric label="Lines" value={mod.lineCount.toLocaleString()} />
-            <Metric label="Language" value={mod.language} />
-            <Metric label="Coupling (Ca/Ce)" value={`${ca}/${ce}`} />
-            <Metric label="Instability" value={instability} color={Number(instability) > 0.7 ? "#ef4444" : Number(instability) > 0.4 ? "#f59e0b" : "#10b981"} />
-          </div>
-        </Section>
-
-        {/* Impact Result */}
-        {impactResult && impactResult.total > 0 && (
-          <Section title="IMPACT RADIUS">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> <span className="text-red-400">d=1 WILL BREAK: {impactResult.d1.length}</span></div>
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /> <span className="text-orange-400">d=2 LIKELY AFFECTED: {impactResult.d2.length}</span></div>
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> <span className="text-yellow-400">d=3 MAY NEED TEST: {impactResult.d3.length}</span></div>
-              <div className="text-[#5a5a70] mt-1">Total: {impactResult.total} affected</div>
+        {/* Dependencies */}
+        <div className="px-4 py-3 border-b border-[#1e1e2a]">
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" /> Depends On ({dependsOn.size})</div>
+              {dependsOn.size === 0 ? <span className="text-[10px] text-[#5a5a70]">none</span> :
+                [...dependsOn.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => (
+                  <div key={n} className="text-[10px] font-mono text-[#8888a0]">→ {n} <span className="text-[#5a5a70]">×{c}</span></div>
+                ))}
             </div>
-          </Section>
-        )}
-
-        {/* Depends On */}
-        <Section title={`DEPENDS ON (${dependsOn.size})`}>
-          {dependsOn.size === 0 ? <span className="text-[#5a5a70]">No dependencies (root module)</span> :
-            [...dependsOn.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => (
-              <div key={name} className="flex items-center justify-between py-0.5">
-                <span className="text-[#8888a0] font-mono">→ {name}</span>
-                <span className="text-[#5a5a70]">{count} refs</span>
-              </div>
-            ))}
-        </Section>
-
-        {/* Depended By */}
-        <Section title={`DEPENDED BY (${dependedBy.size})`}>
-          {dependedBy.size === 0 ? <span className="text-[#5a5a70]">Leaf module (no dependents)</span> :
-            [...dependedBy.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => (
-              <div key={name} className="flex items-center justify-between py-0.5">
-                <span className="text-[#8888a0] font-mono">← {name}</span>
-                <span className="text-[#5a5a70]">{count} refs</span>
-              </div>
-            ))}
-        </Section>
+            <div className="flex-1">
+              <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1">Depended By ({dependedBy.size})</div>
+              {dependedBy.size === 0 ? <span className="text-[10px] text-[#5a5a70]">none</span> :
+                [...dependedBy.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => (
+                  <div key={n} className="text-[10px] font-mono text-[#8888a0]">← {n} <span className="text-[#5a5a70]">×{c}</span></div>
+                ))}
+            </div>
+          </div>
+        </div>
 
         {/* API Endpoints */}
-        {moduleEndpoints.length > 0 && (
-          <Section title={`API ENDPOINTS (${moduleEndpoints.length})`}>
-            {moduleEndpoints.slice(0, 10).map((ep, i) => {
-              const mc: Record<string, string> = { GET: "text-blue-400", POST: "text-emerald-400", PUT: "text-amber-400", DELETE: "text-red-400" };
-              return <div key={i} className="font-mono py-0.5"><span className={`${mc[ep.method] || "text-[#8888a0]"} w-7 inline-block`}>{ep.method}</span> <span className="text-[#8888a0]">{ep.path}</span></div>;
+        {endpoints.length > 0 && (
+          <div className="px-4 py-2 border-b border-[#1e1e2a]">
+            <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1">API Endpoints ({endpoints.length})</div>
+            {endpoints.slice(0, 8).map((ep, i) => {
+              const mc: Record<string, string> = { GET: "#60a5fa", POST: "#34d399", PUT: "#fbbf24", DELETE: "#f87171" };
+              return <div key={i} className="text-[10px] font-mono"><span style={{ color: mc[ep.method] || "#8888a0" }}>{ep.method}</span> <span className="text-[#8888a0]">{ep.path}</span></div>;
             })}
-          </Section>
+          </div>
         )}
 
-        {/* DB Entities */}
-        {moduleEntities.length > 0 && (
-          <Section title={`DB TABLES (${moduleEntities.length})`}>
-            {moduleEntities.map((e) => <div key={e.name} className="font-mono text-emerald-400 py-0.5">{e.name} <span className="text-[#5a5a70]">{e.columns.length} cols</span></div>)}
-          </Section>
-        )}
-
-        {/* Health */}
-        <Section title="HEALTH">
-          {issues.length === 0
-            ? <div className="flex items-center gap-1.5 text-emerald-400"><CheckCircle2 className="h-3 w-3" /> All checks passed</div>
-            : issues.map((issue, i) => <div key={i} className="flex items-center gap-1.5 text-amber-400"><AlertTriangle className="h-3 w-3" /> {issue}</div>)
-          }
-        </Section>
-
-        {/* Actions */}
-        <div className="space-y-1.5 pt-2">
-          <button onClick={() => onDrillDown(mod.name, mod.name, "module")} className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-xs font-medium hover:bg-archlens-500/20">
-            <Eye className="h-3.5 w-3.5" /> Explore Module
-          </button>
-          <button onClick={onShowImpact} className="w-full flex items-center justify-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 py-2 text-xs font-medium hover:bg-red-500/20">
-            <Target className="h-3.5 w-3.5" /> Show Impact
-          </button>
-          {moduleEndpoints.length > 0 && (
-            <a href="/sequence" className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 py-2 text-xs font-medium hover:bg-blue-500/20">
-              <GitBranch className="h-3.5 w-3.5" /> Sequence Diagrams
-            </a>
-          )}
+        {/* Files & Code Structure */}
+        <div className="flex-1 overflow-y-auto px-2 py-2">
+          <div className="text-[9px] uppercase font-semibold text-[#5a5a70] px-2 mb-2">Code Structure ({fileSymbols.size} files)</div>
+          {[...fileSymbols.entries()].slice(0, 20).map(([fp, symbols]) => (
+            <div key={fp} className="mb-2">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-elevated/50">
+                <File className="h-3 w-3 text-[#5a5a70]" />
+                <span className="text-[10px] font-mono text-[#8888a0] truncate">{fp.split("/").pop()}</span>
+                <span className="ml-auto text-[9px] text-[#5a5a70]">{symbols.length}</span>
+              </div>
+              <div className="ml-4 mt-0.5 space-y-0">
+                {symbols.sort((a, b) => a.line - b.line).slice(0, 15).map((sym) => {
+                  const kindColors: Record<string, string> = {
+                    class: "#fbbf24", function: "#34d399", method: "#34d399",
+                    interface: "#a78bfa", enum: "#f59e0b", property: "#64748b",
+                  };
+                  const kindIcons: Record<string, React.ReactNode> = {
+                    class: <Box className="h-2.5 w-2.5" />, function: <FunctionSquare className="h-2.5 w-2.5" />,
+                    method: <FunctionSquare className="h-2.5 w-2.5" />, interface: <Braces className="h-2.5 w-2.5" />,
+                    enum: <Hash className="h-2.5 w-2.5" />, property: <Code2 className="h-2.5 w-2.5" />,
+                  };
+                  return (
+                    <div key={sym.uid} className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-hover text-[10px] font-mono group">
+                      <span style={{ color: kindColors[sym.kind] || "#5a5a70" }}>{kindIcons[sym.kind] || <Code2 className="h-2.5 w-2.5" />}</span>
+                      <span className="text-[#8888a0] group-hover:text-[#e4e4ed] truncate">{sym.name}</span>
+                      <span className="ml-auto text-[8px] text-[#5a5a70]">L{sym.line}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
-  // File/symbol level — simpler panel
-  const symbols = Object.entries(model.symbols).filter(([, s]) => (s as Record<string, unknown>).filePath === selectedId) as Array<[string, Record<string, unknown>]>;
-  if (symbols.length === 0 && level !== "system") {
-    return <div className="text-[#5a5a70] text-xs">No data for selection</div>;
-  }
-
+  // Module level — show files
   return (
-    <div className="space-y-3 text-xs">
-      <h3 className="font-mono font-bold text-sm text-[#e4e4ed]">{selectedId.split("/").pop()}</h3>
-      <p className="text-[10px] text-[#5a5a70] font-mono">{selectedId}</p>
-      <button onClick={() => onDrillDown(selectedId, selectedId.split("/").pop() || selectedId, "file")} className="w-full flex items-center justify-center gap-2 rounded-lg bg-archlens-500/10 border border-archlens-500/30 text-archlens-400 py-2 text-xs font-medium hover:bg-archlens-500/20">
-        <Eye className="h-3.5 w-3.5" /> Explore Symbols
-      </button>
-      <Section title={`SYMBOLS (${symbols.length})`}>
-        {symbols.slice(0, 20).map(([uid, sym]) => (
-          <div key={uid} className="flex items-center gap-2 py-0.5">
-            <span className="text-[#5a5a70]">{sym.kind as string}</span>
-            <span className="text-[#8888a0] font-mono truncate">{sym.name as string}</span>
-          </div>
-        ))}
-      </Section>
+    <div className="p-4 text-[#5a5a70] text-xs">
+      <h3 className="font-mono font-bold text-sm text-[#e4e4ed] mb-2">{selectedId.split("/").pop()}</h3>
+      <p className="font-mono text-[10px]">{selectedId}</p>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-[#5a5a70] mb-1.5">{title}</h4>
-      <div>{children}</div>
-    </div>
-  );
-}
-
-function Metric({ label, value, color }: { label: string; value: string | number; color?: string }) {
-  return (
-    <div className="rounded-md bg-hover px-2 py-1.5">
-      <div className="text-sm font-bold" style={{ color: color || "#e4e4e7" }}>{value}</div>
-      <div className="text-[9px] text-[#5a5a70]">{label}</div>
-    </div>
-  );
-}
-
-// ─── Main View ───────────────────────────────────────────────────────
+// ─── Main ────────────────────────────────────────────────────────────
 
 export function ArchitectureView() {
   const { model } = useStore();
-  const graphRef = useRef<ArchGraphHandle>(null);
+  const graphRef = useRef<SigmaGraphHandle>(null);
 
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ level: "system", id: "root", label: "System" }]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [impactMode, setImpactMode] = useState(false);
   const [impactResult, setImpactResult] = useState<ImpactResult | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [edgeFilters, setEdgeFilters] = useState<Set<string>>(new Set());
   const [bottomTab, setBottomTab] = useState<"trace" | "matrix">("trace");
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   const currentLevel = breadcrumbs[breadcrumbs.length - 1];
 
@@ -409,9 +310,7 @@ export function ArchitectureView() {
 
   const handleNodeDoubleClick = useCallback((nodeId: string) => {
     if (!model) return;
-    // Skip compound/layer parent nodes
     if (nodeId.startsWith("layer-")) return;
-
     if (currentLevel.level === "system") {
       const mod = model.modules.find((m) => m.name === nodeId);
       if (mod) drillDown(nodeId, nodeId, "module");
@@ -420,145 +319,59 @@ export function ArchitectureView() {
     }
   }, [model, currentLevel.level, drillDown]);
 
-  const handleShowImpact = useCallback(() => {
-    if (selectedNode && graphRef.current) {
-      setImpactMode(true);
-      const result = graphRef.current.highlightImpact(selectedNode);
-      setImpactResult(result);
-    }
-  }, [selectedNode]);
-
-  const toggleEdgeFilter = useCallback((type: string) => {
-    setEdgeFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      if (graphRef.current) {
-        if (next.size > 0) graphRef.current.filterEdgeTypes([...next]);
-        else graphRef.current.showAllEdges();
-      }
-      return next;
-    });
-  }, []);
-
   const graphData = useMemo(() => {
     if (!model) return { nodes: [], edges: [] };
-    if (currentLevel.level === "system") return buildSystemGraph(model, edgeFilters);
+    if (currentLevel.level === "system") return buildSystemGraph(model);
     if (currentLevel.level === "module") return buildModuleGraph(model, currentLevel.id);
     return { nodes: [], edges: [] };
-  }, [model, currentLevel, edgeFilters]);
+  }, [model, currentLevel]);
 
   if (!model) return null;
 
-  // Navigator data
   const filteredModules = searchQuery
     ? model.modules.filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : model.modules;
 
-  const edgeTypes = [...new Set(model.relations.map((r) => r.type))];
-
   return (
     <div className="flex h-full">
-      {/* LEFT: Navigator Panel */}
+      {/* ── LEFT: Navigator ── */}
       <aside className="w-52 border-r border-[#1e1e2a] bg-surface flex flex-col overflow-hidden">
-        {/* Search */}
         <div className="p-2 border-b border-[#1e1e2a]">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#5a5a70]" />
             <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search..."
-              className="w-full rounded-md border border-[#2a2a3a] bg-surface/50 py-1.5 pl-7 pr-2 text-[11px] text-[#8888a0] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/30"
+              type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search modules..."
+              className="w-full rounded-md border border-[#2a2a3a] bg-deep py-1.5 pl-7 pr-2 text-[11px] text-[#8888a0] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/30"
             />
           </div>
         </div>
 
-        {/* Module Tree */}
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          <div className="text-[9px] font-semibold uppercase tracking-wider text-[#5a5a70] px-1 mb-1">Modules</div>
+          <div className="text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70] px-1 mb-1">Modules ({filteredModules.length})</div>
           {filteredModules.map((mod) => {
-            const color = layerMeta[mod.layer]?.color || "#52525b";
+            const color = layerMeta[mod.layer]?.color || "#6b7280";
             const isSelected = selectedNode === mod.name;
-            const isExpanded = expandedModules.has(mod.name);
-
             return (
-              <div key={mod.name}>
-                <button
-                  onClick={() => {
-                    setSelectedNode(mod.name);
-                    graphRef.current?.selectNode(mod.name);
-                    setExpandedModules((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(mod.name)) next.delete(mod.name);
-                      else next.add(mod.name);
-                      return next;
-                    });
-                  }}
-                  className={`w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] transition-colors ${isSelected ? "bg-archlens-500/10 text-archlens-400" : "text-[#8888a0] hover:bg-hover hover:text-[#8888a0]"}`}
-                >
-                  {isExpanded ? <ChevronDown className="h-3 w-3 flex-shrink-0 text-[#5a5a70]" /> : <ChevronRight className="h-3 w-3 flex-shrink-0 text-[#5a5a70]" />}
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                  <span className="font-mono truncate">{mod.name}</span>
-                  <span className="ml-auto text-[9px] text-[#5a5a70]">{mod.fileCount}</span>
-                </button>
-
-                {isExpanded && (
-                  <div className="ml-5 space-y-0.5 mt-0.5">
-                    {Object.entries(model.symbols)
-                      .filter(([, s]) => (s as Record<string, unknown>).filePath?.toString().startsWith(mod.name + "/"))
-                      .reduce((files, [, s]) => {
-                        const fp = (s as Record<string, unknown>).filePath as string;
-                        if (!files.includes(fp)) files.push(fp);
-                        return files;
-                      }, [] as string[])
-                      .slice(0, 15)
-                      .map((fp) => (
-                        <button
-                          key={fp}
-                          onClick={() => { setSelectedNode(fp); }}
-                          className={`w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] transition-colors ${selectedNode === fp ? "text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
-                        >
-                          <FileCode className="h-2.5 w-2.5 flex-shrink-0" />
-                          <span className="font-mono truncate">{fp.split("/").pop()}</span>
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
+              <button
+                key={mod.name}
+                onClick={() => { setSelectedNode(mod.name); graphRef.current?.selectNode(mod.name); }}
+                onDoubleClick={() => drillDown(mod.name, mod.name, "module")}
+                className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] transition-all ${isSelected ? "bg-archlens-500/12 text-archlens-300 border-l-2 border-archlens-400" : "text-[#8888a0] hover:bg-hover"}`}
+              >
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color, boxShadow: isSelected ? `0 0 8px ${color}60` : "none" }} />
+                <span className="font-mono truncate">{mod.name}</span>
+                <span className="ml-auto text-[9px] text-[#5a5a70]">{mod.fileCount}</span>
+              </button>
             );
           })}
         </div>
-
-        {/* Edge Filters */}
-        <div className="p-2 border-t border-[#1e1e2a]">
-          <div className="flex items-center gap-1 mb-1.5">
-            <Filter className="h-3 w-3 text-[#5a5a70]" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-[#5a5a70]">Relations</span>
-          </div>
-          <div className="space-y-0.5">
-            {edgeTypes.slice(0, 6).map((type) => {
-              const active = edgeFilters.size === 0 || edgeFilters.has(type);
-              return (
-                <button
-                  key={type}
-                  onClick={() => toggleEdgeFilter(type)}
-                  className={`flex items-center gap-1.5 w-full px-1.5 py-0.5 rounded text-[10px] transition-colors ${active ? "text-[#8888a0]" : "text-[#5a5a70]"}`}
-                >
-                  <div className={`w-2 h-2 rounded-sm ${active ? "" : "opacity-30"}`} style={{ backgroundColor: active ? (edgeFilters.size > 0 ? "#10b981" : "#52525b") : "#27272a" }} />
-                  {type}
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </aside>
 
-      {/* CENTER + BOTTOM */}
+      {/* ── CENTER ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="px-4 py-2 border-b border-[#1e1e2a] flex items-center justify-between">
+        <div className="px-4 py-2 border-b border-[#1e1e2a] flex items-center justify-between bg-surface/50">
           <div className="flex items-center gap-2">
             {breadcrumbs.length > 1 && (
               <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-elevated text-[#5a5a70]"><ArrowLeft className="h-3.5 w-3.5" /></button>
@@ -566,36 +379,29 @@ export function ArchitectureView() {
             {breadcrumbs.map((c, i) => (
               <div key={i} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight className="h-3 w-3 text-[#5a5a70]" />}
-                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/10 text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/12 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
                   {c.label}
                 </button>
               </div>
             ))}
+            <span className="text-[10px] text-[#5a5a70] ml-2">{graphData.nodes.length}n · {graphData.edges.length}e</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#5a5a70]">{graphData.nodes.length}n {graphData.edges.length}e</span>
-            <button
-              onClick={() => {
-                setImpactMode(!impactMode);
-                if (impactMode) { graphRef.current?.clearHighlight(); setImpactResult(null); }
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-elevated text-[#5a5a70] hover:text-[#8888a0] border border-zinc-700"}`}
-            >
-              <Target className="h-3 w-3" />
-              Impact
-            </button>
-          </div>
+          <button
+            onClick={() => { setImpactMode(!impactMode); if (impactMode) { graphRef.current?.clearHighlight(); setImpactResult(null); } }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-glow-pulse" : "bg-elevated text-[#5a5a70] hover:text-[#8888a0] border border-[#2a2a3a]"}`}
+          >
+            <Target className="h-3.5 w-3.5" />
+            Impact
+          </button>
         </div>
 
-        {/* Graph */}
+        {/* Graph — Full height */}
         <div className="flex-1 min-h-0">
-          <ArchGraph
+          <SigmaGraph
             ref={graphRef}
             nodes={graphData.nodes}
             edges={graphData.edges}
-            layout={currentLevel.level === "file" ? "cola" : "dagre"}
-            direction={currentLevel.level === "system" ? "TB" : "LR"}
             onNodeClick={handleNodeClick}
             onNodeDoubleClick={handleNodeDoubleClick}
             impactMode={impactMode}
@@ -605,55 +411,46 @@ export function ArchitectureView() {
 
         {/* Bottom Panel */}
         {currentLevel.level === "system" && (
-          <div className="border-t border-[#1e1e2a] bg-surface/30">
+          <div className="border-t border-[#1e1e2a] bg-surface">
             <div className="flex items-center gap-0.5 px-4 pt-1">
-              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-elevated text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-elevated text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
                 <Zap className="h-3 w-3 inline mr-1" />Feature Tracing
               </button>
-              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-elevated text-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-elevated text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
                 <Grid3x3 className="h-3 w-3 inline mr-1" />Dependency Matrix
               </button>
             </div>
-            <div className="px-4 pb-3 pt-2 max-h-[250px] overflow-auto">
-              {bottomTab === "trace" && (
-                <FeatureTracer model={model} graphRef={graphRef} />
-              )}
-              {bottomTab === "matrix" && (
-                <DependencyMatrix
-                  model={model}
-                  onCellClick={(src, tgt) => {
-                    // Highlight the edge between these modules
-                    graphRef.current?.clearHighlight();
-                    graphRef.current?.selectNode(src);
-                  }}
-                />
-              )}
+            <div className="px-4 pb-3 pt-2 max-h-[220px] overflow-auto">
+              {bottomTab === "trace" ? <FeatureTracer model={model} graphRef={graphRef as any} /> : <DependencyMatrix model={model} />}
             </div>
           </div>
         )}
       </div>
 
-      {/* RIGHT: Detail Panel */}
-      <aside className="w-72 border-l border-[#1e1e2a] bg-surface overflow-y-auto">
-        <div className="p-3">
-          {selectedNode ? (
-            <SmartDetailPanel
-              model={model}
-              selectedId={selectedNode}
-              level={currentLevel.level}
-              impactResult={impactResult}
-              onDrillDown={drillDown}
-              onShowImpact={handleShowImpact}
-            />
-          ) : (
-            <div className="text-center py-12">
-              <Layers className="h-8 w-8 text-zinc-800 mx-auto mb-3" />
-              <p className="text-[11px] text-[#5a5a70]">Click a node to inspect</p>
-              <p className="text-[10px] text-[#5a5a70] mt-1">Double-click to drill down</p>
-              <p className="text-[10px] text-[#5a5a70]">Enable Impact mode for blast radius</p>
+      {/* ── RIGHT: Code Panel ── */}
+      <aside className="w-80 border-l border-[#1e1e2a] bg-surface overflow-hidden flex flex-col">
+        {selectedNode ? (
+          <CodePanel model={model} selectedId={selectedNode} level={currentLevel.level} />
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+            <div className="w-16 h-16 rounded-2xl bg-elevated flex items-center justify-center mb-4">
+              <Layers className="h-8 w-8 text-[#2a2a3a]" />
             </div>
-          )}
-        </div>
+            <p className="text-sm font-medium text-[#5a5a70]">Select a module</p>
+            <p className="text-[11px] text-[#5a5a70] mt-1">Click to inspect · Double-click to drill down</p>
+            {impactMode && <p className="text-[11px] text-red-400 mt-2">Impact mode active</p>}
+
+            {/* Impact Result */}
+            {impactResult && impactResult.total > 0 && (
+              <div className="mt-4 w-full text-left bg-elevated rounded-xl p-3 space-y-1.5">
+                <div className="text-[10px] uppercase font-semibold text-[#5a5a70]">Blast Radius</div>
+                <div className="flex items-center gap-2 text-xs"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> <span className="text-red-400">WILL BREAK: {impactResult.d1.length}</span></div>
+                <div className="flex items-center gap-2 text-xs"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /> <span className="text-orange-400">LIKELY AFFECTED: {impactResult.d2.length}</span></div>
+                <div className="flex items-center gap-2 text-xs"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> <span className="text-yellow-400">MAY NEED TEST: {impactResult.d3.length}</span></div>
+              </div>
+            )}
+          </div>
+        )}
       </aside>
     </div>
   );
