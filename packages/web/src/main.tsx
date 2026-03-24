@@ -26,7 +26,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="onboard" element={<OnboardView />} />
           <Route path="drift" element={<DriftView />} />
           <Route path="modules" element={<ModulesView />} />
-          <Route path="api" element={<ApiMapView />} />
+          <Route path="endpoints" element={<ApiMapView />} />
         </Route>
       </Routes>
     </BrowserRouter>

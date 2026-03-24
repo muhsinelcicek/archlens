@@ -85,7 +85,7 @@ function buildStylesheet(): Stylesheet[] {
         label: "data(label)",
         "text-valign": "center",
         "text-halign": "center",
-        "font-size": "11px",
+        "font-size": "12px",
         color: "#e0e0e0",
         "background-color": "#333333",
         "border-width": 2,
@@ -93,9 +93,9 @@ function buildStylesheet(): Stylesheet[] {
         "text-wrap": "wrap",
         "text-max-width": "140px",
         shape: "roundrectangle",
-        width: 160,
-        height: 50,
-        padding: "14px",
+        width: 180,
+        height: 55,
+        padding: "16px",
       },
     },
     {
@@ -391,7 +391,7 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
       layout: {
         name: layout,
         ...(layout === "dagre"
-          ? { rankDir: direction, nodeSep: 60, rankSep: 80, edgeSep: 20, padding: 40 }
+          ? { rankDir: direction, nodeSep: 80, rankSep: 100, edgeSep: 30, padding: 50 }
           : layout === "cola"
             ? { nodeSpacing: 80, edgeLength: 150, animate: false, padding: 40 }
             : { padding: 40 }),

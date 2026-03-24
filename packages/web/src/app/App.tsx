@@ -23,7 +23,7 @@ const navItems = [
   { to: "/sequence", icon: GitBranch, label: "Sequence Diagrams" },
   { to: "/diagram/dependency-graph", icon: GitBranch, label: "Dependencies" },
   { to: "/diagram/er-diagram", icon: Database, label: "ER Diagram" },
-  { to: "/api", icon: Globe, label: "API Map" },
+  { to: "/endpoints", icon: Globe, label: "API Map" },
   { to: "/diagram/tech-radar", icon: Cpu, label: "Tech Radar" },
   { to: "/onboard", icon: Rocket, label: "Onboarding" },
   { to: "/drift", icon: ShieldCheck, label: "Health Check" },
