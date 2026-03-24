@@ -4,6 +4,7 @@ export { TypeScriptParser } from "./typescript-parser.js";
 export { PythonParser } from "./python-parser.js";
 export { GoParser } from "./go-parser.js";
 export { JavaParser } from "./java-parser.js";
+export { SwiftParser } from "./swift-parser.js";
 
 import type { Language } from "../models/index.js";
 import { BaseParser } from "./base-parser.js";
@@ -11,8 +12,9 @@ import { TypeScriptParser } from "./typescript-parser.js";
 import { PythonParser } from "./python-parser.js";
 import { GoParser } from "./go-parser.js";
 import { JavaParser } from "./java-parser.js";
+import { SwiftParser } from "./swift-parser.js";
 
-const parsers: BaseParser[] = [new TypeScriptParser(), new PythonParser(), new GoParser(), new JavaParser()];
+const parsers: BaseParser[] = [new TypeScriptParser(), new PythonParser(), new GoParser(), new JavaParser(), new SwiftParser()];
 
 export function getParserForFile(filePath: string): BaseParser | undefined {
   return parsers.find((p) => p.canParse(filePath));
