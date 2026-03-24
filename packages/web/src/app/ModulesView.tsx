@@ -19,7 +19,7 @@ const layerBadge: Record<string, string> = {
   infrastructure: "bg-red-500/20 text-red-400",
   config: "bg-gray-500/20 text-gray-400",
   test: "bg-yellow-500/20 text-yellow-400",
-  unknown: "bg-zinc-500/20 text-zinc-400",
+  unknown: "bg-zinc-500/20 text-[#888888]",
 };
 
 export function ModulesView() {
@@ -49,21 +49,21 @@ export function ModulesView() {
                   {mod.layer}
                 </span>
               </div>
-              <span className="text-xs text-zinc-500 font-mono">{mod.language}</span>
+              <span className="text-xs text-[#707070] font-mono">{mod.language}</span>
             </div>
 
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-xl font-bold">{mod.fileCount}</div>
-                <div className="text-xs text-zinc-500">files</div>
+                <div className="text-xs text-[#707070]">files</div>
               </div>
               <div>
                 <div className="text-xl font-bold">{mod.symbols.length}</div>
-                <div className="text-xs text-zinc-500">symbols</div>
+                <div className="text-xs text-[#707070]">symbols</div>
               </div>
               <div>
                 <div className="text-xl font-bold">{mod.lineCount.toLocaleString()}</div>
-                <div className="text-xs text-zinc-500">lines</div>
+                <div className="text-xs text-[#707070]">lines</div>
               </div>
             </div>
           </div>

@@ -58,7 +58,7 @@ export function FeatureTracer({ model, graphRef, className = "" }: FeatureTracer
 
   if (processes.length === 0) {
     return (
-      <div className={`text-center text-zinc-600 text-xs py-4 ${className}`}>
+      <div className={`text-center text-[#606060] text-xs py-4 ${className}`}>
         No business processes detected
       </div>
     );
@@ -71,22 +71,22 @@ export function FeatureTracer({ model, graphRef, className = "" }: FeatureTracer
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 transition-colors min-w-[200px]"
+            className="flex items-center gap-2 bg-[#383838] border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-[#b0b0b0] hover:bg-zinc-700 transition-colors min-w-[200px]"
           >
             <span className="truncate">{process?.name || "Select a process..."}</span>
             <ChevronDown className="h-3 w-3 flex-shrink-0" />
           </button>
 
           {showDropdown && (
-            <div className="absolute bottom-full left-0 mb-1 w-72 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+            <div className="absolute bottom-full left-0 mb-1 w-72 bg-[#2c2c2c] border border-zinc-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
               {processes.filter((p) => p.category !== "presentation" && p.category !== "api-service").map((p) => (
                 <button
                   key={p.id}
                   onClick={() => { setSelectedProcess(p.id); setShowDropdown(false); setCurrentStep(0); stop(); }}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-800 transition-colors ${selectedProcess === p.id ? "bg-zinc-800 text-archlens-400" : "text-zinc-300"}`}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-[#383838] transition-colors ${selectedProcess === p.id ? "bg-[#383838] text-archlens-400" : "text-[#b0b0b0]"}`}
                 >
                   <div className="font-medium">{p.name}</div>
-                  <div className="text-zinc-600 mt-0.5">{p.steps.length} steps — {p.category}</div>
+                  <div className="text-[#606060] mt-0.5">{p.steps.length} steps — {p.category}</div>
                 </button>
               ))}
             </div>
@@ -97,7 +97,7 @@ export function FeatureTracer({ model, graphRef, className = "" }: FeatureTracer
         {process && (
           <>
             <div className="flex items-center gap-1">
-              <button onClick={() => goToStep(currentStep - 1)} className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300" disabled={currentStep === 0}>
+              <button onClick={() => goToStep(currentStep - 1)} className="p-1 rounded hover:bg-[#383838] text-[#707070] hover:text-[#b0b0b0]" disabled={currentStep === 0}>
                 <SkipBack className="h-3.5 w-3.5" />
               </button>
               {isPlaying ? (
@@ -109,13 +109,13 @@ export function FeatureTracer({ model, graphRef, className = "" }: FeatureTracer
                   <Play className="h-3.5 w-3.5" />
                 </button>
               )}
-              <button onClick={() => goToStep(currentStep + 1)} className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300" disabled={currentStep >= (process?.steps.length || 1) - 1}>
+              <button onClick={() => goToStep(currentStep + 1)} className="p-1 rounded hover:bg-[#383838] text-[#707070] hover:text-[#b0b0b0]" disabled={currentStep >= (process?.steps.length || 1) - 1}>
                 <SkipForward className="h-3.5 w-3.5" />
               </button>
             </div>
 
             {/* Step indicator */}
-            <div className="text-[10px] text-zinc-600">
+            <div className="text-[10px] text-[#606060]">
               Step {currentStep + 1}/{process.steps.length}
             </div>
 
@@ -123,15 +123,15 @@ export function FeatureTracer({ model, graphRef, className = "" }: FeatureTracer
             <div className="flex items-center gap-0.5 flex-1 overflow-x-auto">
               {process.steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-0.5 flex-shrink-0">
-                  {i > 0 && <ArrowRight className="h-2.5 w-2.5 text-zinc-700" />}
+                  {i > 0 && <ArrowRight className="h-2.5 w-2.5 text-[#505050]" />}
                   <button
                     onClick={() => goToStep(i)}
                     className={`px-2 py-0.5 rounded text-[9px] font-medium whitespace-nowrap transition-colors ${
                       i === currentStep
                         ? "bg-archlens-500/20 text-archlens-400 border border-archlens-500/30"
                         : i < currentStep
-                          ? "bg-zinc-800 text-zinc-400"
-                          : "text-zinc-600 hover:text-zinc-400"
+                          ? "bg-[#383838] text-[#888888]"
+                          : "text-[#606060] hover:text-[#888888]"
                     }`}
                   >
                     {step.name}
@@ -145,17 +145,17 @@ export function FeatureTracer({ model, graphRef, className = "" }: FeatureTracer
 
       {/* Current Step Detail */}
       {process && process.steps[currentStep] && (
-        <div className="mt-2 rounded-lg bg-zinc-800/30 border border-zinc-800/50 px-3 py-2">
+        <div className="mt-2 rounded-lg bg-[#373737] border border-[#404040] px-3 py-2">
           <div className="flex items-start gap-2">
             <div className="flex-shrink-0 w-5 h-5 rounded-full bg-archlens-500/20 flex items-center justify-center text-[10px] font-bold text-archlens-400 mt-0.5">
               {currentStep + 1}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-zinc-200">{process.steps[currentStep].name}</div>
-              <div className="text-[10px] text-zinc-500 mt-0.5">{process.steps[currentStep].description}</div>
+              <div className="text-xs font-medium text-[#d4d4d4]">{process.steps[currentStep].name}</div>
+              <div className="text-[10px] text-[#707070] mt-0.5">{process.steps[currentStep].description}</div>
               <div className="flex items-center gap-2 mt-1 text-[9px] font-mono">
                 <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">{process.steps[currentStep].inputData}</span>
-                <ArrowRight className="h-2.5 w-2.5 text-zinc-600" />
+                <ArrowRight className="h-2.5 w-2.5 text-[#606060]" />
                 <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{process.steps[currentStep].outputData}</span>
               </div>
               {process.steps[currentStep].algorithm && (

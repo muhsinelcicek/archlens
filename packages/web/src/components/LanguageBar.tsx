@@ -28,7 +28,7 @@ export function LanguageBar({ languages, totalSymbols }: LanguageBarProps) {
   return (
     <div className="space-y-3">
       {/* Bar */}
-      <div className="flex h-3 overflow-hidden rounded-full bg-zinc-800">
+      <div className="flex h-3 overflow-hidden rounded-full bg-[#383838]">
         {sorted.map(([lang, count]) => {
           const pct = (count / totalSymbols) * 100;
           const config = langConfig[lang] || langConfig.unknown;
@@ -46,9 +46,9 @@ export function LanguageBar({ languages, totalSymbols }: LanguageBarProps) {
             >
               {/* Tooltip */}
               {hoveredLang === lang && (
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-zinc-800 px-2 py-1 text-xs shadow-lg border border-zinc-700 z-50">
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#383838] px-2 py-1 text-xs shadow-lg border border-zinc-700 z-50">
                   <span className="font-semibold" style={{ color: config.color }}>{config.label}</span>
-                  <span className="text-zinc-400 ml-1.5">{count} symbols ({pct.toFixed(1)}%)</span>
+                  <span className="text-[#888888] ml-1.5">{count} symbols ({pct.toFixed(1)}%)</span>
                 </div>
               )}
             </div>
@@ -70,8 +70,8 @@ export function LanguageBar({ languages, totalSymbols }: LanguageBarProps) {
               onMouseLeave={() => setHoveredLang(null)}
             >
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} />
-              <span className="text-zinc-300 font-medium">{config.label}</span>
-              <span className="text-zinc-600 text-xs">{pct}%</span>
+              <span className="text-[#b0b0b0] font-medium">{config.label}</span>
+              <span className="text-[#606060] text-xs">{pct}%</span>
             </div>
           );
         })}

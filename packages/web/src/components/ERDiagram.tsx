@@ -236,7 +236,7 @@ export function ERDiagram({ entities, className = "" }: ERDiagramProps) {
 
   if (entities.length === 0) {
     return (
-      <div className={`flex items-center justify-center h-full text-zinc-500 ${className}`}>
+      <div className={`flex items-center justify-center h-full text-[#707070] ${className}`}>
         No database entities detected
       </div>
     );

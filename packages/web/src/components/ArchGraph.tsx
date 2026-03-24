@@ -58,14 +58,14 @@ interface ArchGraphProps {
 }
 
 const layerColors: Record<string, { bg: string; border: string; text: string }> = {
-  presentation: { bg: "#065f46", border: "#10b981", text: "#d1fae5" },
-  api: { bg: "#1e3a5f", border: "#3b82f6", text: "#dbeafe" },
-  application: { bg: "#5c3d0e", border: "#f59e0b", text: "#fef3c7" },
-  domain: { bg: "#4c1d95", border: "#8b5cf6", text: "#ede9fe" },
-  infrastructure: { bg: "#7f1d1d", border: "#ef4444", text: "#fee2e2" },
-  config: { bg: "#374151", border: "#6b7280", text: "#e5e7eb" },
-  test: { bg: "#451a03", border: "#d97706", text: "#fef3c7" },
-  default: { bg: "#27272a", border: "#52525b", text: "#e4e4e7" },
+  presentation: { bg: "#1a3a2a", border: "#34d399", text: "#a7f3d0" },
+  api: { bg: "#1a2a4a", border: "#60a5fa", text: "#bfdbfe" },
+  application: { bg: "#3a2a0a", border: "#fbbf24", text: "#fde68a" },
+  domain: { bg: "#2a1a4a", border: "#a78bfa", text: "#ddd6fe" },
+  infrastructure: { bg: "#3a1a1a", border: "#f87171", text: "#fecaca" },
+  config: { bg: "#2a2a2a", border: "#9ca3af", text: "#d1d5db" },
+  test: { bg: "#3a2a0a", border: "#f59e0b", text: "#fde68a" },
+  default: { bg: "#333333", border: "#666666", text: "#cccccc" },
 };
 
 const edgeTypeStyles: Record<string, { color: string; style: string }> = {
@@ -86,10 +86,10 @@ function buildStylesheet(): Stylesheet[] {
         "text-valign": "center",
         "text-halign": "center",
         "font-size": "11px",
-        color: "#e4e4e7",
-        "background-color": "#27272a",
+        color: "#e0e0e0",
+        "background-color": "#333333",
         "border-width": 2,
-        "border-color": "#52525b",
+        "border-color": "#555555",
         "text-wrap": "wrap",
         "text-max-width": "140px",
         shape: "roundrectangle",
@@ -109,9 +109,9 @@ function buildStylesheet(): Stylesheet[] {
         "font-size": "13px",
         "font-weight": "bold",
         padding: "24px",
-        "background-color": "#18181b",
-        "border-color": "#3f3f46",
-        color: "#a1a1aa",
+        "background-color": "#252525",
+        "border-color": "#444444",
+        color: "#aaaaaa",
       },
     },
     ...Object.entries(layerColors).map(
@@ -138,12 +138,12 @@ function buildStylesheet(): Stylesheet[] {
       selector: "edge",
       style: {
         width: "data(displayWeight)",
-        "line-color": "#3f3f46",
-        "target-arrow-color": "#3f3f46",
+        "line-color": "#666666",
+        "target-arrow-color": "#666666",
         "target-arrow-shape": "triangle",
         "curve-style": "bezier",
         "arrow-scale": 0.8,
-        opacity: 0.6,
+        opacity: 0.8,
       },
     },
     {
@@ -151,7 +151,7 @@ function buildStylesheet(): Stylesheet[] {
       style: {
         label: "data(label)",
         "font-size": "9px",
-        color: "#52525b",
+        color: "#6b7280",
         "text-rotation": "autorotate",
         "text-margin-y": -8,
       },
@@ -382,6 +382,8 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
       });
     }
 
+    containerRef.current.style.backgroundColor = "#1e1e1e";
+
     const cy = cytoscape({
       container: containerRef.current,
       elements,
@@ -396,7 +398,7 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
       } as cytoscape.LayoutOptions,
       minZoom: 0.15,
       maxZoom: 4,
-      wheelSensitivity: 1,
+      // default wheel sensitivity
     });
 
     // Interactions
@@ -465,13 +467,13 @@ export const ArchGraph = forwardRef<ArchGraphHandle, ArchGraphProps>(function Ar
 
   return (
     <div className={`relative ${className}`}>
-      <div ref={containerRef} className="w-full h-full bg-zinc-950 rounded-xl" />
+      <div ref={containerRef} className="w-full h-full rounded-xl" style={{ backgroundColor: "#1e1e1e" }} />
 
       {/* Zoom Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-        <button onClick={handleZoomIn} className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 text-sm backdrop-blur-sm">+</button>
-        <button onClick={handleZoomOut} className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 text-sm backdrop-blur-sm">-</button>
-        <button onClick={handleFit} className="w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-zinc-300 backdrop-blur-sm" title="Fit">
+        <button onClick={handleZoomIn} className="w-8 h-8 bg-[#383838]/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-[#b0b0b0] text-sm backdrop-blur-sm">+</button>
+        <button onClick={handleZoomOut} className="w-8 h-8 bg-[#383838]/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-[#b0b0b0] text-sm backdrop-blur-sm">-</button>
+        <button onClick={handleFit} className="w-8 h-8 bg-[#383838]/90 hover:bg-zinc-700 border border-zinc-700 rounded-lg flex items-center justify-center text-[#b0b0b0] backdrop-blur-sm" title="Fit">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
         </button>
       </div>

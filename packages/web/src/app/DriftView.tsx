@@ -96,7 +96,7 @@ export function DriftView() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-bold">Architecture Health</h2>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-[#707070] mt-1">
             Drift detection, layer violations, circular dependencies, and module health
           </p>
         </div>
@@ -114,7 +114,7 @@ export function DriftView() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xl font-bold" style={{ color: scoreColor }}>{analysis.score}</span>
-            <span className="text-[9px] text-zinc-600">SCORE</span>
+            <span className="text-[9px] text-[#606060]">SCORE</span>
           </div>
         </div>
       </div>
@@ -150,15 +150,15 @@ export function DriftView() {
       </div>
 
       {/* Layer Violations */}
-      <section className="rounded-xl border border-zinc-800 overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-3 bg-zinc-900/50 border-b border-zinc-800">
+      <section className="rounded-xl border border-[#404040] overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 bg-[#333333] border-b border-[#404040]">
           {analysis.violations.length === 0 ? (
             <ShieldCheck className="h-4 w-4 text-emerald-500" />
           ) : (
             <ShieldAlert className="h-4 w-4 text-red-500" />
           )}
           <h3 className="font-semibold text-sm">Layer Dependency Rules</h3>
-          <span className="ml-auto text-xs text-zinc-600">Lower layers should NOT depend on higher layers</span>
+          <span className="ml-auto text-xs text-[#606060]">Lower layers should NOT depend on higher layers</span>
         </div>
 
         <div className="p-5">
@@ -173,10 +173,10 @@ export function DriftView() {
                 <div key={i} className="flex items-center gap-3 rounded-lg bg-red-500/5 border border-red-500/20 px-4 py-2.5">
                   <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                   <span className="font-mono text-sm text-red-300">{v.src}</span>
-                  <span className="text-[10px] text-zinc-600">({v.srcLayer})</span>
-                  <ArrowRight className="h-3 w-3 text-zinc-600" />
+                  <span className="text-[10px] text-[#606060]">({v.srcLayer})</span>
+                  <ArrowRight className="h-3 w-3 text-[#606060]" />
                   <span className="font-mono text-sm text-red-300">{v.tgt}</span>
-                  <span className="text-[10px] text-zinc-600">({v.tgtLayer})</span>
+                  <span className="text-[10px] text-[#606060]">({v.tgtLayer})</span>
                 </div>
               ))}
             </div>
@@ -185,8 +185,8 @@ export function DriftView() {
       </section>
 
       {/* Circular Dependencies */}
-      <section className="rounded-xl border border-zinc-800 overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-3 bg-zinc-900/50 border-b border-zinc-800">
+      <section className="rounded-xl border border-[#404040] overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 bg-[#333333] border-b border-[#404040]">
           {analysis.circular.length === 0 ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           ) : (
@@ -207,7 +207,7 @@ export function DriftView() {
                 <div key={i} className="flex items-center gap-3 rounded-lg bg-amber-500/5 border border-amber-500/20 px-4 py-2.5">
                   <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
                   <span className="font-mono text-sm text-amber-300">{pair[0]}</span>
-                  <span className="text-zinc-600">↔</span>
+                  <span className="text-[#606060]">↔</span>
                   <span className="font-mono text-sm text-amber-300">{pair[1]}</span>
                 </div>
               ))}
@@ -217,8 +217,8 @@ export function DriftView() {
       </section>
 
       {/* Module Health */}
-      <section className="rounded-xl border border-zinc-800 overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-3 bg-zinc-900/50 border-b border-zinc-800">
+      <section className="rounded-xl border border-[#404040] overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 bg-[#333333] border-b border-[#404040]">
           <Activity className="h-4 w-4 text-archlens-500" />
           <h3 className="font-semibold text-sm">Module Health</h3>
         </div>
@@ -229,7 +229,7 @@ export function DriftView() {
               key={mod.name}
               className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
                 mod.healthy
-                  ? "border-zinc-800/50 bg-zinc-900/20"
+                  ? "border-[#404040] bg-[#303030]"
                   : "border-amber-500/20 bg-amber-500/5"
               }`}
             >
@@ -239,13 +239,13 @@ export function DriftView() {
                 ) : (
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                 )}
-                <span className="font-mono text-sm font-medium text-zinc-200">{mod.name}/</span>
-                <span className="text-xs text-zinc-600">{mod.layer}</span>
+                <span className="font-mono text-sm font-medium text-[#d4d4d4]">{mod.name}/</span>
+                <span className="text-xs text-[#606060]">{mod.layer}</span>
               </div>
 
               <div className="flex items-center gap-4 text-xs">
-                <span className="text-zinc-500">{mod.fileCount} files</span>
-                <span className="text-zinc-500">{mod.lineCount.toLocaleString()} lines</span>
+                <span className="text-[#707070]">{mod.fileCount} files</span>
+                <span className="text-[#707070]">{mod.lineCount.toLocaleString()} lines</span>
                 {!mod.healthy && (
                   <span className="text-amber-400">{mod.issues.join(", ")}</span>
                 )}
@@ -256,11 +256,11 @@ export function DriftView() {
       </section>
 
       {/* Footer */}
-      <div className="text-center text-xs text-zinc-600">
+      <div className="text-center text-xs text-[#606060]">
         Last indexed: {analysis.indexDate.toLocaleString("tr-TR")} ({Math.round(analysis.hoursSince)}h ago)
         {analysis.hoursSince > 24 && (
           <span className="text-amber-500 ml-2">
-            — Run <code className="bg-zinc-800 px-1.5 py-0.5 rounded">archlens analyze</code> to refresh
+            — Run <code className="bg-[#383838] px-1.5 py-0.5 rounded">archlens analyze</code> to refresh
           </span>
         )}
       </div>
@@ -273,10 +273,10 @@ function HealthCard({ label, value, ok, detail, suffix }: {
 }) {
   return (
     <div className={`rounded-xl border p-4 ${ok ? "border-emerald-500/20 bg-emerald-500/5" : "border-amber-500/20 bg-amber-500/5"}`}>
-      <div className="text-xs text-zinc-500 mb-1">{label}</div>
+      <div className="text-xs text-[#707070] mb-1">{label}</div>
       <div className="flex items-baseline gap-1">
         <span className={`text-2xl font-bold ${ok ? "text-emerald-400" : "text-amber-400"}`}>{value}</span>
-        {suffix && <span className="text-sm text-zinc-600">{suffix}</span>}
+        {suffix && <span className="text-sm text-[#606060]">{suffix}</span>}
       </div>
       <div className={`text-[11px] mt-1 ${ok ? "text-emerald-600" : "text-amber-600"}`}>{detail}</div>
     </div>

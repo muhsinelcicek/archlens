@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useStore } from "../lib/store.js";
+import { useStore, type ArchModel } from "../lib/store.js";
 import { ArchGraph, type GraphNode, type GraphEdge } from "../components/ArchGraph.js";
 import { ERDiagram } from "../components/ERDiagram.js";
 import { TechRadar } from "../components/TechRadar.js";
@@ -33,7 +33,7 @@ const diagramLabels: Record<string, { title: string; description: string }> = {
   },
 };
 
-function buildArchitectureGraph(model: NonNullable<ReturnType<typeof useStore>["model"]>): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildArchitectureGraph(model: ArchModel): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
@@ -97,7 +97,7 @@ function buildArchitectureGraph(model: NonNullable<ReturnType<typeof useStore>["
   return { nodes, edges };
 }
 
-function buildDependencyGraph(model: NonNullable<ReturnType<typeof useStore>["model"]>): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildDependencyGraph(model: ArchModel): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = model.modules.map((mod) => ({
     id: mod.name,
     label: mod.name,
@@ -131,7 +131,7 @@ function buildDependencyGraph(model: NonNullable<ReturnType<typeof useStore>["mo
   return { nodes, edges };
 }
 
-function buildDataFlowGraph(model: NonNullable<ReturnType<typeof useStore>["model"]>): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildDataFlowGraph(model: ArchModel): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const nodeSet = new Set<string>();
@@ -252,7 +252,7 @@ export function DiagramView() {
         return null; // Handled by ApiMapView
 
       default:
-        return <div className="text-zinc-500 p-8">Unknown diagram type: {type}</div>;
+        return <div className="text-[#707070] p-8">Unknown diagram type: {type}</div>;
     }
   };
 
@@ -261,7 +261,7 @@ export function DiagramView() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-bold">{info.title}</h2>
-          <p className="text-sm text-zinc-500 mt-1 flex items-center gap-1.5">
+          <p className="text-sm text-[#707070] mt-1 flex items-center gap-1.5">
             <Info className="h-3.5 w-3.5" />
             {info.description}
           </p>
@@ -270,7 +270,7 @@ export function DiagramView() {
           {diagrams[type] && (
             <button
               onClick={handleDownloadMermaid}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#383838] hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm transition-colors"
             >
               <Download className="h-4 w-4" />
               Export .mmd
@@ -282,11 +282,11 @@ export function DiagramView() {
       {/* Selected Node Info */}
       {selectedNode && (
         <div className="rounded-lg border border-archlens-500/30 bg-archlens-500/5 px-4 py-2 text-sm">
-          <span className="text-zinc-400">Selected:</span>{" "}
+          <span className="text-[#888888]">Selected:</span>{" "}
           <span className="font-mono text-archlens-400">{selectedNode}</span>
           <button
             onClick={() => setSelectedNode(null)}
-            className="ml-3 text-zinc-600 hover:text-zinc-400"
+            className="ml-3 text-[#606060] hover:text-[#888888]"
           >
             Clear
           </button>
@@ -294,7 +294,7 @@ export function DiagramView() {
       )}
 
       {/* Diagram */}
-      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+      <div className="rounded-xl border border-[#404040] overflow-hidden">
         {renderDiagram()}
       </div>
     </div>

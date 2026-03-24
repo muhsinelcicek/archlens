@@ -49,16 +49,16 @@ function ProcessCard({ process, isExpanded, onToggle }: {
       {/* Header */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-zinc-800/30 transition-colors text-left"
+        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[#373737] transition-colors text-left"
       >
         <div className="rounded-lg p-2.5" style={{ backgroundColor: `${config.color}15` }}>
           <Icon className="h-5 w-5" style={{ color: config.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-zinc-100">{process.name}</h3>
-          <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{process.description}</p>
+          <h3 className="font-semibold text-[#e8e8e8]">{process.name}</h3>
+          <p className="text-xs text-[#707070] mt-0.5 line-clamp-1">{process.description}</p>
         </div>
-        <div className="flex items-center gap-3 text-xs text-zinc-600">
+        <div className="flex items-center gap-3 text-xs text-[#606060]">
           <span>{process.steps.length} steps</span>
           <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${config.color}15`, color: config.color }}>
             {config.label}
@@ -70,26 +70,26 @@ function ProcessCard({ process, isExpanded, onToggle }: {
       {isExpanded && (
         <div className="border-t" style={{ borderColor: `${config.color}15` }}>
           {/* Description */}
-          <div className="px-5 py-4 bg-zinc-900/30">
-            <p className="text-sm text-zinc-300 leading-relaxed">{process.description}</p>
+          <div className="px-5 py-4 bg-[#2f2f2f]">
+            <p className="text-sm text-[#b0b0b0] leading-relaxed">{process.description}</p>
           </div>
 
           {/* Data Sources */}
           {process.dataSources.length > 0 && (
-            <div className="px-5 py-4 border-t border-zinc-800/30">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3 flex items-center gap-2">
+            <div className="px-5 py-4 border-t border-[#3a3a3a]">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#707070] mb-3 flex items-center gap-2">
                 <FileInput className="h-3.5 w-3.5" />
                 Data Sources
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {process.dataSources.map((ds, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-lg bg-zinc-800/30 border border-zinc-800/50 p-3">
+                  <div key={i} className="flex items-start gap-3 rounded-lg bg-[#373737] border border-[#404040] p-3">
                     <Database className="h-4 w-4 text-cyan-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-medium text-zinc-200">{ds.name}</div>
-                      <div className="text-[11px] text-zinc-500 mt-0.5">{ds.description}</div>
+                      <div className="text-sm font-medium text-[#d4d4d4]">{ds.name}</div>
+                      <div className="text-[11px] text-[#707070] mt-0.5">{ds.description}</div>
                       {ds.format && (
-                        <span className="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                        <span className="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#383838] text-[#888888]">
                           {ds.format}
                         </span>
                       )}
@@ -101,8 +101,8 @@ function ProcessCard({ process, isExpanded, onToggle }: {
           )}
 
           {/* Steps — The Core Pipeline */}
-          <div className="px-5 py-4 border-t border-zinc-800/30">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+          <div className="px-5 py-4 border-t border-[#3a3a3a]">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#707070] mb-4 flex items-center gap-2">
               <Cpu className="h-3.5 w-3.5" />
               Processing Pipeline ({process.steps.length} steps)
             </h4>
@@ -127,8 +127,8 @@ function ProcessCard({ process, isExpanded, onToggle }: {
                       <div
                         className={`rounded-lg border p-4 transition-all ${
                           isStepExpanded
-                            ? "bg-zinc-800/50 shadow-lg"
-                            : "bg-zinc-900/30 hover:bg-zinc-800/20"
+                            ? "bg-[#3a3a3a] shadow-lg"
+                            : "bg-[#2f2f2f] hover:bg-[#353535]"
                         }`}
                         style={{ borderColor: isStepExpanded ? `${config.color}40` : "rgb(39 39 42 / 0.5)" }}
                       >
@@ -143,17 +143,17 @@ function ProcessCard({ process, isExpanded, onToggle }: {
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <h5 className="font-semibold text-sm text-zinc-100">{step.name}</h5>
-                              {isStepExpanded ? <ChevronDown className="h-3 w-3 text-zinc-600" /> : <ChevronRight className="h-3 w-3 text-zinc-600" />}
+                              <h5 className="font-semibold text-sm text-[#e8e8e8]">{step.name}</h5>
+                              {isStepExpanded ? <ChevronDown className="h-3 w-3 text-[#606060]" /> : <ChevronRight className="h-3 w-3 text-[#606060]" />}
                             </div>
-                            <p className="text-xs text-zinc-400 mt-1">{step.description}</p>
+                            <p className="text-xs text-[#888888] mt-1">{step.description}</p>
 
                             {/* Data flow badge */}
                             <div className="flex items-center gap-2 mt-2 text-[10px] font-mono">
                               <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                 {step.inputData}
                               </span>
-                              <ArrowRight className="h-3 w-3 text-zinc-600" />
+                              <ArrowRight className="h-3 w-3 text-[#606060]" />
                               <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                 {step.outputData}
                               </span>
@@ -166,24 +166,24 @@ function ProcessCard({ process, isExpanded, onToggle }: {
                           <div className="mt-4 ml-10 space-y-3">
                             {/* Algorithm */}
                             {step.algorithm && (
-                              <div className="rounded-lg bg-zinc-950/50 border border-zinc-800 p-3">
+                              <div className="rounded-lg bg-[#2c2c2c]/50 border border-[#404040] p-3">
                                 <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-500 mb-1.5">
                                   <Lightbulb className="h-3 w-3" />
                                   Algorithm
                                 </div>
-                                <p className="text-xs text-zinc-300 leading-relaxed font-mono">{step.algorithm}</p>
+                                <p className="text-xs text-[#b0b0b0] leading-relaxed font-mono">{step.algorithm}</p>
                               </div>
                             )}
 
                             {/* Details */}
                             {step.details && step.details.length > 0 && (
                               <div>
-                                <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
+                                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#606060] mb-1.5">
                                   Implementation Details
                                 </div>
                                 <ul className="space-y-1">
                                   {step.details.map((detail, j) => (
-                                    <li key={j} className="flex items-start gap-2 text-xs text-zinc-400">
+                                    <li key={j} className="flex items-start gap-2 text-xs text-[#888888]">
                                       <Zap className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: config.color }} />
                                       <span>{detail}</span>
                                     </li>
@@ -194,7 +194,7 @@ function ProcessCard({ process, isExpanded, onToggle }: {
 
                             {/* Symbol reference */}
                             {step.symbolRef && (
-                              <div className="text-[10px] font-mono text-zinc-600">
+                              <div className="text-[10px] font-mono text-[#606060]">
                                 ref: {step.symbolRef}
                               </div>
                             )}
@@ -210,20 +210,20 @@ function ProcessCard({ process, isExpanded, onToggle }: {
 
           {/* Outputs */}
           {process.outputs.length > 0 && (
-            <div className="px-5 py-4 border-t border-zinc-800/30">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3 flex items-center gap-2">
+            <div className="px-5 py-4 border-t border-[#3a3a3a]">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#707070] mb-3 flex items-center gap-2">
                 <FileOutput className="h-3.5 w-3.5" />
                 Outputs
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {process.outputs.map((out, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-lg bg-zinc-800/30 border border-zinc-800/50 p-3">
+                  <div key={i} className="flex items-start gap-3 rounded-lg bg-[#373737] border border-[#404040] p-3">
                     <div className="h-4 w-4 mt-0.5 flex-shrink-0 rounded-full" style={{ backgroundColor: config.color }} />
                     <div>
-                      <div className="text-sm font-medium text-zinc-200">{out.name}</div>
-                      <div className="text-[11px] text-zinc-500 mt-0.5">{out.description}</div>
+                      <div className="text-sm font-medium text-[#d4d4d4]">{out.name}</div>
+                      <div className="text-[11px] text-[#707070] mt-0.5">{out.description}</div>
                       {out.format && (
-                        <span className="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                        <span className="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#383838] text-[#888888]">
                           {out.format}
                         </span>
                       )}
@@ -246,15 +246,15 @@ export function ProcessView() {
 
   if (!model) return null;
 
-  const processes = (model as unknown as { businessProcesses?: BusinessProcess[] }).businessProcesses || [];
+  const processes = model.businessProcesses || [];
 
   if (processes.length === 0) {
     return (
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-4">Business Processes</h2>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
-          <BarChart3 className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-          <p className="text-zinc-500">No business processes detected.</p>
+        <div className="rounded-xl border border-[#404040] bg-[#333333] p-12 text-center">
+          <BarChart3 className="h-12 w-12 text-[#505050] mx-auto mb-3" />
+          <p className="text-[#707070]">No business processes detected.</p>
         </div>
       </div>
     );
@@ -277,7 +277,7 @@ export function ProcessView() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">Business Processes</h2>
-        <p className="text-sm text-zinc-500 mt-1">
+        <p className="text-sm text-[#707070] mt-1">
           {processes.length} processes detected with {totalSteps} total processing steps.
           Click to explore algorithms, data sources, and outputs.
         </p>
@@ -290,7 +290,7 @@ export function ProcessView() {
           className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
             !filterCategory
               ? "bg-zinc-700 border-zinc-600 text-white"
-              : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300"
+              : "bg-[#2c2c2c] border-[#404040] text-[#707070] hover:text-[#b0b0b0]"
           }`}
         >
           All ({processes.length})
@@ -317,14 +317,14 @@ export function ProcessView() {
       </div>
 
       {/* Process pipeline overview — horizontal flow */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 overflow-x-auto">
+      <div className="rounded-xl border border-[#404040] bg-[#2f2f2f] p-4 overflow-x-auto">
         <div className="flex items-center gap-2 min-w-max">
           {processes.map((p, i) => {
             const config = categoryConfig[p.category] || categoryConfig.analysis;
             return (
               <div key={p.id} className="flex items-center gap-2">
                 {i > 0 && (
-                  <ArrowRight className="h-4 w-4 text-zinc-700 flex-shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-[#505050] flex-shrink-0" />
                 )}
                 <button
                   onClick={() => {
@@ -338,8 +338,8 @@ export function ProcessView() {
                   }}
                 >
                   <config.icon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: config.color }} />
-                  <span className="font-medium text-zinc-300 whitespace-nowrap">{p.name}</span>
-                  <span className="text-zinc-600">{p.steps.length}s</span>
+                  <span className="font-medium text-[#b0b0b0] whitespace-nowrap">{p.name}</span>
+                  <span className="text-[#606060]">{p.steps.length}s</span>
                 </button>
               </div>
             );

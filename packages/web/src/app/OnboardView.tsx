@@ -47,7 +47,7 @@ export function OnboardView() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">Welcome to {model.project.name}</h1>
-              <p className="text-zinc-500 text-sm">Onboarding guide — everything you need to understand this project</p>
+              <p className="text-[#707070] text-sm">Onboarding guide — everything you need to understand this project</p>
             </div>
           </div>
 
@@ -58,10 +58,10 @@ export function OnboardView() {
               { label: "API Endpoints", value: model.apiEndpoints.length, icon: Globe },
               { label: "Business Processes", value: processes.length, icon: Zap },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-lg bg-zinc-800/30 border border-zinc-800/50 p-3 text-center">
+              <div key={stat.label} className="rounded-lg bg-[#373737] border border-[#404040] p-3 text-center">
                 <stat.icon className="h-4 w-4 text-archlens-500 mx-auto mb-1" />
-                <div className="text-xl font-bold text-zinc-100">{stat.value}</div>
-                <div className="text-[10px] text-zinc-600 uppercase">{stat.label}</div>
+                <div className="text-xl font-bold text-[#e8e8e8]">{stat.value}</div>
+                <div className="text-[10px] text-[#606060] uppercase">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -74,7 +74,7 @@ export function OnboardView() {
           <Layers className="h-5 w-5 text-archlens-500" />
           <h2 className="text-xl font-bold">How is it structured?</h2>
         </div>
-        <p className="text-sm text-zinc-400 mb-6">
+        <p className="text-sm text-[#888888] mb-6">
           The codebase follows a layered architecture. Each layer has a specific responsibility.
           Higher layers (UI) depend on lower layers (data), never the reverse.
         </p>
@@ -101,7 +101,7 @@ export function OnboardView() {
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold capitalize" style={{ color: meta.color }}>{layer} Layer</h3>
                       </div>
-                      <p className="text-xs text-zinc-500 mb-3">{meta.description}</p>
+                      <p className="text-xs text-[#707070] mb-3">{meta.description}</p>
 
                       <div className="flex flex-wrap gap-2">
                         {mods.map((mod) => (
@@ -111,7 +111,7 @@ export function OnboardView() {
                             style={{ borderColor: `${meta.color}20`, backgroundColor: `${meta.color}05` }}
                           >
                             <div className="font-mono text-sm font-semibold" style={{ color: meta.color }}>{mod.name}/</div>
-                            <div className="flex gap-3 text-[10px] text-zinc-600 mt-1">
+                            <div className="flex gap-3 text-[10px] text-[#606060] mt-1">
                               <span>{mod.language}</span>
                               <span>{mod.fileCount} files</span>
                               <span>{mod.lineCount.toLocaleString()} lines</span>
@@ -125,7 +125,7 @@ export function OnboardView() {
 
                 {/* Arrow down */}
                 <div className="flex justify-center py-1">
-                  <div className="w-px h-4 bg-zinc-800" />
+                  <div className="w-px h-4 bg-[#383838]" />
                 </div>
               </div>
             );
@@ -140,7 +140,7 @@ export function OnboardView() {
           <h2 className="text-xl font-bold">How do modules connect?</h2>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-5">
+        <div className="rounded-xl border border-[#404040] bg-[#2f2f2f] p-5">
           <div className="space-y-3">
             {[...depMap.entries()].map(([src, deps]) => {
               const srcMod = model.modules.find((m) => m.name === src);
@@ -150,7 +150,7 @@ export function OnboardView() {
                   <span className="font-mono text-sm font-bold px-2 py-1 rounded-md" style={{ color: srcColor, backgroundColor: `${srcColor}10` }}>
                     {src}
                   </span>
-                  <ArrowRight className="h-4 w-4 text-zinc-700" />
+                  <ArrowRight className="h-4 w-4 text-[#505050]" />
                   <div className="flex gap-2 flex-wrap">
                     {[...deps].map((dep) => {
                       const depMod = model.modules.find((m) => m.name === dep);
@@ -175,7 +175,7 @@ export function OnboardView() {
           <Zap className="h-5 w-5 text-archlens-500" />
           <h2 className="text-xl font-bold">What does it DO?</h2>
         </div>
-        <p className="text-sm text-zinc-400 mb-6">
+        <p className="text-sm text-[#888888] mb-6">
           The system implements {processes.length} core business processes. Each process has data sources, a processing pipeline, and outputs.
         </p>
 
@@ -190,15 +190,15 @@ export function OnboardView() {
             const color = catColors[proc.category] || "#10b981";
 
             return (
-              <div key={proc.id} className="rounded-xl border bg-zinc-900/30 p-5" style={{ borderColor: `${color}20` }}>
+              <div key={proc.id} className="rounded-xl border bg-[#2f2f2f] p-5" style={{ borderColor: `${color}20` }}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                  <h3 className="font-semibold text-zinc-100">{proc.name}</h3>
+                  <h3 className="font-semibold text-[#e8e8e8]">{proc.name}</h3>
                   <span className="text-[10px] rounded-full px-2 py-0.5" style={{ backgroundColor: `${color}15`, color }}>
                     {proc.category}
                   </span>
                 </div>
-                <p className="text-sm text-zinc-400 mb-4">{proc.description}</p>
+                <p className="text-sm text-[#888888] mb-4">{proc.description}</p>
 
                 {/* Mini pipeline */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-2">
@@ -210,7 +210,7 @@ export function OnboardView() {
                     </div>
                   </div>
 
-                  <ArrowRight className="h-3.5 w-3.5 text-zinc-700 flex-shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-[#505050] flex-shrink-0" />
 
                   {/* Steps as compact pills */}
                   {proc.steps.slice(0, 6).map((step, i) => (
@@ -222,7 +222,7 @@ export function OnboardView() {
                     </div>
                   ))}
 
-                  <ArrowRight className="h-3.5 w-3.5 text-zinc-700 flex-shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-[#505050] flex-shrink-0" />
 
                   {/* Outputs */}
                   <div className="flex-shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5">
@@ -248,18 +248,18 @@ export function OnboardView() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {model.dbEntities.map((entity) => (
-              <div key={entity.name} className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
+              <div key={entity.name} className="rounded-xl border border-[#404040] bg-[#2f2f2f] p-4">
                 <h4 className="font-mono font-bold text-emerald-400 mb-2">{entity.name}</h4>
                 <div className="space-y-0.5">
                   {entity.columns.slice(0, 6).map((col) => (
                     <div key={col.name} className="flex items-center gap-2 text-[11px] font-mono">
                       {col.primary && <span className="text-amber-400">PK</span>}
-                      <span className="text-zinc-400">{col.name}</span>
-                      <span className="text-zinc-700 ml-auto">{col.type}</span>
+                      <span className="text-[#888888]">{col.name}</span>
+                      <span className="text-[#505050] ml-auto">{col.type}</span>
                     </div>
                   ))}
                   {entity.columns.length > 6 && (
-                    <div className="text-[10px] text-zinc-600">+{entity.columns.length - 6} more columns</div>
+                    <div className="text-[10px] text-[#606060]">+{entity.columns.length - 6} more columns</div>
                   )}
                 </div>
               </div>
@@ -275,7 +275,7 @@ export function OnboardView() {
           <h2 className="text-xl font-bold">Tech Stack</h2>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-5">
+        <div className="rounded-xl border border-[#404040] bg-[#2f2f2f] p-5">
           {(() => {
             const byCat = new Map<string, typeof model.techRadar>();
             for (const t of model.techRadar) {
@@ -284,12 +284,12 @@ export function OnboardView() {
             }
             return [...byCat.entries()].map(([cat, items]) => (
               <div key={cat} className="mb-4 last:mb-0">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">{cat}</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#707070] mb-2">{cat}</h4>
                 <div className="flex flex-wrap gap-2">
                   {items.map((t) => (
-                    <span key={t.name} className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800/50 border border-zinc-700/50 px-2.5 py-1 text-xs">
-                      <span className="text-zinc-300">{t.name}</span>
-                      {t.version && <span className="text-zinc-600">{t.version}</span>}
+                    <span key={t.name} className="inline-flex items-center gap-1.5 rounded-md bg-[#3a3a3a] border border-zinc-700/50 px-2.5 py-1 text-xs">
+                      <span className="text-[#b0b0b0]">{t.name}</span>
+                      {t.version && <span className="text-[#606060]">{t.version}</span>}
                     </span>
                   ))}
                 </div>
@@ -300,7 +300,7 @@ export function OnboardView() {
       </section>
 
       {/* Footer tip */}
-      <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/20 p-4 text-center text-sm text-zinc-600">
+      <div className="rounded-xl border border-[#404040] bg-[#303030] p-4 text-center text-sm text-[#606060]">
         Use <span className="font-mono text-archlens-500">Business Processes</span> for algorithm details,{" "}
         <span className="font-mono text-archlens-500">Architecture</span> for drill-down exploration
       </div>
