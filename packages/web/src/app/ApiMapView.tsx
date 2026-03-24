@@ -13,7 +13,8 @@ const methodStyle: Record<string, { bg: string; text: string; border: string; ba
 export function ApiMapView() {
   const { model } = useStore();
   const [search, setSearch] = useState("");
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  // All groups expanded by default
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(["__all__"]));
 
   if (!model) return null;
 
@@ -108,7 +109,7 @@ export function ApiMapView() {
       {/* Endpoint Groups */}
       <div className="space-y-3">
         {[...groups.entries()].map(([prefix, endpoints]) => {
-          const isExpanded = expandedGroups.has(prefix) || search.length > 0;
+          const isExpanded = expandedGroups.has("__all__") || expandedGroups.has(prefix) || search.length > 0;
 
           return (
             <div key={prefix} className="rounded-xl border border-[#2a2a3a] overflow-hidden">

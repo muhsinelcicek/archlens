@@ -95,13 +95,17 @@ function traceEndpoint(model: ArchModel | null, method: string, path: string): S
 
 export function SequenceView() {
   const { model } = useStore();
-  const [selectedEndpoint, setSelectedEndpoint] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
   if (!model) return null;
 
   const endpoints = model.apiEndpoints;
+
+  // Auto-select first endpoint
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string | null>(
+    endpoints.length > 0 ? `${endpoints[0].method}:${endpoints[0].path}` : null,
+  );
   const filtered = search
     ? endpoints.filter((ep) => ep.path.toLowerCase().includes(search.toLowerCase()) || ep.method.toLowerCase().includes(search.toLowerCase()))
     : endpoints;
