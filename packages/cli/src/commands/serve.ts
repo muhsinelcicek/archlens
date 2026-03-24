@@ -170,6 +170,48 @@ export const serveCommand = new Command("serve")
         return;
       }
 
+      // ─── File content endpoint ─────────────────────────────
+
+      if (url.pathname === "/api/file") {
+        const filePath = url.searchParams.get("path");
+        if (!filePath) { res.writeHead(400); res.end("Missing path param"); return; }
+
+        // Determine project root
+        let projectRoot = "";
+        if (options.data) {
+          projectRoot = path.dirname(options.data);
+        } else if (registry.length > 0) {
+          // Check if path belongs to a specific project
+          const projectName = url.searchParams.get("project");
+          const project = projectName
+            ? registry.find((p) => p.name === projectName)
+            : registry[0];
+          if (project) projectRoot = project.localPath;
+        }
+
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        const absPath = path.resolve(projectRoot, filePath);
+        // Security: ensure path is within project
+        if (!absPath.startsWith(path.resolve(projectRoot))) {
+          res.writeHead(403); res.end("Forbidden"); return;
+        }
+
+        if (fs.existsSync(absPath)) {
+          const content = fs.readFileSync(absPath, "utf-8");
+          const ext = path.extname(absPath).slice(1);
+          res.writeHead(200, {
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-File-Language": ext,
+            "X-File-Lines": String(content.split("\n").length),
+          });
+          res.end(content);
+        } else {
+          res.writeHead(404); res.end("File not found");
+        }
+        return;
+      }
+
       res.writeHead(404); res.end("Not found");
     });
 

@@ -262,11 +262,136 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
     );
   }
 
-  // Module level — show files
+  // File selected — show code
+  if (selectedId.includes("/") && selectedId.includes(".")) {
+    return <FileCodeViewer filePath={selectedId} model={model} />;
+  }
+
   return (
     <div className="p-4 text-[#5a5a70] text-xs">
       <h3 className="font-mono font-bold text-sm text-[#e4e4ed] mb-2">{selectedId.split("/").pop()}</h3>
       <p className="font-mono text-[10px]">{selectedId}</p>
+    </div>
+  );
+}
+
+// ─── File Code Viewer ────────────────────────────────────────────────
+
+function FileCodeViewer({ filePath, model }: { filePath: string; model: ArchModel }) {
+  const [code, setCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch(`/api/file?path=${encodeURIComponent(filePath)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.text();
+      })
+      .then((text) => { setCode(text); setLoading(false); })
+      .catch((err) => { setError(err.message); setLoading(false); });
+  }, [filePath]);
+
+  // Find symbols in this file for annotations
+  const fileSymbols = Object.entries(model.symbols)
+    .filter(([, s]) => (s as Record<string, unknown>).filePath === filePath)
+    .map(([uid, s]) => {
+      const sym = s as Record<string, unknown>;
+      return { uid, name: sym.name as string, kind: sym.kind as string, startLine: (sym.startLine as number) || 0 };
+    })
+    .sort((a, b) => a.startLine - b.startLine);
+
+  const ext = filePath.split(".").pop() || "";
+  const langNames: Record<string, string> = { cs: "C#", ts: "TypeScript", tsx: "TSX", py: "Python", go: "Go", java: "Java", swift: "Swift", rs: "Rust", js: "JavaScript" };
+  const langColors: Record<string, string> = { cs: "#178600", ts: "#3178c6", tsx: "#3178c6", py: "#3572A5", go: "#00ADD8", java: "#b07219", swift: "#F05138", rs: "#dea584", js: "#f0db4f" };
+
+  // Build line→symbol map for annotations
+  const lineSymbols = new Map<number, { name: string; kind: string }>();
+  for (const sym of fileSymbols) {
+    const line = sym.startLine as number;
+    if (line) lineSymbols.set(line, { name: sym.name as string, kind: sym.kind as string });
+  }
+
+  const kindColors: Record<string, string> = {
+    class: "#fbbf24", function: "#34d399", method: "#34d399", interface: "#a78bfa", enum: "#f59e0b", property: "#64748b",
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* File Header */}
+      <div className="px-4 py-3 border-b border-[#1e1e2a] flex items-center justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <FileCode className="h-4 w-4 flex-shrink-0" style={{ color: langColors[ext] || "#5a5a70" }} />
+            <h3 className="font-mono font-bold text-sm text-[#e4e4ed] truncate">{filePath.split("/").pop()}</h3>
+          </div>
+          <p className="font-mono text-[9px] text-[#5a5a70] mt-0.5 truncate">{filePath}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${langColors[ext] || "#5a5a70"}20`, color: langColors[ext] || "#5a5a70" }}>
+            {langNames[ext] || ext}
+          </span>
+          {code && <span className="text-[9px] text-[#5a5a70]">{code.split("\n").length}L</span>}
+        </div>
+      </div>
+
+      {/* Symbols bar */}
+      {fileSymbols.length > 0 && (
+        <div className="px-3 py-2 border-b border-[#1e1e2a] flex flex-wrap gap-1">
+          {fileSymbols.slice(0, 12).map((sym) => (
+            <span key={sym.uid} className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: `${kindColors[sym.kind] || "#5a5a70"}15`, color: kindColors[sym.kind] || "#5a5a70" }}>
+              {sym.name.split(".").pop()}
+            </span>
+          ))}
+          {fileSymbols.length > 12 && <span className="text-[9px] text-[#5a5a70]">+{fileSymbols.length - 12}</span>}
+        </div>
+      )}
+
+      {/* Code */}
+      <div className="flex-1 overflow-auto">
+        {loading && (
+          <div className="flex items-center justify-center h-32 text-[#5a5a70] text-xs">Loading...</div>
+        )}
+        {error && (
+          <div className="p-4 text-[#5a5a70] text-xs">
+            <p>Could not load file content</p>
+            <p className="text-[9px] mt-1">Make sure the server has access to the source files</p>
+          </div>
+        )}
+        {code && (
+          <div className="font-mono text-[11px] leading-[18px]">
+            {code.split("\n").map((line, i) => {
+              const lineNum = i + 1;
+              const sym = lineSymbols.get(lineNum);
+              const hasSymbol = !!sym;
+
+              return (
+                <div
+                  key={i}
+                  className={`flex hover:bg-hover/30 ${hasSymbol ? "bg-archlens-500/5" : ""}`}
+                >
+                  {/* Line number */}
+                  <div className="w-10 flex-shrink-0 text-right pr-3 select-none text-[#5a5a70] text-[10px]" style={{ lineHeight: "18px" }}>
+                    {lineNum}
+                  </div>
+                  {/* Symbol marker */}
+                  <div className="w-2 flex-shrink-0 flex items-center">
+                    {hasSymbol && (
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: kindColors[sym!.kind] || "#5a5a70" }} title={`${sym!.kind}: ${sym!.name}`} />
+                    )}
+                  </div>
+                  {/* Code line */}
+                  <pre className="flex-1 text-[#8888a0] overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }}>
+                    {line || " "}
+                  </pre>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
