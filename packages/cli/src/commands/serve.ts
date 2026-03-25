@@ -3,6 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import http from "node:http";
 import chalk from "chalk";
+import { QualityAnalyzer } from "@archlens/core";
 
 const ARCHLENS_HOME = path.join(process.env.HOME || "~", ".archlens");
 const REGISTRY_PATH = path.join(ARCHLENS_HOME, "registry.json");
@@ -166,6 +167,30 @@ export const serveCommand = new Command("serve")
         } else {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end("{}");
+        }
+        return;
+      }
+
+      // ─── Quality report endpoint ─────────────────────────────
+
+      if (url.pathname === "/api/quality") {
+        let modelData: any = singleModel;
+        if (!modelData && registry.length > 0) {
+          const first = registry[0];
+          const mp = path.join(first.localPath, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+        if (modelData) {
+          // Convert symbols to Map for analyzer
+          if (!(modelData.symbols instanceof Map)) {
+            modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+          }
+          const analyzer = new QualityAnalyzer(modelData);
+          const report = analyzer.analyze();
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(report));
+        } else {
+          res.writeHead(404); res.end("No model");
         }
         return;
       }

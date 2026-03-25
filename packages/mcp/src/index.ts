@@ -5,7 +5,7 @@ import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 import type { ArchitectureModel, BusinessProcessInfo } from "@archlens/core";
-import { GitDiffer, SequenceTracer } from "@archlens/core";
+import { GitDiffer, SequenceTracer, QualityAnalyzer } from "@archlens/core";
 
 // ─── Load Model ──────────────────────────────────────────────────────
 
@@ -750,6 +750,64 @@ server.tool(
 
     lines.push(`No module or symbol found matching "${target}".`);
     lines.push("\nAvailable modules: " + model.modules.map((m) => m.name).join(", "));
+
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+  },
+);
+
+// ─── Tool: archlens_quality ───────────────────────────────────────────
+
+server.tool(
+  "archlens_quality",
+  "Analyze code quality, architecture patterns (DDD, Clean Architecture, SOLID, Repository, CQRS), naming conventions, complexity, and best practices. Returns issues with severity and suggestions.",
+  {
+    module: z.string().optional().describe("Specific module to analyze. Omit for full project."),
+    category: z.string().optional().describe("Filter by category: naming, complexity, code-smell, type-safety, ddd, clean-architecture, solid, pattern"),
+  },
+  async ({ module: moduleName, category }) => {
+    const result = findAndLoadModel();
+    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found." }] };
+    const { model } = result;
+
+    const analyzer = new QualityAnalyzer(model);
+    const report = analyzer.analyze();
+
+    const lines: string[] = [];
+    lines.push(`# Code Quality Report — Score: ${report.projectScore}/100\n`);
+    lines.push(`Total issues: ${report.totalIssues} (Critical: ${report.bySeverity.critical || 0}, Major: ${report.bySeverity.major || 0}, Minor: ${report.bySeverity.minor || 0})\n`);
+
+    // Architecture Patterns
+    lines.push("## Architecture Patterns\n");
+    for (const pat of report.architecturePatterns) {
+      const emoji = pat.compliance >= 80 ? "✅" : pat.compliance >= 50 ? "⚠️" : pat.compliance > 0 ? "❌" : "➖";
+      lines.push(`${emoji} **${pat.pattern}** — ${pat.detected ? "Detected" : "Not detected"} — Compliance: ${pat.compliance}%`);
+      for (const v of pat.violations) lines.push(`  - ❌ ${v}`);
+      for (const r of pat.recommendations) lines.push(`  - 💡 ${r}`);
+      lines.push("");
+    }
+
+    // Module scores
+    const targetModules = moduleName
+      ? report.modules.filter((m) => m.moduleName.toLowerCase().includes(moduleName.toLowerCase()))
+      : report.modules;
+
+    lines.push("## Module Quality\n");
+    for (const mod of targetModules.sort((a, b) => a.score - b.score)) {
+      lines.push(`### ${mod.moduleName}/ — Score: ${mod.score}/100`);
+      lines.push(`Symbols: ${mod.metrics.totalSymbols} | God Classes: ${mod.metrics.godClasses} | Naming: ${mod.metrics.namingViolations} | Pattern: ${mod.metrics.patternViolations}\n`);
+
+      const issues = category
+        ? mod.issues.filter((i) => i.category === category)
+        : mod.issues;
+
+      for (const issue of issues.slice(0, 10)) {
+        const icon = issue.severity === "critical" ? "🔴" : issue.severity === "major" ? "🟠" : issue.severity === "minor" ? "🟡" : "🔵";
+        lines.push(`${icon} **${issue.rule}**: ${issue.message}`);
+        if (issue.suggestion) lines.push(`   💡 ${issue.suggestion}`);
+      }
+      if (issues.length > 10) lines.push(`   ... and ${issues.length - 10} more issues`);
+      lines.push("");
+    }
 
     return { content: [{ type: "text" as const, text: lines.join("\n") }] };
   },

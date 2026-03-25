@@ -6,5 +6,7 @@ export { ModuleResolver } from "./module-resolver.js";
 export { GitDiffer } from "./git-differ.js";
 export { IncrementalCache } from "./incremental-cache.js";
 export { SequenceTracer } from "./sequence-tracer.js";
+export { QualityAnalyzer } from "./quality-analyzer.js";
+export type { QualityReport, QualityIssue, ModuleQuality, PatternAnalysis, Severity, IssueCategory } from "./quality-analyzer.js";
 export type { SequenceDiagram, SequenceStep } from "./sequence-tracer.js";
 export type { DriftReport, ChangedFile, SymbolChange, DependencyChange, LayerViolation } from "./git-differ.js";
