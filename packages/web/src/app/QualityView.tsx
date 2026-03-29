@@ -43,13 +43,18 @@ export function QualityView() {
   const navigate = useNavigate();
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
+  const [deepPatterns, setDeepPatterns] = useState<any[] | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/quality")
-      .then((r) => r.json())
-      .then((d) => { setReport(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch("/api/quality").then((r) => r.ok ? r.json() : null),
+      fetch("/api/patterns").then((r) => r.ok ? r.json() : null),
+    ]).then(([q, p]) => {
+      if (q) setReport(q);
+      if (p) setDeepPatterns(p);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="flex items-center justify-center h-64 text-[#5a5a70]">Analyzing code quality...</div>;
@@ -93,46 +98,85 @@ export function QualityView() {
         })}
       </div>
 
-      {/* Architecture Patterns */}
+      {/* Architecture Patterns — Deep Analysis */}
       <section>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Layers className="h-5 w-5 text-archlens-400" /> Architecture Patterns</h3>
-        <div className="space-y-2">
-          {report.architecturePatterns.map((pat) => {
-            const isExpanded = expandedPattern === pat.pattern;
-            const compColor = pat.compliance >= 80 ? "#34d399" : pat.compliance >= 50 ? "#fbbf24" : pat.compliance > 0 ? "#f97316" : "#5a5a70";
+        <div className="space-y-3">
+          {(deepPatterns || report.architecturePatterns.map((p) => ({ ...p, id: p.pattern, status: p.compliance >= 80 ? "excellent" : p.compliance >= 50 ? "good" : "partial", summary: "", evidence: [], relatedPatterns: [] }))).map((pat: any) => {
+            const isExpanded = expandedPattern === pat.id;
+            const statusColors: Record<string, string> = { excellent: "#34d399", good: "#60a5fa", partial: "#fbbf24", poor: "#ef4444", "not-detected": "#5a5a70" };
+            const sc = statusColors[pat.status] || "#5a5a70";
+            const evidence = pat.evidence || [];
+            const violations = pat.violations || [];
+
             return (
-              <div key={pat.pattern} className="rounded-xl border border-[#2a2a3a] overflow-hidden">
-                <button onClick={() => setExpandedPattern(isExpanded ? null : pat.pattern)} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-hover transition-colors text-left">
+              <div key={pat.id} className="rounded-xl border overflow-hidden" style={{ borderColor: isExpanded ? `${sc}40` : "#2a2a3a" }}>
+                <button onClick={() => setExpandedPattern(isExpanded ? null : pat.id)} className="w-full flex items-center gap-3 px-5 py-4 hover:bg-hover transition-colors text-left">
                   {isExpanded ? <ChevronDown className="h-4 w-4 text-[#5a5a70]" /> : <ChevronRight className="h-4 w-4 text-[#5a5a70]" />}
-                  <span className="font-semibold text-sm text-[#e4e4ed] flex-1">{pat.pattern}</span>
-                  {pat.detected ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-archlens-500/10 text-archlens-300">Detected</span>
-                  ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1e1e2a] text-[#5a5a70]">Not detected</span>
-                  )}
-                  <div className="flex items-center gap-2 w-24">
+                  <span className="font-semibold text-[#e4e4ed] flex-1">{pat.pattern}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full capitalize" style={{ backgroundColor: `${sc}15`, color: sc }}>{pat.status}</span>
+                  <div className="flex items-center gap-2 w-28">
                     <div className="flex-1 h-2 rounded-full bg-[#1e1e2a] overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pat.compliance}%`, backgroundColor: compColor }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pat.compliance}%`, backgroundColor: sc }} />
                     </div>
-                    <span className="text-xs font-bold w-8 text-right" style={{ color: compColor }}>{pat.compliance}%</span>
+                    <span className="text-xs font-bold w-8 text-right" style={{ color: sc }}>{pat.compliance}%</span>
                   </div>
                 </button>
+
                 {isExpanded && (
-                  <div className="px-5 py-3 border-t border-[#2a2a3a] bg-surface">
-                    {pat.violations.length > 0 && (
-                      <div className="mb-3">
-                        <div className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-1">Violations</div>
-                        {pat.violations.map((v, i) => (
-                          <div key={i} className="flex items-start gap-2 text-xs text-red-400 py-0.5">
-                            <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> {v}
+                  <div className="border-t border-[#2a2a3a]">
+                    {/* Summary */}
+                    <div className="px-5 py-3 bg-deep">
+                      <p className="text-sm text-[#8888a0]">{pat.summary}</p>
+                      {pat.relatedPatterns?.length > 0 && (
+                        <div className="flex gap-1.5 mt-2">
+                          {pat.relatedPatterns.map((rp: string) => <span key={rp} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70]">{rp}</span>)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Evidence */}
+                    {evidence.length > 0 && (
+                      <div className="px-5 py-3 border-t border-[#1e1e2a]">
+                        <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-2">Evidence ({evidence.length})</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                          {evidence.slice(0, 12).map((e: any, i: number) => {
+                            const typeColors: Record<string, string> = { aggregate: "#fbbf24", "value-object": "#a78bfa", "domain-event": "#f472b6", entity: "#34d399", repository: "#60a5fa", interface: "#06b6d4", command: "#f97316", query: "#60a5fa", handler: "#34d399", service: "#8888a0", event: "#f472b6", controller: "#60a5fa" };
+                            const tc = typeColors[e.type] || "#5a5a70";
+                            return (
+                              <div key={i} className="flex items-center gap-2 rounded-lg bg-[#1e1e2a] px-2.5 py-1.5">
+                                <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold" style={{ backgroundColor: `${tc}15`, color: tc }}>{e.type}</span>
+                                <span className="text-[10px] font-mono text-[#e4e4ed] truncate">{e.name}</span>
+                                {e.details && <span className="text-[9px] text-[#5a5a70] ml-auto truncate max-w-[120px]">{e.details}</span>}
+                              </div>
+                            );
+                          })}
+                          {evidence.length > 12 && <div className="text-[9px] text-[#5a5a70] px-2">+{evidence.length - 12} more</div>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Violations */}
+                    {violations.length > 0 && (
+                      <div className="px-5 py-3 border-t border-[#1e1e2a]">
+                        <div className="text-[9px] uppercase font-semibold text-red-400 mb-2">Violations ({violations.length})</div>
+                        {violations.map((v: any, i: number) => (
+                          <div key={i} className="flex items-start gap-2 text-xs py-1">
+                            <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0 text-red-400" />
+                            <div>
+                              <span className="text-red-300">{v.message}</span>
+                              {v.fix && <div className="text-[10px] text-amber-500 mt-0.5 flex items-center gap-1"><Lightbulb className="h-3 w-3" /> {v.fix}</div>}
+                            </div>
                           </div>
                         ))}
                       </div>
                     )}
-                    {pat.recommendations.length > 0 && (
-                      <div>
-                        <div className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-1">Recommendations</div>
-                        {pat.recommendations.map((r, i) => (
+
+                    {/* Recommendations */}
+                    {(pat.recommendations || []).length > 0 && (
+                      <div className="px-5 py-3 border-t border-[#1e1e2a]">
+                        <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-2">Recommendations</div>
+                        {pat.recommendations.map((r: string, i: number) => (
                           <div key={i} className="flex items-start gap-2 text-xs text-[#8888a0] py-0.5">
                             <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" /> {r}
                           </div>
