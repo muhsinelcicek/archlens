@@ -12,5 +12,7 @@ export { DeadCodeDetector } from "./dead-code-detector.js";
 export type { DeadCodeReport, DeadCodeItem } from "./dead-code-detector.js";
 export { SecurityScanner } from "./security-scanner.js";
 export type { SecurityReport, SecurityIssue } from "./security-scanner.js";
+export { HotspotAnalyzer } from "./hotspot-analyzer.js";
+export type { HotspotReport, Hotspot } from "./hotspot-analyzer.js";
 export type { SequenceDiagram, SequenceStep } from "./sequence-tracer.js";
 export type { DriftReport, ChangedFile, SymbolChange, DependencyChange, LayerViolation } from "./git-differ.js";
