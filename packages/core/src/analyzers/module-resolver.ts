@@ -109,6 +109,11 @@ export class ModuleResolver {
       return this.resolvePythonImport(modulePath, fromFile);
     }
 
+    // C# namespace imports
+    if (this.isCSharpFile(fromFile)) {
+      return this.resolveCSharpImport(modulePath, fromFile);
+    }
+
     // TypeScript/JavaScript
     return this.resolveTypeScriptImport(modulePath, fromFile);
   }
@@ -239,6 +244,35 @@ export class ModuleResolver {
     return null;
   }
 
+  // ─── C# Resolution ─────────────────────────────────────────────
+
+  private resolveCSharpImport(modulePath: string, fromFile: string): string | null {
+    // C# uses namespace-based imports: "using eShop.Ordering.Domain.AggregatesModel"
+    // Strategy: match the last segment(s) of the namespace to class/file names
+    const segments = modulePath.split(".");
+    const lastName = segments[segments.length - 1];
+
+    // Try exact class name match across all files
+    for (const [uid, sym] of this.symbols) {
+      if (sym.name === lastName && sym.filePath !== fromFile) {
+        return sym.filePath;
+      }
+    }
+
+    // Try namespace → directory mapping
+    // "eShop.Ordering.Domain.AggregatesModel" → look for files in paths containing "Ordering.Domain/AggregatesModel" or "Ordering/Domain/AggregatesModel"
+    const namespaceParts = segments.slice(-3); // last 3 segments
+    for (const candidate of this.fileIndex.keys()) {
+      const candidateLower = candidate.toLowerCase().replace(/\\/g, "/");
+      const matchParts = namespaceParts.filter((p) => candidateLower.includes(p.toLowerCase()));
+      if (matchParts.length >= 2) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────
 
   private buildFileIndex(): void {
@@ -289,6 +323,18 @@ export class ModuleResolver {
   }
 
   private isExternalPackage(modulePath: string, fromFile: string): boolean {
+    // C#: Microsoft.*, System.*, third-party namespaces
+    if (this.isCSharpFile(fromFile)) {
+      const first = modulePath.split(".")[0];
+      if (["System", "Microsoft", "Newtonsoft", "AutoMapper", "FluentValidation", "MediatR", "Serilog", "Polly", "Grpc", "Google", "NUnit", "Xunit", "Moq"].includes(first)) return true;
+      // Check if any project file matches this namespace
+      for (const file of this.files) {
+        const rel = path.relative(this.rootDir, file);
+        if (rel.endsWith(".cs") && modulePath.split(".").some((seg) => rel.includes(seg))) return false;
+      }
+      return true; // Assume external if no match
+    }
+
     // Python: check if first segment is a known project directory
     if (this.isPythonFile(fromFile)) {
       if (modulePath.startsWith(".")) return false; // relative
@@ -324,5 +370,9 @@ export class ModuleResolver {
 
   private isPythonFile(filePath: string): boolean {
     return filePath.endsWith(".py");
+  }
+
+  private isCSharpFile(filePath: string): boolean {
+    return filePath.endsWith(".cs");
   }
 }
