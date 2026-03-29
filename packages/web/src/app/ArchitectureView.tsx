@@ -3,6 +3,8 @@ import { useStore, type ArchModel } from "../lib/store.js";
 import { SigmaGraph, type SigmaGraphHandle, type GraphNode, type GraphEdge, type ImpactResult, type NodeQualityData } from "../components/SigmaGraph.js";
 import { DependencyMatrix } from "../components/DependencyMatrix.js";
 import { FeatureTracer } from "../components/FeatureTracer.js";
+import { ArchHealthBand } from "../components/ArchHealthBand.js";
+import { SmartInsights } from "../components/SmartInsights.js";
 import {
   ChevronRight, ChevronDown, ArrowLeft, Search, Code2, GitBranch,
   Box, Braces, FunctionSquare, FileCode, Eye, Layers, Zap,
@@ -449,6 +451,7 @@ export function ArchitectureView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [bottomTab, setBottomTab] = useState<"trace" | "matrix">("trace");
   const [showQualityAlerts, setShowQualityAlerts] = useState(false);
+  const [leftTab, setLeftTab] = useState<"insights" | "files">("insights");
   const [qualityData, setQualityData] = useState<NodeQualityData | null>(null);
 
   // Fetch quality data on mount
@@ -573,9 +576,27 @@ export function ArchitectureView() {
   }
 
   return (
-    <div className="flex h-full">
-      {/* ── LEFT: File Tree Navigator ── */}
+    <div className="flex flex-col h-full">
+      {/* ── TOP: Health Band ── */}
+      <ArchHealthBand model={model} />
+
+      <div className="flex flex-1 min-h-0">
+      {/* ── LEFT: Smart Insights + File Tree ── */}
       <aside className="w-64 border-r border-[#1e1e2a] bg-surface flex flex-col overflow-hidden">
+        {/* Tab switcher */}
+        <div className="flex border-b border-[#1e1e2a]">
+          <button onClick={() => setLeftTab("insights")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+            <Zap className="h-3 w-3 inline mr-1" />Insights
+          </button>
+          <button onClick={() => setLeftTab("files")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "files" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+            <FileCode className="h-3 w-3 inline mr-1" />Files
+          </button>
+        </div>
+
+        {leftTab === "insights" ? (
+          <SmartInsights model={model} onModuleSelect={(name) => { setSelectedNode(name); graphRef.current?.selectNode(name); }} />
+        ) : (
+        <>
         <div className="p-2 border-b border-[#1e1e2a]">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#5a5a70]" />
@@ -667,6 +688,8 @@ export function ArchitectureView() {
         <div className="px-3 py-2 border-t border-[#1e1e2a] text-[9px] text-[#5a5a70]">
           {model.modules.length} modules · {model.stats.files} files
         </div>
+        </>
+        )}
       </aside>
 
       {/* ── CENTER ── */}
@@ -762,6 +785,7 @@ export function ArchitectureView() {
           </div>
         )}
       </aside>
+    </div>
     </div>
   );
 }
