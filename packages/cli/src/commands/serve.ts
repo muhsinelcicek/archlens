@@ -69,15 +69,18 @@ export const serveCommand = new Command("serve")
           stats: p.stats,
         }));
 
-        // If single-mode, add that too
+        // If single-mode, add that too (but skip if already in registry)
         if (singleModel) {
           const m = singleModel as { project?: { name?: string }; stats?: Record<string, unknown> };
+          const singleName = m.project?.name || "local";
+          if (!projects.some((p) => p.name === singleName)) {
           projects.unshift({
-            name: m.project?.name || "local",
+            name: singleName,
             repoUrl: "local",
             analyzedAt: new Date().toISOString(),
             stats: (m.stats || {}) as ProjectEntry["stats"],
           });
+          }
         }
 
         res.writeHead(200, { "Content-Type": "application/json" });
