@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import http from "node:http";
 import chalk from "chalk";
-import { QualityAnalyzer, DeadCodeDetector, SecurityScanner } from "@archlens/core";
+import { QualityAnalyzer, DeadCodeDetector, SecurityScanner, TechDebtCalculator, EventFlowDetector } from "@archlens/core";
 
 const ARCHLENS_HOME = path.join(process.env.HOME || "~", ".archlens");
 const REGISTRY_PATH = path.join(ARCHLENS_HOME, "registry.json");
@@ -233,6 +233,40 @@ export const serveCommand = new Command("serve")
           const scanner = new SecurityScanner(modelData, projectRoot);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(scanner.scan()));
+        } else { res.writeHead(404); res.end("No model"); }
+        return;
+      }
+
+      // ─── Tech debt endpoint ─────────────────────────────────
+
+      if (url.pathname === "/api/techdebt") {
+        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
+        if (!modelData && registry.length > 0) {
+          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+        if (modelData) {
+          if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+          const calc = new TechDebtCalculator(modelData);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(calc.calculate()));
+        } else { res.writeHead(404); res.end("No model"); }
+        return;
+      }
+
+      // ─── Event flow endpoint ──────────────────────────────────
+
+      if (url.pathname === "/api/eventflow") {
+        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
+        if (!modelData && registry.length > 0) {
+          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+        if (modelData) {
+          if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+          const detector = new EventFlowDetector(modelData);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(detector.detect()));
         } else { res.writeHead(404); res.end("No model"); }
         return;
       }

@@ -3,7 +3,7 @@ import { Outlet, NavLink } from "react-router-dom";
 import { useStore } from "../lib/store.js";
 import {
   LayoutDashboard, Network, Database, GitBranch, Boxes, Cpu,
-  Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings,
+  Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
 import { GlobalSearch } from "../components/GlobalSearch.js";
@@ -19,6 +19,8 @@ const navItems = [
   { to: "/diagram/tech-radar", icon: Cpu, label: "Tech Radar" },
   { to: "/onboard", icon: Rocket, label: "Onboarding" },
   { to: "/quality", icon: ShieldAlert, label: "Code Quality" },
+  { to: "/techdebt", icon: DollarSign, label: "Tech Debt" },
+  { to: "/eventflow", icon: MessageSquare, label: "Event Flow" },
   { to: "/drift", icon: ShieldCheck, label: "Health Check" },
   { to: "/modules", icon: Boxes, label: "Modules" },
   { to: "/settings", icon: Settings, label: "Settings" },

@@ -13,6 +13,8 @@ import { OnboardView } from "./app/OnboardView.js";
 import { DriftView } from "./app/DriftView.js";
 import { SettingsView } from "./app/SettingsView.js";
 import { QualityView } from "./app/QualityView.js";
+import { TechDebtView } from "./app/TechDebtView.js";
+import { EventFlowView } from "./app/EventFlowView.js";
 import { initTheme } from "./lib/theme.js";
 import "./index.css";
 
@@ -33,6 +35,8 @@ createRoot(document.getElementById("root")!).render(
           <Route path="drift" element={<DriftView />} />
           <Route path="modules" element={<ModulesView />} />
           <Route path="quality" element={<QualityView />} />
+          <Route path="techdebt" element={<TechDebtView />} />
+          <Route path="eventflow" element={<EventFlowView />} />
           <Route path="settings" element={<SettingsView />} />
           <Route path="endpoints" element={<ApiMapView />} />
         </Route>
