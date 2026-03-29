@@ -127,7 +127,7 @@ export class CSharpParser extends BaseParser {
 
     // Class-level route
     const routeAttr = attributes.find((a) => a.includes("[Route(") || a.includes("[ApiController]"));
-    const classRoute = this.extractRouteFromAttribute(attributes);
+    const classRoute = this.extractRouteFromAttribute(attributes, name);
 
     symbols.push({
       uid,
@@ -253,7 +253,15 @@ export class CSharpParser extends BaseParser {
         if (attr.startsWith(prefix)) {
           const pathMatch = attr.match(/\("([^"]+)"\)/);
           const methodPath = pathMatch ? pathMatch[1] : "";
-          const fullPath = (classRoute + "/" + methodPath).replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+          let fullPath = (classRoute + "/" + methodPath).replace(/\/+/g, "/").replace(/\/$/, "");
+          // Resolve {action} placeholder
+          fullPath = fullPath.replace("{action}", name?.toLowerCase() || "");
+          // Fallback: if path is empty, derive from controller+method name
+          if (!fullPath || fullPath === "/") {
+            const controllerPart = className.replace(/Controller$/, "").toLowerCase();
+            const methodPart = name?.toLowerCase() || "index";
+            fullPath = `/${controllerPart}/${methodPart}`;
+          }
 
           apiEndpoints.push({
             method: method as ApiEndpoint["method"],
@@ -367,10 +375,22 @@ export class CSharpParser extends BaseParser {
     return attrs;
   }
 
-  private extractRouteFromAttribute(attrs: string[]): string {
+  private extractRouteFromAttribute(attrs: string[], className?: string): string {
     for (const attr of attrs) {
-      const routeMatch = attr.match(/\[Route\("([^"]+)"\)\]/);
-      if (routeMatch) return routeMatch[1].replace("[controller]", "").replace("[action]", "");
+      const routeMatch = attr.match(/\[Route\("([^"]+)"\)/);
+      if (routeMatch) {
+        let route = routeMatch[1];
+        // Resolve ASP.NET convention placeholders
+        const controllerName = (className || "").replace(/Controller$/, "");
+        route = route.replace("[controller]", controllerName.toLowerCase());
+        route = route.replace("[action]", "{action}");
+        return route;
+      }
+    }
+    // Check for [ApiController] + class name convention
+    if (attrs.some((a) => a.includes("ApiController")) && className) {
+      const controllerName = className.replace(/Controller$/, "");
+      return `/api/${controllerName.toLowerCase()}`;
     }
     return "";
   }
