@@ -145,6 +145,17 @@ export class ProjectScanner {
       allImports.push(...result.imports);
     }
 
+    // 3.5 Deduplicate DB entities — keep the one with most columns
+    const entityMap = new Map<string, typeof dbEntities[0]>();
+    for (const ent of dbEntities) {
+      const existing = entityMap.get(ent.name);
+      if (!existing || ent.columns.length > existing.columns.length) {
+        entityMap.set(ent.name, ent);
+      }
+    }
+    dbEntities.length = 0;
+    dbEntities.push(...entityMap.values());
+
     // 4. Resolve import relations (using proper module resolver)
     const resolver = new ModuleResolver(rootDir, files, symbols);
     const importRelations = resolver.resolve(allImports);

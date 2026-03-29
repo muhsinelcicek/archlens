@@ -19,6 +19,50 @@ export class CSharpParser extends BaseParser {
     const imports: ImportInfo[] = [];
 
     this.walkNode(tree.rootNode, filePath, symbols, relations, imports, apiEndpoints, dbEntities);
+
+    // Post-process: find entity classes by inheritance or attributes
+    // (DbSet only captures names — we need columns from the actual class)
+    for (const sym of symbols) {
+      if (sym.kind !== "class") continue;
+      const isEntity = sym.extends?.some((e) => ["Entity", "BaseEntity", "AggregateRoot", "IAggregateRoot", "ValueObject"].includes(e))
+        || sym.annotations?.some((a) => a.includes("Table") || a.includes("Entity"));
+      const isDbSetEntity = dbEntities.some((e) => e.name === sym.name);
+
+      if (isEntity || isDbSetEntity) {
+        // Extract properties as columns
+        const columns: DbEntity["columns"] = [];
+        for (const propSym of symbols) {
+          if (propSym.kind !== "property") continue;
+          if (!propSym.name.startsWith(sym.name + ".")) continue;
+          const propName = propSym.name.split(".").pop() || "";
+          // Skip navigation properties (collections, complex types)
+          if (propName.startsWith("_")) continue;
+          const isPk = propName === "Id" || propName === sym.name + "Id" || propSym.annotations?.some((a) => a.includes("Key"));
+          columns.push({
+            name: propName,
+            type: propSym.returnType || "unknown",
+            primary: isPk,
+            nullable: true,
+          });
+        }
+
+        // Update existing or add new entity
+        const existing = dbEntities.find((e) => e.name === sym.name);
+        if (existing) {
+          existing.columns = columns;
+          existing.filePath = filePath;
+        } else if (columns.length > 0) {
+          dbEntities.push({
+            name: sym.name,
+            tableName: sym.name.toLowerCase() + "s",
+            filePath,
+            columns,
+            relations: [],
+          });
+        }
+      }
+    }
+
     return { symbols, relations, apiEndpoints, dbEntities, imports };
   }
 
@@ -290,6 +334,11 @@ export class CSharpParser extends BaseParser {
 
     const fullName = `${className}.${name}`;
     const uid = this.makeUid(filePath, fullName, "property");
+    const propType = node.children.find((c) =>
+      c.type === "predefined_type" || c.type === "nullable_type" || c.type === "generic_name" ||
+      (c.type === "identifier" && c.text !== name && c.text !== "get" && c.text !== "set"),
+    )?.text;
+    const attributes = this.getAttributes(node);
 
     symbols.push({
       uid,
@@ -300,6 +349,8 @@ export class CSharpParser extends BaseParser {
       kind: "property",
       language: "csharp",
       visibility: this.getVisibility(node),
+      returnType: propType,
+      annotations: attributes.length > 0 ? attributes : undefined,
     });
 
     relations.push({ source: classUid, target: uid, type: "composes" });
