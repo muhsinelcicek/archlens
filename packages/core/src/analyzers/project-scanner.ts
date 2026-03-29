@@ -499,12 +499,6 @@ export class ProjectScanner {
       } catch { /* skip */ }
     }
 
-    // Dockerfile
-    const dockerfilePath = path.join(rootDir, "Dockerfile");
-    if (fs.existsSync(dockerfilePath)) {
-      entries.push({ name: "Docker", category: "tool", ring: "adopt", source: "Dockerfile" });
-    }
-
     // go.mod (Go)
     const goModPath = path.join(rootDir, "go.mod");
     if (fs.existsSync(goModPath)) {
@@ -542,7 +536,45 @@ export class ProjectScanner {
       }
     }
 
+    // *.csproj (NuGet packages for .NET)
+    try {
+      const csprojFiles = fg.sync("**/*.csproj", { cwd: rootDir, absolute: true, ignore: ["**/node_modules/**", "**/bin/**", "**/obj/**"] });
+      const nugetPackages = new Map<string, string>();
+      for (const csproj of csprojFiles.slice(0, 20)) {
+        try {
+          const content = fs.readFileSync(csproj, "utf-8");
+          const pkgRefs = content.matchAll(/<PackageReference\s+Include="([^"]+)"(?:\s+Version="([^"]+)")?/gi);
+          for (const match of pkgRefs) {
+            if (!nugetPackages.has(match[1])) nugetPackages.set(match[1], match[2] || "");
+          }
+        } catch { /* skip */ }
+      }
+      if (nugetPackages.size > 0 && !entries.some((e) => e.source === ".csproj")) {
+        entries.push({ name: ".NET", category: "framework", ring: "adopt", source: ".csproj" });
+      }
+      for (const [name, version] of nugetPackages) {
+        const category = this.categorizeNuget(name);
+        entries.push({ name, version: version || undefined, category, ring: "adopt", source: ".csproj" });
+      }
+    } catch { /* skip */ }
+
+    // Dockerfile
+    const dockerfilePath = path.join(rootDir, "Dockerfile");
+    if (fs.existsSync(dockerfilePath)) {
+      entries.push({ name: "Docker", category: "tool", ring: "adopt", source: "Dockerfile" });
+    }
+
     return entries;
+  }
+
+  private categorizeNuget(name: string): TechEntry["category"] {
+    const n = name.toLowerCase();
+    if (n.includes("entityframework") || n.includes("npgsql") || n.includes("sqlclient") || n.includes("redis")) return "database";
+    if (n.includes("aspnetcore") || n.includes("blazor") || n.includes("grpc") || n.includes("signalr")) return "framework";
+    if (n.includes("serilog") || n.includes("nlog") || n.includes("xunit") || n.includes("nunit") || n.includes("moq") || n.includes("coverlet")) return "tool";
+    if (n.includes("identity") || n.includes("authentication") || n.includes("authorization")) return "framework";
+    if (n.includes("rabbitmq") || n.includes("masstransit") || n.includes("mediatr")) return "library";
+    return "library";
   }
 
   private categorizeDep(name: string): TechEntry["category"] {
