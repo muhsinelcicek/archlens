@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import http from "node:http";
 import chalk from "chalk";
-import { QualityAnalyzer } from "@archlens/core";
+import { QualityAnalyzer, DeadCodeDetector, SecurityScanner } from "@archlens/core";
 
 const ARCHLENS_HOME = path.join(process.env.HOME || "~", ".archlens");
 const REGISTRY_PATH = path.join(ARCHLENS_HOME, "registry.json");
@@ -192,6 +192,45 @@ export const serveCommand = new Command("serve")
         } else {
           res.writeHead(404); res.end("No model");
         }
+        return;
+      }
+
+      // ─── Dead code endpoint ──────────────────────────────────
+
+      if (url.pathname === "/api/deadcode") {
+        let modelData: any = singleModel;
+        if (!modelData && registry.length > 0) {
+          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+        if (modelData) {
+          if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+          const detector = new DeadCodeDetector(modelData);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(detector.detect()));
+        } else { res.writeHead(404); res.end("No model"); }
+        return;
+      }
+
+      // ─── Security scan endpoint ───────────────────────────────
+
+      if (url.pathname === "/api/security") {
+        let modelData: any = singleModel;
+        let projectRoot = "";
+        if (options.data) {
+          projectRoot = path.dirname(options.data);
+          if (!modelData) { const mp = path.join(options.data, "model.json"); if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8")); }
+        } else if (registry.length > 0) {
+          projectRoot = registry[0].localPath;
+          const mp = path.join(projectRoot, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+        if (modelData && projectRoot) {
+          if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+          const scanner = new SecurityScanner(modelData, projectRoot);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(scanner.scan()));
+        } else { res.writeHead(404); res.end("No model"); }
         return;
       }
 
