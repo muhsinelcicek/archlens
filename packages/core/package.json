@@ -2,9 +2,18 @@
   "name": "@archlens/core",
   "version": "0.1.0",
   "description": "Core parsing and architecture analysis engine",
-  "publishConfig": { "access": "public" },
-  "files": ["dist"],
-  "keywords": ["architecture", "code-analysis", "tree-sitter", "parser"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "architecture",
+    "code-analysis",
+    "tree-sitter",
+    "parser"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -38,6 +47,6 @@
   "devDependencies": {
     "@types/node": "^25.5.0",
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.2.4"
   }
 }
