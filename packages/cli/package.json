@@ -8,6 +8,18 @@
   "bin": {
     "archlens": "dist/index.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/archlens/archlens"
+  },
+  "keywords": ["architecture", "code-analysis", "visualization", "mcp", "cli"],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
