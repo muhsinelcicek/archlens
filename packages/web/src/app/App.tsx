@@ -6,41 +6,43 @@ import {
   Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
+import { useI18n } from "../lib/i18n.js";
 import { GlobalSearch } from "../components/GlobalSearch.js";
 
-interface NavGroup { label: string; items: Array<{ to: string; icon: React.ElementType; label: string; end?: boolean }> }
+interface NavGroup { labelKey: string; items: Array<{ to: string; icon: React.ElementType; labelKey: string; end?: boolean }> }
 
 const navGroups: NavGroup[] = [
-  { label: "", items: [
-    { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
-    { to: "/architecture", icon: Network, label: "Architecture" },
+  { labelKey: "", items: [
+    { to: "/", icon: LayoutDashboard, labelKey: "nav.dashboard", end: true },
+    { to: "/architecture", icon: Network, labelKey: "nav.architecture" },
   ]},
-  { label: "Analysis", items: [
-    { to: "/processes", icon: Zap, label: "Processes" },
-    { to: "/sequence", icon: GitBranch, label: "Sequences" },
-    { to: "/eventflow", icon: MessageSquare, label: "Event Flow" },
+  { labelKey: "nav.group.analysis", items: [
+    { to: "/processes", icon: Zap, labelKey: "nav.processes" },
+    { to: "/sequence", icon: GitBranch, labelKey: "nav.sequences" },
+    { to: "/eventflow", icon: MessageSquare, labelKey: "nav.event_flow" },
   ]},
-  { label: "Diagrams", items: [
-    { to: "/diagram/dependency-graph", icon: GitBranch, label: "Dependencies" },
-    { to: "/diagram/er-diagram", icon: Database, label: "ER Diagram" },
-    { to: "/endpoints", icon: Globe, label: "API Map" },
-    { to: "/diagram/tech-radar", icon: Cpu, label: "Tech Radar" },
+  { labelKey: "nav.group.diagrams", items: [
+    { to: "/diagram/dependency-graph", icon: GitBranch, labelKey: "nav.dependencies" },
+    { to: "/diagram/er-diagram", icon: Database, labelKey: "nav.er_diagram" },
+    { to: "/endpoints", icon: Globe, labelKey: "nav.api_map" },
+    { to: "/diagram/tech-radar", icon: Cpu, labelKey: "nav.tech_radar" },
   ]},
-  { label: "Quality", items: [
-    { to: "/quality", icon: ShieldAlert, label: "Code Quality" },
-    { to: "/techdebt", icon: DollarSign, label: "Tech Debt" },
-    { to: "/drift", icon: ShieldCheck, label: "Health Check" },
+  { labelKey: "nav.group.quality", items: [
+    { to: "/quality", icon: ShieldAlert, labelKey: "nav.code_quality" },
+    { to: "/techdebt", icon: DollarSign, labelKey: "nav.tech_debt" },
+    { to: "/drift", icon: ShieldCheck, labelKey: "nav.health_check" },
   ]},
-  { label: "", items: [
-    { to: "/onboard", icon: Rocket, label: "Onboarding" },
-    { to: "/modules", icon: Boxes, label: "Modules" },
-    { to: "/settings", icon: Settings, label: "Settings" },
+  { labelKey: "", items: [
+    { to: "/onboard", icon: Rocket, labelKey: "nav.onboarding" },
+    { to: "/modules", icon: Boxes, labelKey: "nav.modules" },
+    { to: "/settings", icon: Settings, labelKey: "nav.settings" },
   ]},
 ];
 
 export function App() {
   const { model, loading, error, projects, activeProject, fetchModel, fetchDiagrams, fetchProjects, switchProject } = useStore();
   const { theme } = useTheme();
+  const { t } = useI18n();
 
   useEffect(() => {
     fetchModel();
@@ -117,9 +119,9 @@ export function App() {
         {/* Nav — Grouped */}
         <nav className="flex-1 px-2 py-1 overflow-y-auto">
           {navGroups.map((group, gi) => (
-            <div key={gi} className={group.label ? "mt-3 mb-1" : "mb-0.5"}>
-              {group.label && (
-                <div className="px-3 py-1 text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70]">{group.label}</div>
+            <div key={gi} className={group.labelKey ? "mt-3 mb-1" : "mb-0.5"}>
+              {group.labelKey && (
+                <div className="px-3 py-1 text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70]">{t(group.labelKey)}</div>
               )}
               {group.items.map((item) => (
                 <NavLink
@@ -135,7 +137,7 @@ export function App() {
                   }
                 >
                   <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
-                  {item.label}
+                  {t(item.labelKey)}
                 </NavLink>
               ))}
             </div>

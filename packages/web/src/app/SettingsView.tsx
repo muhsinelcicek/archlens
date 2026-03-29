@@ -1,5 +1,6 @@
 import { useTheme, themes, type Theme } from "../lib/theme.js";
-import { Palette, Check, Monitor, Moon, Sun } from "lucide-react";
+import { useI18n, type Locale } from "../lib/i18n.js";
+import { Palette, Check, Monitor, Moon, Sun, Globe } from "lucide-react";
 
 function ThemeCard({ theme, isActive, onSelect }: { theme: Theme; isActive: boolean; onSelect: () => void }) {
   const c = theme.colors;
@@ -56,6 +57,7 @@ function ThemeCard({ theme, isActive, onSelect }: { theme: Theme; isActive: bool
 
 export function SettingsView() {
   const { themeId, setTheme } = useTheme();
+  const { locale, setLocale, t } = useI18n();
 
   return (
     <div className="p-6 lg:p-8 space-y-8 max-w-[900px]">
@@ -81,6 +83,41 @@ export function SettingsView() {
               isActive={themeId === theme.id}
               onSelect={() => setTheme(theme.id)}
             />
+          ))}
+        </div>
+      </section>
+
+      {/* Language Section */}
+      <section>
+        <div className="flex items-center gap-2 mb-5">
+          <Globe className="h-5 w-5" style={{ color: themes[themeId]?.colors.accent }} />
+          <h3 className="text-lg font-semibold">{t("settings.language")}</h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {([
+            { id: "en" as Locale, label: "English", flag: "🇬🇧", desc: "English interface" },
+            { id: "tr" as Locale, label: "Türkçe", flag: "🇹🇷", desc: "Türkçe arayüz" },
+          ]).map((lang) => (
+            <button
+              key={lang.id}
+              onClick={() => setLocale(lang.id)}
+              className={`relative rounded-xl border-2 p-4 transition-all duration-200 hover:scale-[1.02] text-left ${locale === lang.id ? "border-archlens-400 shadow-lg" : "border-transparent hover:border-[#2a2a3a]"}`}
+              style={{ borderColor: locale === lang.id ? themes[themeId]?.colors.accent : undefined }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{lang.flag}</span>
+                <div>
+                  <div className="font-semibold" style={{ color: locale === lang.id ? themes[themeId]?.colors.accent : "#e4e4ed" }}>{lang.label}</div>
+                  <div className="text-xs text-[#5a5a70]">{lang.desc}</div>
+                </div>
+                {locale === lang.id && (
+                  <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: themes[themeId]?.colors.accent }}>
+                    <Check className="h-3 w-3 text-white" />
+                  </div>
+                )}
+              </div>
+            </button>
           ))}
         </div>
       </section>
