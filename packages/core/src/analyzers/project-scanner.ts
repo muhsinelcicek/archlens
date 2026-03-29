@@ -426,6 +426,8 @@ export class ProjectScanner {
       else if (ext === ".java") counts["java"] = (counts["java"] || 0) + 1;
       else if (ext === ".go") counts["go"] = (counts["go"] || 0) + 1;
       else if (ext === ".rs") counts["rust"] = (counts["rust"] || 0) + 1;
+      else if (ext === ".cs") counts["csharp"] = (counts["csharp"] || 0) + 1;
+      else if (ext === ".swift") counts["swift"] = (counts["swift"] || 0) + 1;
     }
 
     let maxLang: Language = "unknown";

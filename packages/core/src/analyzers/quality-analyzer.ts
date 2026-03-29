@@ -114,6 +114,10 @@ export class QualityAnalyzer {
     const lang = mod.language;
 
     for (const [uid, sym] of symbols) {
+      // Skip auto-generated files (migrations, designers, generated)
+      const fp = sym.filePath.toLowerCase();
+      if (fp.includes("migration") || fp.includes(".designer.") || fp.includes(".generated.") || fp.includes("/obj/") || fp.includes("/bin/")) continue;
+
       // ── Naming Conventions ──
       issues.push(...this.checkNaming(sym, lang));
 
@@ -185,9 +189,8 @@ export class QualityAnalyzer {
     }
 
     if (lang === "typescript" || lang === "javascript") {
-      // camelCase for functions
+      // camelCase for functions (skip React components in tsx/jsx)
       if ((sym.kind === "function" || sym.kind === "method") && /^[A-Z]/.test(name)) {
-        // Could be React component — skip if in tsx
         if (!sym.filePath.endsWith(".tsx") && !sym.filePath.endsWith(".jsx")) {
           issues.push({
             id: `naming-camel-${sym.uid}`, rule: "naming/camel-case",
@@ -196,6 +199,19 @@ export class QualityAnalyzer {
             filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
           });
         }
+      }
+    }
+
+    // C# — PascalCase is CORRECT for methods/functions, no camelCase warning needed
+    // Only check: private fields should be _camelCase
+    if (lang === "csharp") {
+      if (sym.kind === "property" && sym.visibility === "private" && !name.startsWith("_") && /^[a-z]/.test(name)) {
+        issues.push({
+          id: `naming-private-${sym.uid}`, rule: "naming/private-field",
+          category: "naming", severity: "info",
+          message: `Private field "${name}" should use _camelCase (C# convention)`,
+          filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
+        });
       }
     }
 
