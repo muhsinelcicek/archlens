@@ -31,5 +31,9 @@ export type { EventFlowReport, EventFlow, BoundedContext } from "./event-flow-de
 export { PatternDeepAnalyzer } from "./pattern-deep-analyzer.js";
 export type { DeepPatternAnalysis, PatternEvidence } from "./pattern-deep-analyzer.js";
 export { calculateComplexity, getLanguageRules } from "./language-rules.js";
+export { CouplingAnalyzer } from "./coupling-analyzer.js";
+export type { CouplingReport, ModuleCouplingDetail, CircularDependency } from "./coupling-analyzer.js";
+export { ConsistencyChecker } from "./consistency-checker.js";
+export type { ConsistencyReport, ConsistencyIssue } from "./consistency-checker.js";
 export type { SequenceDiagram, SequenceStep } from "./sequence-tracer.js";
 export type { DriftReport, ChangedFile, SymbolChange, DependencyChange, LayerViolation } from "./git-differ.js";
