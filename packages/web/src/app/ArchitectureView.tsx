@@ -619,7 +619,27 @@ export function ArchitectureView() {
               <div key={mod.name}>
                 {/* Module root */}
                 <button
-                  onClick={() => { setSelectedNode(mod.name); graphRef.current?.selectNode(mod.name); toggleDir(mod.name); }}
+                  onClick={() => {
+                    setSelectedNode(mod.name);
+                    graphRef.current?.selectNode(mod.name);
+                    // Toggle module + auto-expand common prefix dirs
+                    setExpandedDirs((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(mod.name)) {
+                        next.delete(mod.name);
+                      } else {
+                        next.add(mod.name);
+                        // Auto-expand top-level dirs that contain all module files
+                        for (const fp of modPaths) {
+                          const parts = fp.split("/");
+                          for (let i = 1; i < Math.min(parts.length, 4); i++) {
+                            next.add(parts.slice(0, i).join("/"));
+                          }
+                        }
+                      }
+                      return next;
+                    });
+                  }}
                   onDoubleClick={() => drillDown(mod.name, mod.name, "module")}
                   className={`w-full flex items-center gap-1 px-2 py-1 text-[11px] transition-all ${isModSelected ? "bg-amber-500/10 text-amber-300" : "text-[#8888a0] hover:bg-hover"}`}
                   style={isModSelected ? { borderLeft: `2px solid ${color}` } : { paddingLeft: "10px" }}
