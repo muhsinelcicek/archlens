@@ -538,41 +538,72 @@ export function ArchitectureView() {
     : model.modules;
 
   // Build nested directory structure for a module
-  function buildDirTree(paths: Set<string>, moduleName: string): Array<{ path: string; name: string; isDir: boolean; depth: number; children: number }> {
-    const items: Array<{ path: string; name: string; isDir: boolean; depth: number; children: number }> = [];
-    const dirs = new Map<string, number>(); // dir path → file count
+  // Simple recursive tree renderer
+  function renderFileTree(paths: Set<string>, parentPath: string, depth: number): React.ReactNode[] {
+    // Get unique direct children at this level
+    const children = new Map<string, { isDir: boolean; fullPath: string }>();
 
     for (const fp of paths) {
-      const parts = fp.split("/");
-      // Build directory entries
-      for (let i = 1; i < parts.length; i++) {
-        const dirPath = parts.slice(0, i).join("/");
-        dirs.set(dirPath, (dirs.get(dirPath) || 0) + (i === parts.length - 1 ? 1 : 0));
+      if (!fp.startsWith(parentPath)) continue;
+      const rest = fp.slice(parentPath.length);
+      const parts = rest.split("/").filter(Boolean);
+      if (parts.length === 0) continue;
+
+      const childName = parts[0];
+      const childPath = parentPath + childName + (parts.length > 1 ? "/" : "");
+      const isDir = parts.length > 1;
+
+      if (!children.has(childName)) {
+        children.set(childName, { isDir, fullPath: isDir ? childPath : fp });
+      } else if (isDir) {
+        children.set(childName, { isDir: true, fullPath: childPath });
       }
     }
 
-    // Sort paths for display
-    const sorted = [...paths].sort();
-    const addedDirs = new Set<string>();
+    // Sort: dirs first, then files
+    const sorted = [...children.entries()].sort((a, b) => {
+      if (a[1].isDir !== b[1].isDir) return a[1].isDir ? -1 : 1;
+      return a[0].localeCompare(b[0]);
+    });
 
-    for (const fp of sorted) {
-      const parts = fp.split("/");
-      // Add directory entries
-      for (let i = 1; i < parts.length; i++) {
-        const dirPath = parts.slice(0, i).join("/");
-        if (!addedDirs.has(dirPath)) {
-          addedDirs.add(dirPath);
-          const dirFiles = [...paths].filter((p) => p.startsWith(dirPath + "/")).length;
-          items.push({ path: dirPath, name: parts[i - 1], isDir: true, depth: i - 1, children: dirFiles });
-        }
+    return sorted.map(([name, info]) => {
+      if (info.isDir) {
+        const dirKey = info.fullPath;
+        const isDirExpanded = expandedDirs.has(dirKey);
+        const fileCount = [...paths].filter((p) => p.startsWith(dirKey)).length;
+
+        return (
+          <div key={dirKey}>
+            <button
+              onClick={() => toggleDir(dirKey)}
+              className="w-full flex items-center gap-1 py-0.5 text-[10px] text-[#5a5a70] hover:text-[#8888a0] hover:bg-hover/50 rounded"
+              style={{ paddingLeft: `${depth * 14 + 4}px` }}
+            >
+              {isDirExpanded ? <ChevronDown className="h-2.5 w-2.5 flex-shrink-0" /> : <ChevronRight className="h-2.5 w-2.5 flex-shrink-0" />}
+              <span className="font-mono truncate">{name}</span>
+              <span className="ml-auto text-[8px] text-[#5a5a70] pr-1">{fileCount}</span>
+            </button>
+            {isDirExpanded && renderFileTree(paths, dirKey, depth + 1)}
+          </div>
+        );
+      } else {
+        const ext = name.split(".").pop() || "";
+        const extColors: Record<string, string> = { cs: "#178600", ts: "#3178c6", tsx: "#3178c6", py: "#3572A5", go: "#00ADD8", java: "#b07219", swift: "#F05138", rs: "#dea584", js: "#f0db4f" };
+        const isFileSelected = selectedNode === info.fullPath;
+
+        return (
+          <button
+            key={info.fullPath}
+            onClick={() => setSelectedNode(info.fullPath)}
+            className={`w-full flex items-center gap-1 py-0.5 text-[10px] rounded ${isFileSelected ? "bg-amber-500/10 text-amber-300" : "text-[#5a5a70] hover:text-[#8888a0] hover:bg-hover/50"}`}
+            style={{ paddingLeft: `${depth * 14 + 4}px` }}
+          >
+            <FileCode className="h-2.5 w-2.5 flex-shrink-0" style={{ color: extColors[ext] || "#5a5a70" }} />
+            <span className="font-mono truncate">{name}</span>
+          </button>
+        );
       }
-      // Add file
-      items.push({ path: fp, name: parts[parts.length - 1], isDir: false, depth: parts.length - 1, children: 0 });
-    }
-
-    // Deduplicate and sort: dirs first, then files at each level
-    const seen = new Set<string>();
-    return items.filter((item) => { if (seen.has(item.path)) return false; seen.add(item.path); return true; });
+    });
   }
 
   return (
@@ -633,7 +664,7 @@ export function ArchitectureView() {
                         for (const fp of modPaths) {
                           const parts = fp.split("/");
                           for (let i = 1; i < Math.min(parts.length, 4); i++) {
-                            next.add(parts.slice(0, i).join("/"));
+                            next.add(parts.slice(0, i).join("/") + "/");
                           }
                         }
                       }
@@ -652,51 +683,10 @@ export function ArchitectureView() {
                   <span className="ml-auto text-[9px] text-[#5a5a70]">{mod.fileCount}</span>
                 </button>
 
-                {/* Expanded file tree */}
+                {/* Expanded file tree — recursive */}
                 {isModExpanded && (
-                  <div className="ml-2">
-                    {buildDirTree(modPaths, mod.name).map((item) => {
-                      if (item.isDir) {
-                        const isDirExpanded = expandedDirs.has(item.path);
-                        // Only show if parent is expanded or is direct child
-                        const parentDir = item.path.split("/").slice(0, -1).join("/");
-                        if (item.depth > 1 && !expandedDirs.has(parentDir)) return null;
-
-                        return (
-                          <button
-                            key={item.path}
-                            onClick={() => toggleDir(item.path)}
-                            className="w-full flex items-center gap-1 py-0.5 text-[10px] text-[#5a5a70] hover:text-[#8888a0] hover:bg-hover/50 rounded"
-                            style={{ paddingLeft: `${item.depth * 12 + 8}px` }}
-                          >
-                            {isDirExpanded
-                              ? <ChevronDown className="h-2.5 w-2.5 flex-shrink-0" />
-                              : <ChevronRight className="h-2.5 w-2.5 flex-shrink-0" />}
-                            <span className="font-mono truncate">{item.name}/</span>
-                          </button>
-                        );
-                      }
-
-                      // File
-                      const parentDir2 = item.path.split("/").slice(0, -1).join("/");
-                      if (item.depth > 1 && !expandedDirs.has(parentDir2)) return null;
-
-                      const isFileSelected = selectedNode === item.path;
-                      const ext = item.name.split(".").pop() || "";
-                      const extColors: Record<string, string> = { cs: "#178600", ts: "#3178c6", tsx: "#3178c6", py: "#3572A5", go: "#00ADD8", java: "#b07219", swift: "#F05138", rs: "#dea584" };
-
-                      return (
-                        <button
-                          key={item.path}
-                          onClick={() => setSelectedNode(item.path)}
-                          className={`w-full flex items-center gap-1 py-0.5 text-[10px] rounded ${isFileSelected ? "bg-amber-500/10 text-amber-300" : "text-[#5a5a70] hover:text-[#8888a0] hover:bg-hover/50"}`}
-                          style={{ paddingLeft: `${item.depth * 12 + 8}px` }}
-                        >
-                          <FileCode className="h-2.5 w-2.5 flex-shrink-0" style={{ color: extColors[ext] || "#5a5a70" }} />
-                          <span className="font-mono truncate">{item.name}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="ml-1">
+                    {renderFileTree(modPaths, "", 1)}
                   </div>
                 )}
               </div>
