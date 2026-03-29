@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2, XCircle,
   Bug, Code2, Box, Layers, GitBranch, ChevronDown, ChevronRight,
-  Lightbulb, ArrowRight,
+  Lightbulb, ArrowRight, ExternalLink, FileCode,
 } from "lucide-react";
 
 interface QualityIssue {
@@ -39,8 +40,10 @@ const categoryIcons: Record<string, React.ReactNode> = {
 export function QualityView() {
   const [report, setReport] = useState<QualityReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/quality")
@@ -178,28 +181,86 @@ export function QualityView() {
                       ))}
                     </div>
                     {/* Issues */}
-                    <div className="px-5 py-2 max-h-[300px] overflow-y-auto divide-y divide-[#1e1e2a]">
-                      {mod.issues.slice(0, 20).map((issue) => {
+                    <div className="px-5 py-2 max-h-[400px] overflow-y-auto divide-y divide-[#1e1e2a]">
+                      {mod.issues.slice(0, 30).map((issue) => {
                         const cfg = severityConfig[issue.severity] || severityConfig.info;
+                        const isSelected = selectedIssue === issue.id;
+                        const hasFile = issue.filePath && issue.filePath.includes("/");
+
                         return (
-                          <div key={issue.id} className="py-2 flex items-start gap-3">
-                            <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-[#e4e4ed]">{issue.message}</div>
-                              <div className="flex items-center gap-2 mt-1 text-[10px] text-[#5a5a70]">
-                                <span className="font-mono">{issue.rule}</span>
-                                {issue.filePath && <span>· {issue.filePath.split("/").pop()}</span>}
-                                {issue.line && <span>:L{issue.line}</span>}
-                              </div>
-                              {issue.suggestion && (
-                                <div className="flex items-start gap-1 mt-1 text-[10px] text-amber-500/80">
-                                  <Lightbulb className="h-3 w-3 flex-shrink-0 mt-0.5" /> {issue.suggestion}
+                          <div key={issue.id} className={`py-2 transition-all ${isSelected ? "bg-archlens-500/5 -mx-5 px-5 rounded-lg" : ""}`}>
+                            <button
+                              onClick={() => setSelectedIssue(isSelected ? null : issue.id)}
+                              className="w-full flex items-start gap-3 text-left"
+                            >
+                              <span style={{ color: cfg.color }} className="mt-0.5">{cfg.icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs text-[#e4e4ed]">{issue.message}</div>
+                                <div className="flex items-center gap-2 mt-1 text-[10px] text-[#5a5a70]">
+                                  <span className="font-mono px-1 py-0.5 rounded bg-[#1e1e2a]">{issue.rule}</span>
+                                  {issue.filePath && <span className="truncate max-w-[200px]">{issue.filePath.split("/").pop()}</span>}
+                                  {issue.line && <span className="text-archlens-400">L{issue.line}</span>}
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                              <ChevronRight className={`h-3 w-3 text-[#5a5a70] mt-1 transition-transform ${isSelected ? "rotate-90" : ""}`} />
+                            </button>
+
+                            {/* Expanded detail */}
+                            {isSelected && (
+                              <div className="ml-7 mt-2 space-y-2 animate-slide-up">
+                                {/* File path */}
+                                {issue.filePath && (
+                                  <div className="flex items-center gap-2 text-[10px] font-mono text-[#8888a0]">
+                                    <FileCode className="h-3 w-3 text-[#5a5a70]" />
+                                    <span>{issue.filePath}</span>
+                                    {issue.line && <span className="text-archlens-400">: line {issue.line}</span>}
+                                  </div>
+                                )}
+
+                                {/* Suggestion */}
+                                {issue.suggestion && (
+                                  <div className="flex items-start gap-2 rounded-lg bg-amber-500/5 border border-amber-500/20 p-2.5">
+                                    <Lightbulb className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-amber-500" />
+                                    <div>
+                                      <div className="text-[10px] uppercase font-semibold text-amber-500 mb-0.5">Suggestion</div>
+                                      <div className="text-xs text-[#8888a0]">{issue.suggestion}</div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Category + Severity detail */}
+                                <div className="flex items-center gap-3 text-[10px]">
+                                  <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}>{issue.severity}</span>
+                                  <span className="text-[#5a5a70]">{issue.category}</span>
+                                </div>
+
+                                {/* Go to code button */}
+                                {hasFile && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Navigate to architecture view with file selected
+                                      navigate("/architecture");
+                                      // Store selected file for architecture view to pick up
+                                      sessionStorage.setItem("archlens-goto-file", issue.filePath);
+                                    }}
+                                    className="flex items-center gap-1.5 text-[10px] font-medium text-archlens-400 hover:text-archlens-300 transition-colors"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    View in Architecture → {issue.filePath.split("/").pop()}
+                                    {issue.line ? `:${issue.line}` : ""}
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
+                      {mod.issues.length > 30 && (
+                        <div className="py-2 text-center text-[10px] text-[#5a5a70]">
+                          +{mod.issues.length - 30} more issues
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
