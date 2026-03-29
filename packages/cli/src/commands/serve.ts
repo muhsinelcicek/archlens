@@ -177,7 +177,7 @@ export const serveCommand = new Command("serve")
       // ─── Quality report endpoint ─────────────────────────────
 
       if (url.pathname === "/api/quality") {
-        let modelData: any = singleModel;
+        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
         if (!modelData && registry.length > 0) {
           const first = registry[0];
           const mp = path.join(first.localPath, ".archlens", "model.json");
@@ -201,7 +201,7 @@ export const serveCommand = new Command("serve")
       // ─── Dead code endpoint ──────────────────────────────────
 
       if (url.pathname === "/api/deadcode") {
-        let modelData: any = singleModel;
+        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
         if (!modelData && registry.length > 0) {
           const mp = path.join(registry[0].localPath, ".archlens", "model.json");
           if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
@@ -218,7 +218,7 @@ export const serveCommand = new Command("serve")
       // ─── Security scan endpoint ───────────────────────────────
 
       if (url.pathname === "/api/security") {
-        let modelData: any = singleModel;
+        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
         let projectRoot = "";
         if (options.data) {
           projectRoot = path.dirname(options.data);
