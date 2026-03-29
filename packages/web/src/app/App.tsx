@@ -8,22 +8,34 @@ import {
 import { useTheme } from "../lib/theme.js";
 import { GlobalSearch } from "../components/GlobalSearch.js";
 
-const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/architecture", icon: Network, label: "Architecture" },
-  { to: "/processes", icon: Zap, label: "Business Processes" },
-  { to: "/sequence", icon: GitBranch, label: "Sequence Diagrams" },
-  { to: "/diagram/dependency-graph", icon: GitBranch, label: "Dependencies" },
-  { to: "/diagram/er-diagram", icon: Database, label: "ER Diagram" },
-  { to: "/endpoints", icon: Globe, label: "API Map" },
-  { to: "/diagram/tech-radar", icon: Cpu, label: "Tech Radar" },
-  { to: "/onboard", icon: Rocket, label: "Onboarding" },
-  { to: "/quality", icon: ShieldAlert, label: "Code Quality" },
-  { to: "/techdebt", icon: DollarSign, label: "Tech Debt" },
-  { to: "/eventflow", icon: MessageSquare, label: "Event Flow" },
-  { to: "/drift", icon: ShieldCheck, label: "Health Check" },
-  { to: "/modules", icon: Boxes, label: "Modules" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+interface NavGroup { label: string; items: Array<{ to: string; icon: React.ElementType; label: string; end?: boolean }> }
+
+const navGroups: NavGroup[] = [
+  { label: "", items: [
+    { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
+    { to: "/architecture", icon: Network, label: "Architecture" },
+  ]},
+  { label: "Analysis", items: [
+    { to: "/processes", icon: Zap, label: "Processes" },
+    { to: "/sequence", icon: GitBranch, label: "Sequences" },
+    { to: "/eventflow", icon: MessageSquare, label: "Event Flow" },
+  ]},
+  { label: "Diagrams", items: [
+    { to: "/diagram/dependency-graph", icon: GitBranch, label: "Dependencies" },
+    { to: "/diagram/er-diagram", icon: Database, label: "ER Diagram" },
+    { to: "/endpoints", icon: Globe, label: "API Map" },
+    { to: "/diagram/tech-radar", icon: Cpu, label: "Tech Radar" },
+  ]},
+  { label: "Quality", items: [
+    { to: "/quality", icon: ShieldAlert, label: "Code Quality" },
+    { to: "/techdebt", icon: DollarSign, label: "Tech Debt" },
+    { to: "/drift", icon: ShieldCheck, label: "Health Check" },
+  ]},
+  { label: "", items: [
+    { to: "/onboard", icon: Rocket, label: "Onboarding" },
+    { to: "/modules", icon: Boxes, label: "Modules" },
+    { to: "/settings", icon: Settings, label: "Settings" },
+  ]},
 ];
 
 export function App() {
@@ -102,24 +114,31 @@ export function App() {
           <GlobalSearch />
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                  isActive
-                    ? "bg-archlens-500/12 text-archlens-300 shadow-sm shadow-archlens-500/5 border-l-2 border-archlens-400 ml-0"
-                    : "text-[#8888a0] hover:text-[#e4e4ed] hover:bg-hover"
-                }`
-              }
-            >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              {item.label}
-            </NavLink>
+        {/* Nav — Grouped */}
+        <nav className="flex-1 px-2 py-1 overflow-y-auto">
+          {navGroups.map((group, gi) => (
+            <div key={gi} className={group.label ? "mt-3 mb-1" : "mb-0.5"}>
+              {group.label && (
+                <div className="px-3 py-1 text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70]">{group.label}</div>
+              )}
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 ${
+                      isActive
+                        ? "bg-archlens-500/12 text-archlens-300 shadow-sm shadow-archlens-500/5 border-l-2 border-archlens-400"
+                        : "text-[#8888a0] hover:text-[#e4e4ed] hover:bg-hover"
+                    }`
+                  }
+                >
+                  <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 

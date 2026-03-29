@@ -33,7 +33,7 @@ export function ApiMapView() {
   const groups = new Map<string, typeof apiEndpoints>();
   for (const ep of filtered) {
     const parts = ep.path.split("/").filter(Boolean);
-    const prefix = parts.length >= 2 ? `/${parts[0]}/${parts[1]}` : `/${parts[0] || ""}`;
+    const prefix = parts.length >= 1 ? `/${parts[0]}` : "/";
     if (!groups.has(prefix)) groups.set(prefix, []);
     groups.get(prefix)!.push(ep);
   }
