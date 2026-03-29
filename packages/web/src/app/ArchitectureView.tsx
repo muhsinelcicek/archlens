@@ -285,20 +285,50 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
 
 function FileCodeViewer({ filePath, model }: { filePath: string; model: ArchModel }) {
   const [code, setCode] = useState<string | null>(null);
+  const [highlightedHtml, setHighlightedHtml] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fileExt = filePath.split(".").pop() || "";
+  const shikiLangMap: Record<string, string> = {
+    cs: "csharp", ts: "typescript", tsx: "tsx", js: "javascript", jsx: "jsx",
+    py: "python", go: "go", java: "java", swift: "swift", rs: "rust",
+    json: "json", yaml: "yaml", yml: "yaml", md: "markdown", xml: "xml",
+    html: "html", css: "css", scss: "scss",
+  };
 
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setHighlightedHtml(null);
     fetch(`/api/file?path=${encodeURIComponent(filePath)}`)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.text();
       })
-      .then((text) => { setCode(text); setLoading(false); })
+      .then(async (text) => {
+        setCode(text);
+        // Try syntax highlighting with Shiki
+        try {
+          const { codeToTokens } = await import("shiki");
+          const lang = shikiLangMap[fileExt] || "text";
+          const { tokens } = await codeToTokens(text, { lang: lang as any, theme: "github-dark" });
+          // Convert tokens to HTML lines
+          const lines = tokens.map((lineTokens) => {
+            return lineTokens.map((token) => {
+              const color = token.color || "#8888a0";
+              const escaped = token.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+              return `<span style="color:${color}">${escaped}</span>`;
+            }).join("");
+          });
+          setHighlightedHtml(lines);
+        } catch {
+          // Shiki failed — fallback to plain text
+        }
+        setLoading(false);
+      })
       .catch((err) => { setError(err.message); setLoading(false); });
-  }, [filePath]);
+  }, [filePath, fileExt]);
 
   // Find symbols in this file for annotations
   const fileSymbols = Object.entries(model.symbols)
@@ -389,9 +419,13 @@ function FileCodeViewer({ filePath, model }: { filePath: string; model: ArchMode
                     )}
                   </div>
                   {/* Code line */}
-                  <pre className="flex-1 text-[#8888a0] overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }}>
-                    {line || " "}
-                  </pre>
+                  {highlightedHtml && highlightedHtml[i] ? (
+                    <pre className="flex-1 overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }} dangerouslySetInnerHTML={{ __html: highlightedHtml[i] || " " }} />
+                  ) : (
+                    <pre className="flex-1 text-[#8888a0] overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }}>
+                      {line || " "}
+                    </pre>
+                  )}
                 </div>
               );
             })}

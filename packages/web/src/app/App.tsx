@@ -6,6 +6,7 @@ import {
   Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
+import { GlobalSearch } from "../components/GlobalSearch.js";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -92,6 +93,11 @@ export function App() {
               <p className="text-xs font-mono text-archlens-300 truncate">{model.project.name}</p>
             </div>
           ) : null}
+        </div>
+
+        {/* Global Search */}
+        <div className="px-3 py-2 border-b border-[#1e1e2a]">
+          <GlobalSearch />
         </div>
 
         {/* Nav */}
