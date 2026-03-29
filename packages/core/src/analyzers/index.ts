@@ -30,5 +30,6 @@ export { EventFlowDetector } from "./event-flow-detector.js";
 export type { EventFlowReport, EventFlow, BoundedContext } from "./event-flow-detector.js";
 export { PatternDeepAnalyzer } from "./pattern-deep-analyzer.js";
 export type { DeepPatternAnalysis, PatternEvidence } from "./pattern-deep-analyzer.js";
+export { calculateComplexity, getLanguageRules } from "./language-rules.js";
 export type { SequenceDiagram, SequenceStep } from "./sequence-tracer.js";
 export type { DriftReport, ChangedFile, SymbolChange, DependencyChange, LayerViolation } from "./git-differ.js";

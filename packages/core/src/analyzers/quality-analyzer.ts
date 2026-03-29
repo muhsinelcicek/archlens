@@ -1,11 +1,16 @@
-import type { ArchitectureModel, Symbol, Relation, Module } from "../models/index.js";
+import fs from "node:fs";
+import path from "node:path";
+import type { ArchitectureModel, Symbol, Relation, Module, Language } from "../models/index.js";
+import { calculateComplexity, getLanguageRules, type LanguageIssue } from "./language-rules.js";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
 export type Severity = "critical" | "major" | "minor" | "info";
 export type IssueCategory =
   | "naming" | "complexity" | "code-smell" | "type-safety" | "security"
-  | "ddd" | "clean-architecture" | "solid" | "pattern" | "best-practice";
+  | "ddd" | "clean-architecture" | "solid" | "pattern" | "best-practice"
+  | "performance" | "resource-management" | "error-handling" | "readability"
+  | "bug-risk" | "safety" | "memory";
 
 export interface QualityIssue {
   id: string;
@@ -122,7 +127,7 @@ export class QualityAnalyzer {
       issues.push(...this.checkNaming(sym, lang));
 
       // ── Complexity / Code Smells ──
-      issues.push(...this.checkComplexity(sym));
+      issues.push(...this.checkComplexity(sym, lang as Language, this.model.project.rootPath));
 
       // ── Type Safety ──
       issues.push(...this.checkTypeSafety(sym, lang));
@@ -220,7 +225,7 @@ export class QualityAnalyzer {
 
   // ─── Complexity ──────────────────────────────────────────────────
 
-  private checkComplexity(sym: Symbol): QualityIssue[] {
+  private checkComplexity(sym: Symbol, lang: Language, rootDir?: string): QualityIssue[] {
     const issues: QualityIssue[] = [];
 
     if (sym.kind === "function" || sym.kind === "method") {
@@ -246,6 +251,71 @@ export class QualityAnalyzer {
           filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
           suggestion: "Consider using a parameter object or builder pattern",
         });
+      }
+
+      // Cyclomatic complexity (from source if available)
+      if (rootDir && lines > 10) {
+        try {
+          const absPath = path.join(rootDir, sym.filePath);
+          if (fs.existsSync(absPath)) {
+            const content = fs.readFileSync(absPath, "utf-8");
+            const fileLines = content.split("\n");
+            const methodCode = fileLines.slice((sym.startLine || 1) - 1, sym.endLine || fileLines.length).join("\n");
+            const complexity = calculateComplexity(methodCode, lang);
+
+            if (complexity.cyclomatic > 10) {
+              issues.push({
+                id: `complexity-cyclo-${sym.uid}`, rule: "complexity/cyclomatic",
+                category: "complexity", severity: complexity.cyclomatic > 20 ? "major" : "minor",
+                message: `${sym.kind} "${sym.name}" has cyclomatic complexity ${complexity.cyclomatic} (recommended <10)`,
+                filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
+                suggestion: "Reduce branching: extract conditions into methods, use early returns, or strategy pattern",
+              });
+            }
+
+            if (complexity.cognitive > 15) {
+              issues.push({
+                id: `complexity-cognitive-${sym.uid}`, rule: "complexity/cognitive",
+                category: "complexity", severity: complexity.cognitive > 25 ? "major" : "minor",
+                message: `${sym.kind} "${sym.name}" has cognitive complexity ${complexity.cognitive} (hard to understand)`,
+                filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
+                suggestion: "Simplify: reduce nesting depth, extract helper methods",
+              });
+            }
+
+            if (complexity.nesting > 4) {
+              issues.push({
+                id: `complexity-nesting-${sym.uid}`, rule: "complexity/deep-nesting",
+                category: "complexity", severity: complexity.nesting > 6 ? "major" : "minor",
+                message: `${sym.kind} "${sym.name}" has ${complexity.nesting} nesting levels (recommended <4)`,
+                filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
+                suggestion: "Use early returns, guard clauses, or extract nested blocks",
+              });
+            }
+          }
+        } catch { /* skip if file unreadable */ }
+      }
+
+      // Language-specific rules (from source)
+      if (rootDir) {
+        try {
+          const absPath = path.join(rootDir, sym.filePath);
+          if (fs.existsSync(absPath)) {
+            const content = fs.readFileSync(absPath, "utf-8");
+            const fileLines = content.split("\n");
+            const methodCode = fileLines.slice((sym.startLine || 1) - 1, sym.endLine || fileLines.length).join("\n");
+            const langIssues = getLanguageRules(sym, methodCode, lang);
+
+            for (const li of langIssues) {
+              issues.push({
+                id: `lang-${li.rule}-${sym.uid}`, rule: li.rule,
+                category: li.category as IssueCategory, severity: li.severity,
+                message: li.message, suggestion: li.suggestion,
+                filePath: sym.filePath, symbolRef: sym.uid, line: sym.startLine,
+              });
+            }
+          }
+        } catch { /* skip */ }
       }
     }
 
