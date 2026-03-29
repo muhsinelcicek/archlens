@@ -156,6 +156,34 @@ export class ProjectScanner {
     dbEntities.length = 0;
     dbEntities.push(...entityMap.values());
 
+    // 3.6 Enrich empty entities by finding matching class symbols
+    for (const ent of dbEntities) {
+      if (ent.columns.length > 0) continue;
+      // Find a class with the same name
+      for (const [uid, sym] of symbols) {
+        if (sym.kind !== "class" || sym.name !== ent.name) continue;
+        // Get properties of this class
+        const props: Array<{ name: string; type: string; primary: boolean }> = [];
+        for (const rel of relations) {
+          if (rel.source !== uid || rel.type !== "composes") continue;
+          const propSym = symbols.get(rel.target);
+          if (!propSym || propSym.kind !== "property") continue;
+          const propName = propSym.name.split(".").pop() || "";
+          if (propName.startsWith("_")) continue;
+          props.push({
+            name: propName,
+            type: propSym.returnType || "unknown",
+            primary: propName === "Id" || propName === `${ent.name}Id`,
+          });
+        }
+        if (props.length > 0) {
+          ent.columns = props.map((p) => ({ name: p.name, type: p.type, primary: p.primary, nullable: true }));
+          ent.filePath = sym.filePath;
+          break;
+        }
+      }
+    }
+
     // 4. Resolve import relations (using proper module resolver)
     const resolver = new ModuleResolver(rootDir, files, symbols);
     const importRelations = resolver.resolve(allImports);
