@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useStore, type ArchModel } from "../lib/store.js";
-import { SigmaGraph, type SigmaGraphHandle, type GraphNode, type GraphEdge, type ImpactResult } from "../components/SigmaGraph.js";
+import { SigmaGraph, type SigmaGraphHandle, type GraphNode, type GraphEdge, type ImpactResult, type NodeQualityData } from "../components/SigmaGraph.js";
 import { DependencyMatrix } from "../components/DependencyMatrix.js";
 import { FeatureTracer } from "../components/FeatureTracer.js";
 import {
@@ -414,6 +414,25 @@ export function ArchitectureView() {
   const [impactResult, setImpactResult] = useState<ImpactResult | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [bottomTab, setBottomTab] = useState<"trace" | "matrix">("trace");
+  const [showQualityAlerts, setShowQualityAlerts] = useState(false);
+  const [qualityData, setQualityData] = useState<NodeQualityData | null>(null);
+
+  // Fetch quality data on mount
+  useEffect(() => {
+    fetch("/api/quality")
+      .then((r) => r.ok ? r.json() : null)
+      .then((report) => {
+        if (!report) return;
+        const qd: NodeQualityData = {};
+        for (const mod of report.modules) {
+          const criticals = mod.issues.filter((i: any) => i.severity === "critical").length;
+          const majors = mod.issues.filter((i: any) => i.severity === "major").length;
+          qd[mod.moduleName] = { score: mod.score, issues: mod.issues.length, critical: criticals, major: majors };
+        }
+        setQualityData(qd);
+      })
+      .catch(() => {});
+  }, []);
 
   const currentLevel = breadcrumbs[breadcrumbs.length - 1];
 
@@ -642,6 +661,13 @@ export function ArchitectureView() {
             <Target className="h-3.5 w-3.5" />
             Impact
           </button>
+          <button
+            onClick={() => setShowQualityAlerts(!showQualityAlerts)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${showQualityAlerts ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-elevated text-[#5a5a70] hover:text-[#8888a0] border border-[#2a2a3a]"}`}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Quality
+          </button>
         </div>
 
         {/* Graph — Full height */}
@@ -653,6 +679,8 @@ export function ArchitectureView() {
             onNodeClick={handleNodeClick}
             onNodeDoubleClick={handleNodeDoubleClick}
             impactMode={impactMode}
+            qualityData={qualityData || undefined}
+            showQualityAlerts={showQualityAlerts}
             className="h-full"
           />
         </div>

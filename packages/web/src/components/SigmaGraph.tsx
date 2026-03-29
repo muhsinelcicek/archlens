@@ -44,6 +44,10 @@ export interface SigmaGraphHandle {
   showAllEdges: () => void;
 }
 
+export interface NodeQualityData {
+  [nodeId: string]: { score: number; issues: number; critical: number; major: number };
+}
+
 interface SigmaGraphProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -52,6 +56,8 @@ interface SigmaGraphProps {
   onNodeHover?: (nodeId: string | null) => void;
   className?: string;
   impactMode?: boolean;
+  qualityData?: NodeQualityData;
+  showQualityAlerts?: boolean;
 }
 
 // ─── Colors ──────────────────────────────────────────────────────────
@@ -87,7 +93,7 @@ function blendColor(color: string, target: string, amount: number): string {
 // ─── Component ───────────────────────────────────────────────────────
 
 export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function SigmaGraph(
-  { nodes, edges, onNodeClick, onNodeDoubleClick, onNodeHover, className = "", impactMode = false },
+  { nodes, edges, onNodeClick, onNodeDoubleClick, onNodeHover, className = "", impactMode = false, qualityData, showQualityAlerts = false },
   ref,
 ) {
   const { theme } = useTheme();
@@ -317,17 +323,30 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
 
+      // Quality alert override
+      let nodeColor = colors.border;
+      let nodeLabel = node.label;
+      const qd = qualityData?.[node.id];
+      if (showQualityAlerts && qd) {
+        if (qd.critical > 0) nodeColor = "#ef4444"; // red
+        else if (qd.score < 50) nodeColor = "#f97316"; // orange
+        else if (qd.score < 70) nodeColor = "#fbbf24"; // yellow
+        nodeLabel = `${node.label}\n⚡ ${qd.score}/100 (${qd.issues})`;
+      }
+
       graph.addNode(node.id, {
         x,
         y,
-        size,
-        color: colors.border,
-        borderColor: colors.border,
-        label: node.label,
-        originalColor: colors.border,
+        size: showQualityAlerts && qd ? Math.max(size, 8 + ((100 - qd.score) / 100) * 20) : size,
+        color: nodeColor,
+        borderColor: nodeColor,
+        label: nodeLabel,
+        originalColor: nodeColor,
         originalSize: size,
         group: node.group,
         nodeType: node.type,
+        qualityScore: qd?.score,
+        qualityIssues: qd?.issues,
       });
 
       nodeIndex++;
