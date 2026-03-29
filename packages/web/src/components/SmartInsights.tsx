@@ -25,7 +25,8 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
       fetch("/api/quality").then((r) => r.ok ? r.json() : null),
       fetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
       fetch("/api/security").then((r) => r.ok ? r.json() : null),
-    ]).then(([quality, deadcode, security]) => {
+      fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
+    ]).then(([quality, deadcode, security, coupling]) => {
       const ins: Insight[] = [];
 
       // Quality insights
@@ -75,6 +76,21 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
           ins.push({ type: "warning", title: `${high} high security issue(s)`, detail: `Security score: ${security.score}/100` });
         } else {
           ins.push({ type: "info", title: `${security.totalIssues} security findings`, detail: `Score: ${security.score}/100 — mostly medium/low severity` });
+        }
+      }
+
+      // Coupling insights
+      if (coupling?.circularDependencies?.length > 0) {
+        ins.push({ type: "warning", title: `${coupling.circularDependencies.length} circular dependencies`, detail: coupling.circularDependencies.map((c: any) => c.cycle.join(" ↔ ")).join(", "), action: "Break cycles with interface extraction or mediator pattern" });
+      }
+      if (coupling?.overallHealth?.concreteRatio > 70) {
+        ins.push({ type: "warning", title: `${coupling.overallHealth.concreteRatio}% concrete coupling`, detail: "Most dependencies are to concrete classes, not interfaces", action: "Apply Dependency Inversion: depend on abstractions" });
+      }
+      // Most unstable module
+      if (coupling?.modules?.length > 0) {
+        const mostUnstable = coupling.modules.sort((a: any, b: any) => b.instability - a.instability)[0];
+        if (mostUnstable?.instability > 0.8) {
+          ins.push({ type: "info", title: `${mostUnstable.moduleName} is highly unstable (I=${mostUnstable.instability})`, detail: `${mostUnstable.efferentCoupling} outgoing deps, ${mostUnstable.afferentCoupling} incoming — changes here ripple outward` });
         }
       }
 

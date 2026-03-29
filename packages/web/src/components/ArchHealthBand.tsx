@@ -21,7 +21,8 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
       fetch("/api/quality").then((r) => r.ok ? r.json() : null),
       fetch("/api/security").then((r) => r.ok ? r.json() : null),
       fetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
-    ]).then(([quality, security, deadcode]) => {
+      fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
+    ]).then(([quality, security, deadcode, coupling]) => {
       const risks: string[] = [];
 
       // Find worst module
@@ -49,6 +50,14 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
         }
       }
 
+      // Circular dependencies from coupling analyzer
+      if (coupling?.circularDependencies?.length > 0) {
+        risks.push(`${coupling.circularDependencies.length} circular dependencies detected`);
+      }
+      if (coupling?.overallHealth?.concreteRatio > 70) {
+        risks.push(`${coupling.overallHealth.concreteRatio}% concrete coupling — use more interfaces`);
+      }
+
       // Calculate coupling
       let totalCross = 0;
       for (const rel of model.relations) {
@@ -59,8 +68,12 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
         if (srcMod && tgtMod && srcMod !== tgtMod) totalCross++;
       }
       const avgCoupling = model.modules.length > 0 ? totalCross / model.modules.length : 0;
-      const couplingLevel = avgCoupling < 5 ? "Low" : avgCoupling < 15 ? "Medium" : "High";
-      const couplingScore = Math.max(0, 100 - avgCoupling * 3);
+      const couplingLevel = coupling?.overallHealth
+        ? (coupling.overallHealth.avgInstability < 0.4 ? "Low" : coupling.overallHealth.avgInstability < 0.7 ? "Medium" : "High")
+        : (avgCoupling < 5 ? "Low" : avgCoupling < 15 ? "Medium" : "High");
+      const couplingScore = coupling?.overallHealth
+        ? Math.max(0, 100 - Math.round(coupling.overallHealth.avgInstability * 60) - coupling.overallHealth.circularCount * 10)
+        : Math.max(0, 100 - avgCoupling * 3);
 
       // Tech debt estimate (rough: $150/hour developer cost)
       const debtHours = (quality?.totalIssues || 0) * 0.5 + (deadcode?.estimatedCleanupLines || 0) * 0.01 + (security?.totalIssues || 0) * 2;
