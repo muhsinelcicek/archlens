@@ -1,10 +1,11 @@
+import { useI18n } from "../lib/i18n.js";
 import { useMemo } from "react";
 import { useStore } from "../lib/store.js";
 import { ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2, XCircle, ArrowRight, Activity } from "lucide-react";
 
 export function DriftView() {
   const { model } = useStore();
-  if (!model) return null;
+  const { t } = useI18n();  if (!model) return null;
 
   const analysis = useMemo(() => {
     const layerOrder = ["presentation", "api", "application", "domain", "infrastructure", "config"];
@@ -95,7 +96,7 @@ export function DriftView() {
       {/* Header with Score */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Architecture Health</h2>
+          <h2 className="text-2xl font-bold">{t("health.title")}</h2>
           <p className="text-sm text-[#5a5a70] mt-1">
             Drift detection, layer violations, circular dependencies, and module health
           </p>

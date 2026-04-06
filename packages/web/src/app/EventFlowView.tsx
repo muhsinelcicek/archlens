@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useState, useEffect } from "react";
 import { MessageSquare, ArrowRight, Box, CheckCircle2, AlertTriangle, Globe, Server, Zap } from "lucide-react";
 
@@ -11,7 +12,7 @@ const ctxColors = ["#60a5fa", "#34d399", "#a78bfa", "#fbbf24", "#f87171", "#06b6
 export function EventFlowView() {
   const [report, setReport] = useState<EventFlowReport | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const { t } = useI18n();
   useEffect(() => {
     fetch("/api/eventflow").then((r) => r.ok ? r.json() : null).then((d) => { setReport(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
@@ -22,7 +23,7 @@ export function EventFlowView() {
   return (
     <div className="p-6 lg:p-8 space-y-8 max-w-[1100px]">
       <div>
-        <h2 className="text-2xl font-bold">Event Flow & Bounded Contexts</h2>
+        <h2 className="text-2xl font-bold">{t("event.title")}</h2>
         <p className="text-sm text-[#5a5a70] mt-1">
           {report.events.length} events · {report.boundedContexts.length} contexts · {report.communicationPatterns.length} patterns
         </p>

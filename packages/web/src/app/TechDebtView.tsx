@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useState, useEffect } from "react";
 import { DollarSign, Clock, TrendingUp, Zap, ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -16,7 +17,7 @@ const impactColors: Record<string, string> = { low: "#60a5fa", medium: "#fbbf24"
 export function TechDebtView() {
   const [report, setReport] = useState<TechDebtReport | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const { t } = useI18n();
   useEffect(() => {
     fetch("/api/techdebt").then((r) => r.ok ? r.json() : null).then((d) => { setReport(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
@@ -27,7 +28,7 @@ export function TechDebtView() {
   return (
     <div className="p-6 lg:p-8 space-y-8 max-w-[1000px]">
       <div>
-        <h2 className="text-2xl font-bold">Technical Debt Ledger</h2>
+        <h2 className="text-2xl font-bold">{t("debt.title")}</h2>
         <p className="text-sm text-[#5a5a70] mt-1">Estimated cost at ${report.costPerDeveloperHour}/hour developer rate</p>
       </div>
 

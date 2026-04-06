@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useStore } from "../lib/store.js";
 import {
   Rocket, Layers, Database, Globe, Cpu, ArrowRight,

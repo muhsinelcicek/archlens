@@ -1,4 +1,5 @@
 import { useStore } from "../lib/store.js";
+import { useI18n } from "../lib/i18n.js";
 import { StatCard } from "../components/StatCard.js";
 import { LanguageBar } from "../components/LanguageBar.js";
 import {
@@ -19,6 +20,7 @@ export function Dashboard() {
   if (!model) return null;
 
   const { stats, modules, apiEndpoints, dbEntities, techRadar } = model;
+  const { t } = useI18n();
 
   const sortedModules = [...modules].sort((a, b) => b.lineCount - a.lineCount);
 
@@ -29,7 +31,7 @@ export function Dashboard() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">{model.project.name}</h2>
           <p className="text-[#5a5a70] text-sm mt-1">
-            Architecture analysis / {new Date(model.project.analyzedAt).toLocaleDateString("tr-TR")}
+            {t("dashboard.title")} / {new Date(model.project.analyzedAt).toLocaleDateString("tr-TR")}
           </p>
         </div>
         <div className="text-right text-xs text-[#5a5a70]">
@@ -87,7 +89,7 @@ export function Dashboard() {
 
       {/* Languages */}
       <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">Languages</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">{t("dashboard.languages")}</h3>
         <LanguageBar languages={stats.languages} totalSymbols={stats.symbols} />
       </section>
 
@@ -95,7 +97,7 @@ export function Dashboard() {
       <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
         <div className="flex items-center gap-2 mb-5">
           <Layers className="h-4 w-4 text-[#5a5a70]" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0]">Architecture Layers</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0]">{t("dashboard.arch_layers")}</h3>
         </div>
 
         <div className="space-y-2">
@@ -162,7 +164,7 @@ export function Dashboard() {
 
       {/* Modules Detail Grid */}
       <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">Modules</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">{t("dashboard.modules")}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sortedModules.map((mod) => {
             const config = layerConfig[mod.layer] || layerConfig.config;
@@ -207,7 +209,7 @@ export function Dashboard() {
 
       {/* Tech Stack */}
       <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">Tech Stack</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">{t("dashboard.tech_stack")}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {techRadar.slice(0, 24).map((tech) => (
             <div

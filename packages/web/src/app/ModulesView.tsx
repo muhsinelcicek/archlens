@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useStore } from "../lib/store.js";
 import { Files, Code2, FileCode } from "lucide-react";
 
@@ -15,14 +16,14 @@ const layerConfig: Record<string, { color: string; label: string }> = {
 export function ModulesView() {
   const { model } = useStore();
   if (!model) return null;
-
+  const { t } = useI18n();
   const sorted = [...model.modules].sort((a, b) => b.lineCount - a.lineCount);
   const maxLines = Math.max(...sorted.map((m) => m.lineCount), 1);
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1200px]">
       <div>
-        <h2 className="text-2xl font-bold">Modules</h2>
+        <h2 className="text-2xl font-bold">{t("modules.title")}</h2>
         <p className="text-sm text-[#5a5a70] mt-1">{model.modules.length} modules detected across the codebase</p>
       </div>
 

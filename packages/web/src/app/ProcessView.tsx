@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useState, useMemo } from "react";
 import { useStore, type ArchModel } from "../lib/store.js";
 import {
@@ -150,6 +151,7 @@ export function ProcessView() {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
   if (!model) return null;
+  const { t } = useI18n();
   const processes = model.businessProcesses || [];
   const filtered = filterCategory ? processes.filter((p) => p.category === filterCategory) : processes;
   const counts = new Map<string, number>();
@@ -158,7 +160,7 @@ export function ProcessView() {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1200px]">
       <div>
-        <h2 className="text-2xl font-bold">How The System Works</h2>
+        <h2 className="text-2xl font-bold">{t("proc.title")}</h2>
         <p className="text-sm text-[#5a5a70] mt-1">{processes.length} processes · {processes.reduce((a, p) => a + p.steps.length, 0)} steps — click to explore algorithms and data flow</p>
       </div>
 

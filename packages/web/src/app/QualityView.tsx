@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -45,7 +46,7 @@ export function QualityView() {
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
   const [deepPatterns, setDeepPatterns] = useState<any[] | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
-  const [coupling, setCoupling] = useState<any | null>(null);
+  const { t } = useI18n();  const [coupling, setCoupling] = useState<any | null>(null);
   const [consistency, setConsistency] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"quality" | "coupling" | "consistency">("quality");
 
@@ -74,7 +75,7 @@ export function QualityView() {
       {/* Header + Score */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Code Quality & Architecture Patterns</h2>
+          <h2 className="text-2xl font-bold">{t("quality.title")}</h2>
           <p className="text-sm text-[#5a5a70] mt-1">{report.totalIssues} issues found across {report.modules.length} modules</p>
         </div>
         <div className="relative flex-shrink-0">

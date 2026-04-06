@@ -1,3 +1,4 @@
+import { useI18n } from "../lib/i18n.js";
 import { useState, useMemo } from "react";
 import { useStore, type ArchModel } from "../lib/store.js";
 import { ArrowRight, Play, ChevronDown, ChevronRight, Globe, FunctionSquare, Lightbulb } from "lucide-react";
@@ -96,7 +97,7 @@ function traceEndpoint(model: ArchModel | null, method: string, path: string): S
 export function SequenceView() {
   const { model } = useStore();
   const [search, setSearch] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
+  const { t } = useI18n();  const [showDropdown, setShowDropdown] = useState(false);
 
   if (!model) return null;
 
@@ -131,7 +132,7 @@ export function SequenceView() {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1100px]">
       <div>
-        <h2 className="text-2xl font-bold">Sequence Diagrams</h2>
+        <h2 className="text-2xl font-bold">{t("seq.title")}</h2>
         <p className="text-sm text-[#5a5a70] mt-1">
           Select an API endpoint to trace its execution flow — who calls whom, in what order, across modules.
         </p>
