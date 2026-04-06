@@ -28,9 +28,9 @@ interface QualityReport {
   topIssues: QualityIssue[];
 }
 interface CouplingReport {
-  overallHealth: { avgInstability: number; circularCount: number; concreteRatio: number };
-  circularDependencies: Array<{ modules: string[] }>;
-  moduleMetrics: Array<{ module: string; afferentCoupling: number; efferentCoupling: number; instability: number }>;
+  overallHealth: { avgInstability: number; avgAbstractness: number; avgDistance: number; circularCount: number; concreteRatio: number };
+  circularDependencies: Array<{ cycle: string[]; level: string; description: string }>;
+  modules: Array<{ moduleName: string; afferentCoupling: number; efferentCoupling: number; instability: number }>;
 }
 interface SecurityReport {
   totalIssues: number;
@@ -123,7 +123,7 @@ function buildActionItems(
   // Circular dependencies
   if (coupling?.circularDependencies) {
     for (const circ of coupling.circularDependencies.slice(0, 2)) {
-      const names = circ.modules.join(" <-> ");
+      const names = (circ.cycle || []).join(" <-> ");
       items.push({
         severity: "warning",
         message: `Circular dependency: ${names}`,
@@ -133,8 +133,8 @@ function buildActionItems(
   }
 
   // High instability modules
-  if (coupling?.moduleMetrics) {
-    const unstable = coupling.moduleMetrics.filter((m) => m.instability > 0.8);
+  if (coupling?.modules) {
+    const unstable = coupling.modules.filter((m: any) => m.instability > 0.8);
     if (unstable.length > 0) {
       items.push({
         severity: "warning",
@@ -157,7 +157,7 @@ function buildActionItems(
   if (techDebt?.quickWins && techDebt.quickWins.length > 0) {
     items.push({
       severity: "info",
-      message: `${techDebt.quickWins.length} quick-win refactoring opportunities ($${(techDebt.quickWins.reduce((a, i) => a + i.estimatedCost, 0) / 1000).toFixed(1)}k savings)`,
+      message: `${techDebt.quickWins.length} quick-win refactoring opportunities ($${(techDebt.quickWins.reduce((a: number, i: any) => a + (i.estimatedCost || 0), 0) / 1000).toFixed(1)}k savings)`,
       link: "/quality?tab=debt",
     });
   }
