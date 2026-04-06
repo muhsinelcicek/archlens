@@ -12,6 +12,7 @@ import { SequenceView } from "./app/SequenceView.js";
 import { OnboardView } from "./app/OnboardView.js";
 import { DriftView } from "./app/DriftView.js";
 import { SettingsView } from "./app/SettingsView.js";
+import { ImportView } from "./app/ImportView.js";
 import { QualityView } from "./app/QualityView.js";
 import { TechDebtView } from "./app/TechDebtView.js";
 import { EventFlowView } from "./app/EventFlowView.js";
@@ -37,6 +38,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="quality" element={<QualityView />} />
           <Route path="techdebt" element={<TechDebtView />} />
           <Route path="eventflow" element={<EventFlowView />} />
+          <Route path="import" element={<ImportView />} />
           <Route path="settings" element={<SettingsView />} />
           <Route path="endpoints" element={<ApiMapView />} />
         </Route>

@@ -3,7 +3,7 @@ import { Outlet, NavLink } from "react-router-dom";
 import { useStore } from "../lib/store.js";
 import {
   LayoutDashboard, Network, Database, GitBranch, Boxes, Cpu,
-  Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare,
+  Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare, Plus,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
 import { useI18n } from "../lib/i18n.js";
@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
     { to: "/drift", icon: ShieldCheck, labelKey: "nav.health_check" },
   ]},
   { labelKey: "", items: [
+    { to: "/import", icon: Plus, labelKey: "nav.import" },
     { to: "/onboard", icon: Rocket, labelKey: "nav.onboarding" },
     { to: "/modules", icon: Boxes, labelKey: "nav.modules" },
     { to: "/settings", icon: Settings, labelKey: "nav.settings" },

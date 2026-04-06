@@ -51,7 +51,7 @@ export const serveCommand = new Command("serve")
 
     const server = http.createServer((req, res) => {
       res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
       if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
@@ -234,6 +234,74 @@ export const serveCommand = new Command("serve")
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(scanner.scan()));
         } else { res.writeHead(404); res.end("No model"); }
+        return;
+      }
+
+      // ─── Add project endpoint (POST) ─────────────────────────
+
+      if (url.pathname === "/api/projects/add" && req.method === "POST") {
+        let body = "";
+        req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+        req.on("end", async () => {
+          try {
+            const { url: repoUrl, branch } = JSON.parse(body);
+            if (!repoUrl) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing url" })); return; }
+
+            const repoName = repoUrl.replace(/\.git$/, "").split("/").pop() || "unknown";
+            const localPath = path.join(process.env.HOME || "~", ".archlens", "projects", repoName);
+
+            // Clone or update
+            const { execSync } = await import("node:child_process");
+            const PROJECTS_DIR = path.join(process.env.HOME || "~", ".archlens", "projects");
+            fs.mkdirSync(PROJECTS_DIR, { recursive: true });
+
+            if (fs.existsSync(localPath)) {
+              try { execSync(`git -C "${localPath}" pull --ff-only`, { stdio: "pipe", timeout: 30000 }); } catch {}
+            } else {
+              execSync(`git clone --depth 1 ${branch ? `--branch ${branch}` : ""} "${repoUrl}" "${localPath}"`, { stdio: "pipe", timeout: 120000 });
+            }
+
+            // Analyze
+            const { ProjectScanner, JsonExporter, MermaidGenerator, MarkdownGenerator } = await import("@archlens/core");
+            const scanner = new ProjectScanner();
+            const model = await scanner.scan({ rootDir: localPath });
+
+            const outputDir = path.join(localPath, ".archlens");
+            fs.mkdirSync(outputDir, { recursive: true });
+            const exporter = new JsonExporter(model);
+            fs.writeFileSync(path.join(outputDir, "model.json"), exporter.toString());
+
+            const mermaid = new MermaidGenerator(model);
+            const diagrams = mermaid.generateFullReport();
+            const diagramDir = path.join(outputDir, "diagrams");
+            fs.mkdirSync(diagramDir, { recursive: true });
+            for (const [name, content] of Object.entries(diagrams)) {
+              fs.writeFileSync(path.join(diagramDir, `${name}.mmd`), content);
+            }
+
+            const md = new MarkdownGenerator(model);
+            fs.writeFileSync(path.join(outputDir, "ARCHITECTURE.md"), md.generate());
+
+            // Register
+            const REGISTRY_PATH = path.join(process.env.HOME || "~", ".archlens", "registry.json");
+            let reg: any[] = [];
+            try { if (fs.existsSync(REGISTRY_PATH)) reg = JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf-8")); } catch {}
+            const entry = {
+              name: repoName, repoUrl, localPath,
+              analyzedAt: new Date().toISOString(),
+              stats: { files: model.stats.files, symbols: model.stats.symbols, modules: model.stats.modules, lines: model.stats.totalLines },
+            };
+            const idx = reg.findIndex((p: any) => p.name === repoName);
+            if (idx >= 0) reg[idx] = entry; else reg.push(entry);
+            fs.writeFileSync(REGISTRY_PATH, JSON.stringify(reg, null, 2));
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, name: repoName, stats: entry.stats }));
+          } catch (err: any) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message || "Failed to add project" }));
+          }
+        });
         return;
       }
 
