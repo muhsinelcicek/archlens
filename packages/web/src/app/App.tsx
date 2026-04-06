@@ -18,24 +18,16 @@ const navGroups: NavGroup[] = [
   ]},
   { labelKey: "nav.group.analysis", items: [
     { to: "/processes", icon: Zap, labelKey: "nav.processes" },
-    { to: "/sequence", icon: GitBranch, labelKey: "nav.sequences" },
-    { to: "/eventflow", icon: MessageSquare, labelKey: "nav.event_flow" },
-  ]},
-  { labelKey: "nav.group.diagrams", items: [
-    { to: "/diagram/dependency-graph", icon: GitBranch, labelKey: "nav.dependencies" },
-    { to: "/diagram/er-diagram", icon: Database, labelKey: "nav.er_diagram" },
-    { to: "/endpoints", icon: Globe, labelKey: "nav.api_map" },
-    { to: "/diagram/tech-radar", icon: Cpu, labelKey: "nav.tech_radar" },
+    { to: "/events", icon: MessageSquare, labelKey: "nav.event_flow" },
+    { to: "/structure", icon: Boxes, labelKey: "nav.structure" },
+    { to: "/stack", icon: Globe, labelKey: "nav.api_stack" },
   ]},
   { labelKey: "nav.group.quality", items: [
     { to: "/quality", icon: ShieldAlert, labelKey: "nav.code_quality" },
-    { to: "/techdebt", icon: DollarSign, labelKey: "nav.tech_debt" },
-    { to: "/drift", icon: ShieldCheck, labelKey: "nav.health_check" },
   ]},
   { labelKey: "", items: [
-    { to: "/import", icon: Plus, labelKey: "nav.import" },
     { to: "/onboard", icon: Rocket, labelKey: "nav.onboarding" },
-    { to: "/modules", icon: Boxes, labelKey: "nav.modules" },
+    { to: "/import", icon: Plus, labelKey: "nav.import" },
     { to: "/settings", icon: Settings, labelKey: "nav.settings" },
   ]},
 ];

@@ -48,7 +48,8 @@ export function QualityView() {
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const { t } = useI18n();  const [coupling, setCoupling] = useState<any | null>(null);
   const [consistency, setConsistency] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<"quality" | "coupling" | "consistency">("quality");
+  const [activeTab, setActiveTab] = useState<"quality" | "coupling" | "consistency" | "debt" | "health">("quality");
+  const [techDebt, setTechDebt] = useState<any | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -56,11 +57,13 @@ export function QualityView() {
       fetch("/api/patterns").then((r) => r.ok ? r.json() : null),
       fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
       fetch("/api/consistency").then((r) => r.ok ? r.json() : null),
-    ]).then(([q, p, c, con]) => {
+      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null),
+    ]).then(([q, p, c, con, td]) => {
       if (q) setReport(q);
       if (p) setDeepPatterns(p);
       if (c) setCoupling(c);
       if (con) setConsistency(con);
+      if (td) setTechDebt(td);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -98,6 +101,7 @@ export function QualityView() {
           { id: "quality" as const, label: "Code Quality", count: report.totalIssues },
           { id: "coupling" as const, label: "Coupling Analysis", count: coupling?.circularDependencies?.length || 0 },
           { id: "consistency" as const, label: "Consistency", count: consistency?.issues?.length || 0 },
+          { id: "debt" as const, label: t("nav.tech_debt"), count: techDebt?.items?.length || 0 },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 text-xs font-semibold transition-colors ${activeTab === tab.id ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
@@ -466,6 +470,41 @@ export function QualityView() {
               </div>
             </section>
           )}
+        </div>
+      )}
+      {/* Tech Debt Tab */}
+      {activeTab === "debt" && techDebt && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
+              <div className="text-xs text-[#5a5a70] uppercase mb-2">{t("debt.total_fix")}</div>
+              <div className="text-3xl font-bold text-red-400">${(techDebt.totalEstimatedCost / 1000).toFixed(0)}k</div>
+              <div className="text-xs text-[#5a5a70] mt-1">{techDebt.totalEstimatedHours} {t("debt.hours")}</div>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+              <div className="text-xs text-[#5a5a70] uppercase mb-2">{t("debt.annual")}</div>
+              <div className="text-3xl font-bold text-amber-400">${(techDebt.totalAnnualCost / 1000).toFixed(0)}k</div>
+              <div className="text-xs text-[#5a5a70] mt-1">{t("debt.ongoing")}</div>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+              <div className="text-xs text-[#5a5a70] uppercase mb-2">{t("debt.best_roi")}</div>
+              <div className="text-3xl font-bold text-emerald-400">{techDebt.quickWins.length}</div>
+              <div className="text-xs text-[#5a5a70] mt-1">{t("debt.quick_wins")}</div>
+            </div>
+          </div>
+          {techDebt.items.map((item: any, i: number) => (
+            <div key={i} className="rounded-xl border border-[#2a2a3a] p-4 flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-[#e4e4ed]">{item.category}</div>
+                <div className="text-xs text-[#8888a0] mt-0.5">{item.description}</div>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-[#e4e4ed]">${(item.estimatedCost / 1000).toFixed(1)}k</span>
+                <span className="text-amber-400">${(item.annualCost / 1000).toFixed(1)}k/yr</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-archlens-500/10 text-archlens-300">ROI: {item.roi.toFixed(1)}x</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
