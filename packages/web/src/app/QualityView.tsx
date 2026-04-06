@@ -1,6 +1,8 @@
 import { useI18n } from "../lib/i18n.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageLoader } from "../components/PageLoader.js";
+import { PageEmpty } from "../components/PageLoader.js";
 import {
   ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2, XCircle,
   Bug, Code2, Box, Layers, GitBranch, ChevronDown, ChevronRight,
@@ -68,8 +70,8 @@ export function QualityView() {
     }).catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-[#5a5a70]">Analyzing code quality...</div>;
-  if (!report) return <div className="p-6 text-[#5a5a70]">No quality data available</div>;
+  if (loading) return <PageLoader message="Analyzing code quality..." />;
+  if (!report) return <PageEmpty message="No quality data available. Run 'archlens analyze' first." />;
 
   const scoreColor = report.projectScore >= 80 ? "#34d399" : report.projectScore >= 60 ? "#fbbf24" : report.projectScore >= 40 ? "#f97316" : "#ef4444";
 

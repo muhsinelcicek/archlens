@@ -1,5 +1,7 @@
 import { useI18n } from "../lib/i18n.js";
 import { useState, useEffect } from "react";
+import { PageLoader } from "../components/PageLoader.js";
+import { PageEmpty } from "../components/PageLoader.js";
 import {
   MessageSquare, ArrowRight, Box, CheckCircle2, AlertTriangle,
   Globe, Server, Zap, Radio, ChevronDown, ChevronRight,
@@ -30,8 +32,8 @@ export function EventFlowView() {
     fetch("/api/eventflow").then((r) => r.ok ? r.json() : null).then((d) => { setReport(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-[#5a5a70]">{t("common.loading")}</div>;
-  if (!report) return <div className="p-6 text-[#5a5a70]">{t("common.no_data")}</div>;
+  if (loading) return <PageLoader message="Detecting event flows..." />;
+  if (!report) return <PageEmpty message="No event flow data detected. Make sure the project has been analyzed." />;
 
   const integrationEvents = report.events.filter((e) => e.eventType === "integration");
   const domainEvents = report.events.filter((e) => e.eventType === "domain");

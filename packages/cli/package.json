@@ -1,12 +1,12 @@
 {
-  "name": "@archlens/cli",
+  "name": "archlens",
   "version": "0.1.0",
   "description": "ArchLens CLI — Analyze and visualize code architecture",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "archlens": "dist/index.js"
+    "archlens": "./dist/index.js"
   },
   "publishConfig": {
     "access": "public"
@@ -19,7 +19,14 @@
     "type": "git",
     "url": "https://github.com/archlens/archlens"
   },
-  "keywords": ["architecture", "code-analysis", "visualization", "mcp", "cli"],
+  "homepage": "https://github.com/archlens/archlens#readme",
+  "bugs": {
+    "url": "https://github.com/archlens/archlens/issues"
+  },
+  "keywords": ["architecture", "code-analysis", "visualization", "static-analysis", "dependency-graph"],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

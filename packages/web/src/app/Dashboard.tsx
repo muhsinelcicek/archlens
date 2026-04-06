@@ -4,6 +4,7 @@ import { useStore } from "../lib/store.js";
 import { useI18n } from "../lib/i18n.js";
 import { StatCard } from "../components/StatCard.js";
 import { LanguageBar } from "../components/LanguageBar.js";
+import { PageLoader } from "../components/PageLoader.js";
 import {
   Files, Code2, GitBranch, Boxes, Database, Globe, Cpu, Layers,
   ShieldCheck, Skull, AlertTriangle, DollarSign, Activity,
@@ -265,22 +266,27 @@ export function Dashboard() {
   const [deadcode, setDeadcode] = useState<DeadCodeReport | null>(null);
   const [techDebt, setTechDebt] = useState<TechDebtReport | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
-      fetch("/api/security").then((r) => r.ok ? r.json() : null),
-      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
-      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null),
+      fetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
     ]).then(([q, c, s, d, td]) => {
       if (q) setQuality(q);
       if (c) setCoupling(c);
       if (s) setSecurity(s);
       if (d) setDeadcode(d);
       if (td) setTechDebt(td);
+      if (!q && !c && !s && !d && !td) setHealthError("Could not load health data. Make sure the API server is running.");
       setHealthLoading(false);
-    }).catch(() => setHealthLoading(false));
+    }).catch(() => {
+      setHealthError("Failed to connect to the API server.");
+      setHealthLoading(false);
+    });
   }, []);
 
   if (!model) return null;
@@ -394,10 +400,11 @@ export function Dashboard() {
         </div>
 
         {healthLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-10 bg-[#1e1e2a] rounded-lg animate-pulse" />
-            ))}
+          <PageLoader message="Loading health data..." />
+        ) : healthError ? (
+          <div className="flex flex-col items-center justify-center h-32 gap-2">
+            <AlertTriangle className="h-6 w-6 text-amber-500" />
+            <p className="text-sm text-[#5a5a70]">{healthError}</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -291,20 +291,25 @@ export function OnboardView() {
   const [coupling, setCoupling] = useState<CouplingReport | null>(null);
   const [security, setSecurity] = useState<SecurityReport | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/coupling").then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/security").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/quality").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/coupling").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/security").then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
       .then(([q, c, s]) => {
         if (q) setQuality(q);
         if (c) setCoupling(c);
         if (s) setSecurity(s);
+        if (!q && !c && !s) setHealthError("Health data unavailable. The API server may not be running.");
         setHealthLoading(false);
       })
-      .catch(() => setHealthLoading(false));
+      .catch(() => {
+        setHealthError("Failed to load health data.");
+        setHealthLoading(false);
+      });
   }, []);
 
   const toggleSection = useCallback((num: number) => {
@@ -764,10 +769,14 @@ export function OnboardView() {
         visited={visitedSections.has(4)}
       >
         {healthLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-xl border border-[#2a2a3a] bg-elevated p-5 h-36 animate-pulse" />
-            ))}
+          <div className="flex flex-col items-center justify-center h-36 gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-archlens-400 border-t-transparent" />
+            <p className="text-sm text-[#5a5a70]">Loading health data...</p>
+          </div>
+        ) : healthError ? (
+          <div className="flex flex-col items-center justify-center h-36 gap-2">
+            <AlertTriangle className="h-6 w-6 text-amber-500" />
+            <p className="text-sm text-[#5a5a70]">{healthError}</p>
           </div>
         ) : (
           <>

@@ -1,101 +1,99 @@
 # ArchLens
 
-**See the forest, not just the trees.**
+> Code Architecture Intelligence Platform — understand any codebase in minutes.
 
-Code Architecture Intelligence Platform — automatically analyzes your codebase and generates architecture documentation, business process maps, and drift detection.
+ArchLens analyzes your codebase and provides interactive architecture visualization, quality analysis, business process detection, and AI-powered insights via MCP integration.
 
-## What it does
+## Features
 
-- **System Architecture** — Auto-generates C4-style layered architecture diagrams
-- **Business Process Detection** — Discovers ETL pipelines, analysis algorithms, API flows, and alert systems
-- **ER Diagrams** — Extracts database schemas from ORM models (SQLAlchemy, JPA, TypeORM)
-- **API Mapping** — Auto-discovers REST endpoints from route decorators
-- **Architecture Drift** — Detects layer violations, circular dependencies, and breaking changes
-- **MCP Integration** — Works with Claude Code, Cursor, and other AI coding tools
-- **Interactive Dashboard** — Web-based exploration with drill-down navigation
+- **8 Language Support** — TypeScript, JavaScript, Python, Go, Java, Swift, Rust, C#
+- **Interactive Web Dashboard** — Sigma.js graph visualization, drill-down from system to file level
+- **Architecture Analysis** — Layer detection, dependency mapping, coupling metrics (Ca/Ce/I/A/D)
+- **Quality Analysis** — Cyclomatic/cognitive complexity, language-specific rules, pattern detection
+- **Business Process Detection** — Auto-discovers data flows and processing pipelines
+- **Impact Analysis** — Blast radius visualization before making changes
+- **Event Flow Mapping** — Bounded contexts, communication patterns, event tracing
+- **MCP Integration** — 7 tools for Claude Code, Cursor, and other AI coding assistants
+- **Tech Debt Calculator** — Estimates fix cost in hours and dollars
 
 ## Quick Start
 
 ```bash
+# Install
+npm install -g archlens
+
 # Analyze your project
-npx @archlens/cli analyze .
+cd your-project
+archlens analyze .
 
-# Start the dashboard
-npx @archlens/cli serve
-
-# Open http://localhost:4848
+# Open the dashboard
+archlens serve
+# → http://localhost:4848
 ```
 
-## MCP Setup (Claude Code / Cursor)
+## Screenshots
 
-```bash
-npx @archlens/cli setup
-# Restart your AI tool — ArchLens tools are now available
-```
-
-### MCP Tools
-
-| Tool | What it does |
-|------|-------------|
-| `archlens_architecture` | System overview: modules, layers, stats |
-| `archlens_process` | Business process details with algorithms |
-| `archlens_impact` | Change blast radius analysis |
-| `archlens_onboard` | New developer onboarding guide |
-| `archlens_drift` | Architecture drift detection (git-based) |
+[TODO: Add screenshots]
 
 ## CLI Commands
 
-```bash
-archlens analyze [path]     # Analyze a project
-archlens serve              # Start dashboard API
-archlens export [path]      # Export diagrams (mermaid, markdown, json)
-archlens drift [path]       # Architecture drift check
-archlens setup              # Configure MCP for AI tools
+| Command | Description |
+|---------|-------------|
+| `archlens analyze <path>` | Analyze a project |
+| `archlens serve` | Start the web dashboard |
+| `archlens add <github-url>` | Add a GitHub repository |
+| `archlens list` | List analyzed projects |
+| `archlens export <format>` | Export analysis (json, svg) |
+| `archlens review` | Architecture review summary |
+
+## MCP Integration
+
+Add to your Claude Code or Cursor configuration:
+
+```json
+{
+  "mcpServers": {
+    "archlens": {
+      "command": "npx",
+      "args": ["archlens", "mcp"]
+    }
+  }
+}
 ```
 
-## Supported Languages
-
-| Language | Parsing | API Detection | DB Schema | Framework Detection |
-|----------|---------|---------------|-----------|-------------------|
-| TypeScript/JavaScript | Full | Express, NestJS, Next.js | TypeORM, Prisma | React, Angular, Vue |
-| Python | Full | FastAPI, Flask, Django | SQLAlchemy | Pydantic |
-| Go | Full | gin, echo, fiber | gorm | net/http |
-| Java | Full | Spring Boot (@GetMapping) | JPA (@Entity) | Spring MVC |
-
-## Dashboard Pages
-
-- **Dashboard** — Stats, language distribution, architecture layers
-- **Architecture** — Interactive drill-down graph (System → Module → File → Symbol)
-- **Business Processes** — Algorithm details, data sources, processing pipelines
-- **Dependencies** — Module dependency graph
-- **ER Diagram** — Database entity visualization
-- **API Map** — Endpoint explorer with search
-- **Tech Radar** — Technology stack overview
-- **Onboarding** — New developer guide
-- **Health Check** — Architecture score, violations, module health
-
-## CI/CD Integration
-
-Add to your GitHub Actions workflow:
-
-```yaml
-- name: Architecture Check
-  run: |
-    npx @archlens/cli analyze .
-    npx @archlens/cli drift . --json > report.json
-```
-
-See `.github/workflows/archlens-check.yml` for a full example with PR comments.
+Available MCP tools: `architecture`, `process`, `impact`, `onboard`, `drift`, `sequence`, `explain`
 
 ## Architecture
 
 ```
-archlens/
-├── packages/
-│   ├── core/     # Parser engine + analyzers + generators
-│   ├── cli/      # Command-line interface
-│   ├── mcp/      # MCP server for AI tools
-│   └── web/      # React dashboard
+packages/
+├── core/     — Analysis engine (parsers, analyzers, models)
+├── cli/      — Command-line interface
+├── mcp/      — Model Context Protocol server
+└── web/      — React dashboard (Vite + Tailwind)
+```
+
+## Supported Languages
+
+| Language | Parser | Imports | Quality Rules | Patterns |
+|----------|--------|---------|---------------|----------|
+| TypeScript | tree-sitter | Yes | 5 rules | Yes |
+| JavaScript | tree-sitter | Yes | 3 rules | Yes |
+| Python | tree-sitter | Yes | 4 rules | Yes |
+| Go | tree-sitter | Yes | 3 rules | Yes |
+| Java | tree-sitter | Yes | 2 rules | Yes |
+| C# | tree-sitter | Yes | 3 rules | Yes |
+| Swift | tree-sitter | Yes | 1 rule | Yes |
+| Rust | tree-sitter | Yes | 2 rules | Yes |
+
+## Development
+
+```bash
+git clone https://github.com/user/archlens.git
+cd archlens
+pnpm install
+pnpm build
+pnpm test
 ```
 
 ## License

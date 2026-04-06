@@ -15,6 +15,7 @@
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
+    "typecheck": "pnpm -r exec tsc --noEmit",
     "clean": "pnpm -r clean"
   }
 }

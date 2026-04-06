@@ -12,6 +12,7 @@ import { EventFlowView } from "./app/EventFlowView.js";
 import { OnboardView } from "./app/OnboardView.js";
 import { ImportView } from "./app/ImportView.js";
 import { SettingsView } from "./app/SettingsView.js";
+import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { initTheme } from "./lib/theme.js";
 import "./index.css";
 
@@ -22,16 +23,16 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />}>
-          <Route index element={<Dashboard />} />
-          <Route path="architecture" element={<ArchitectureView />} />
-          <Route path="processes" element={<ProcessView />} />
-          <Route path="structure" element={<StructureView />} />
-          <Route path="stack" element={<ApiStackView />} />
-          <Route path="quality" element={<QualityView />} />
-          <Route path="events" element={<EventFlowView />} />
-          <Route path="onboard" element={<OnboardView />} />
-          <Route path="import" element={<ImportView />} />
-          <Route path="settings" element={<SettingsView />} />
+          <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route path="architecture" element={<ErrorBoundary><ArchitectureView /></ErrorBoundary>} />
+          <Route path="processes" element={<ErrorBoundary><ProcessView /></ErrorBoundary>} />
+          <Route path="structure" element={<ErrorBoundary><StructureView /></ErrorBoundary>} />
+          <Route path="stack" element={<ErrorBoundary><ApiStackView /></ErrorBoundary>} />
+          <Route path="quality" element={<ErrorBoundary><QualityView /></ErrorBoundary>} />
+          <Route path="events" element={<ErrorBoundary><EventFlowView /></ErrorBoundary>} />
+          <Route path="onboard" element={<ErrorBoundary><OnboardView /></ErrorBoundary>} />
+          <Route path="import" element={<ErrorBoundary><ImportView /></ErrorBoundary>} />
+          <Route path="settings" element={<ErrorBoundary><SettingsView /></ErrorBoundary>} />
         </Route>
       </Routes>
     </BrowserRouter>
