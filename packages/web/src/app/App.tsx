@@ -4,6 +4,7 @@ import { useStore } from "../lib/store.js";
 import {
   LayoutDashboard, Network, Database, GitBranch, Boxes, Cpu,
   Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare, Plus,
+  Flame, GitCompare, ScrollText,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
 import { useI18n } from "../lib/i18n.js";
@@ -24,6 +25,9 @@ const navGroups: NavGroup[] = [
   ]},
   { labelKey: "nav.group.quality", items: [
     { to: "/quality", icon: ShieldAlert, labelKey: "nav.code_quality" },
+    { to: "/hotspots", icon: Flame, labelKey: "nav.hotspots" },
+    { to: "/diff", icon: GitCompare, labelKey: "nav.diff" },
+    { to: "/rules", icon: ScrollText, labelKey: "nav.rules" },
   ]},
   { labelKey: "", items: [
     { to: "/onboard", icon: Rocket, labelKey: "nav.onboarding" },

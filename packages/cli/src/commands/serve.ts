@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import http from "node:http";
 import chalk from "chalk";
-import { QualityAnalyzer, DeadCodeDetector, SecurityScanner, TechDebtCalculator, EventFlowDetector, PatternDeepAnalyzer, CouplingAnalyzer, ConsistencyChecker } from "@archlens/core";
+import { QualityAnalyzer, DeadCodeDetector, SecurityScanner, TechDebtCalculator, EventFlowDetector, PatternDeepAnalyzer, CouplingAnalyzer, ConsistencyChecker, HotspotAnalyzer, DiffAnalyzer, CustomRuleEngine } from "@archlens/core";
 
 const ARCHLENS_HOME = path.join(process.env.HOME || "~", ".archlens");
 const REGISTRY_PATH = path.join(ARCHLENS_HOME, "registry.json");
@@ -392,6 +392,217 @@ export const serveCommand = new Command("serve")
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(checker.check()));
         } else { res.writeHead(404); res.end("No model"); }
+        return;
+      }
+
+      // ─── Hotspots endpoint (git history × complexity) ──────
+
+      if (url.pathname === "/api/hotspots") {
+        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
+        let projectRoot = "";
+        if (options.data) {
+          projectRoot = path.dirname(options.data);
+          if (!modelData) { const mp = path.join(options.data, "model.json"); if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8")); }
+        } else if (registry.length > 0) {
+          projectRoot = registry[0].localPath;
+          const mp = path.join(projectRoot, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+        if (modelData && projectRoot) {
+          if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+          try {
+            const analyzer = new HotspotAnalyzer(modelData, projectRoot);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(analyzer.analyze()));
+          } catch (err: any) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ hotspots: [], totalFiles: 0, riskiestModule: "", topRiskFiles: [], error: err.message }));
+          }
+        } else { res.writeHead(404); res.end("No model"); }
+        return;
+      }
+
+      // ─── Snapshots endpoints ────────────────────────────────
+
+      const snapshotMatch = url.pathname.match(/^\/api\/snapshots(?:\/(.+))?$/);
+      if (snapshotMatch) {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        const snapDir = path.join(projectRoot, ".archlens", "snapshots");
+        if (!fs.existsSync(snapDir)) fs.mkdirSync(snapDir, { recursive: true });
+        const snapName = snapshotMatch[1];
+
+        // POST /api/snapshots - save
+        if (req.method === "POST" && !snapName) {
+          let body = "";
+          req.on("data", (c: Buffer) => { body += c.toString(); });
+          req.on("end", () => {
+            try {
+              const { name } = JSON.parse(body);
+              if (!name) { res.writeHead(400); res.end("Missing name"); return; }
+              let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
+              if (!modelData) {
+                const mp = path.join(projectRoot, ".archlens", "model.json");
+                if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+              }
+              if (!modelData) { res.writeHead(404); res.end("No model"); return; }
+              const safeName = name.replace(/[^a-zA-Z0-9-_]/g, "_");
+              const snapPath = path.join(snapDir, `${safeName}.json`);
+              const savedAt = new Date().toISOString();
+              fs.writeFileSync(snapPath, JSON.stringify({ ...modelData, _savedAt: savedAt }));
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ success: true, name: safeName, savedAt }));
+            } catch (err: any) {
+              res.writeHead(500); res.end(err.message);
+            }
+          });
+          return;
+        }
+
+        // DELETE /api/snapshots/:name
+        if (req.method === "DELETE" && snapName) {
+          const safeName = snapName.replace(/[^a-zA-Z0-9-_]/g, "_");
+          const snapPath = path.join(snapDir, `${safeName}.json`);
+          if (fs.existsSync(snapPath)) fs.unlinkSync(snapPath);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+          return;
+        }
+
+        // GET /api/snapshots/:name - get specific
+        if (snapName) {
+          const safeName = snapName.replace(/[^a-zA-Z0-9-_]/g, "_");
+          const snapPath = path.join(snapDir, `${safeName}.json`);
+          if (!fs.existsSync(snapPath)) { res.writeHead(404); res.end("Not found"); return; }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(fs.readFileSync(snapPath, "utf-8"));
+          return;
+        }
+
+        // GET /api/snapshots - list
+        const files = fs.readdirSync(snapDir).filter((f) => f.endsWith(".json"));
+        const snapshots = files.map((f) => {
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(snapDir, f), "utf-8"));
+            return {
+              name: f.replace(/\.json$/, ""),
+              savedAt: data._savedAt || "",
+              stats: { files: data.stats?.files || 0, symbols: data.stats?.symbols || 0, modules: data.stats?.modules || 0 },
+            };
+          } catch { return null; }
+        }).filter(Boolean);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(snapshots));
+        return;
+      }
+
+      // ─── Diff endpoint ──────────────────────────────────────
+
+      if (url.pathname === "/api/diff" && req.method === "POST") {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        let body = "";
+        req.on("data", (c: Buffer) => { body += c.toString(); });
+        req.on("end", () => {
+          try {
+            const { baseSnapshot, headSnapshot } = JSON.parse(body);
+            const snapDir = path.join(projectRoot, ".archlens", "snapshots");
+            const safeBase = String(baseSnapshot).replace(/[^a-zA-Z0-9-_]/g, "_");
+            const basePath = path.join(snapDir, `${safeBase}.json`);
+            if (!fs.existsSync(basePath)) { res.writeHead(404); res.end("Base snapshot not found"); return; }
+            const baseModel = JSON.parse(fs.readFileSync(basePath, "utf-8"));
+
+            let headModel: any;
+            if (headSnapshot && headSnapshot !== "current") {
+              const safeHead = String(headSnapshot).replace(/[^a-zA-Z0-9-_]/g, "_");
+              const headPath = path.join(snapDir, `${safeHead}.json`);
+              if (!fs.existsSync(headPath)) { res.writeHead(404); res.end("Head snapshot not found"); return; }
+              headModel = JSON.parse(fs.readFileSync(headPath, "utf-8"));
+            } else {
+              headModel = singleModel ? JSON.parse(JSON.stringify(singleModel)) : JSON.parse(fs.readFileSync(path.join(projectRoot, ".archlens", "model.json"), "utf-8"));
+            }
+
+            const analyzer = new DiffAnalyzer();
+            const diff = analyzer.compare(baseModel, headModel);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(diff));
+          } catch (err: any) {
+            res.writeHead(500); res.end(err.message);
+          }
+        });
+        return;
+      }
+
+      // ─── Custom Rules endpoints ─────────────────────────────
+
+      if (url.pathname === "/api/rules") {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        const rulesPath = path.join(projectRoot, ".archlens", "rules.json");
+
+        if (req.method === "POST") {
+          let body = "";
+          req.on("data", (c: Buffer) => { body += c.toString(); });
+          req.on("end", () => {
+            try {
+              const { rules } = JSON.parse(body);
+              fs.writeFileSync(rulesPath, JSON.stringify({ rules }, null, 2));
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ success: true, count: rules.length }));
+            } catch (err: any) { res.writeHead(500); res.end(err.message); }
+          });
+          return;
+        }
+
+        // GET
+        const rules = fs.existsSync(rulesPath)
+          ? JSON.parse(fs.readFileSync(rulesPath, "utf-8")).rules || []
+          : [];
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ rules }));
+        return;
+      }
+
+      if (url.pathname === "/api/rules/validate" && req.method === "POST") {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        let body = "";
+        req.on("data", (c: Buffer) => { body += c.toString(); });
+        req.on("end", () => {
+          try {
+            let rules: any[] = [];
+            if (body) {
+              const parsed = JSON.parse(body);
+              rules = parsed.rules || [];
+            }
+            if (rules.length === 0) {
+              const rulesPath = path.join(projectRoot, ".archlens", "rules.json");
+              if (fs.existsSync(rulesPath)) rules = JSON.parse(fs.readFileSync(rulesPath, "utf-8")).rules || [];
+            }
+            let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
+            if (!modelData) {
+              const mp = path.join(projectRoot, ".archlens", "model.json");
+              if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+            }
+            if (!modelData) { res.writeHead(404); res.end("No model"); return; }
+            if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
+            const engine = new CustomRuleEngine(modelData, rules);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(engine.evaluate()));
+          } catch (err: any) { res.writeHead(500); res.end(err.message); }
+        });
         return;
       }
 

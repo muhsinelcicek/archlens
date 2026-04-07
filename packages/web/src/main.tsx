@@ -12,6 +12,9 @@ import { EventFlowView } from "./app/EventFlowView.js";
 import { OnboardView } from "./app/OnboardView.js";
 import { ImportView } from "./app/ImportView.js";
 import { SettingsView } from "./app/SettingsView.js";
+import { HotspotsView } from "./app/HotspotsView.js";
+import { DiffView } from "./app/DiffView.js";
+import { RulesView } from "./app/RulesView.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { initTheme } from "./lib/theme.js";
 import "./index.css";
@@ -33,6 +36,9 @@ createRoot(document.getElementById("root")!).render(
           <Route path="onboard" element={<ErrorBoundary><OnboardView /></ErrorBoundary>} />
           <Route path="import" element={<ErrorBoundary><ImportView /></ErrorBoundary>} />
           <Route path="settings" element={<ErrorBoundary><SettingsView /></ErrorBoundary>} />
+          <Route path="hotspots" element={<ErrorBoundary><HotspotsView /></ErrorBoundary>} />
+          <Route path="diff" element={<ErrorBoundary><DiffView /></ErrorBoundary>} />
+          <Route path="rules" element={<ErrorBoundary><RulesView /></ErrorBoundary>} />
         </Route>
       </Routes>
     </BrowserRouter>
