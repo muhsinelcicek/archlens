@@ -9,6 +9,7 @@ import {
   ShieldCheck, AlertTriangle, Activity, Workflow,
   Compass, BarChart3, Radio, Search,
 } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 /* ─── Constants ───────────────────────────────────────────── */
 
@@ -295,9 +296,9 @@ export function OnboardView() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      fetch("/api/coupling").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      fetch("/api/security").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      apiFetch("/api/quality").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      apiFetch("/api/coupling").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      apiFetch("/api/security").then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
       .then(([q, c, s]) => {
         if (q) setQuality(q);

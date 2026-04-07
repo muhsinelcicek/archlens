@@ -8,6 +8,7 @@ import {
   Bug, Code2, Box, Layers, GitBranch, ChevronDown, ChevronRight,
   Lightbulb, ArrowRight, ExternalLink, FileCode,
 } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 interface QualityIssue {
   id: string; rule: string; category: string; severity: string;
@@ -55,11 +56,11 @@ export function QualityView() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      fetch("/api/patterns").then((r) => r.ok ? r.json() : null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
-      fetch("/api/consistency").then((r) => r.ok ? r.json() : null),
-      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/patterns").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/consistency").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null),
     ]).then(([q, p, c, con, td]) => {
       if (q) setReport(q);
       if (p) setDeepPatterns(p);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flame, AlertTriangle, GitBranch, Activity, FileCode, Users } from "lucide-react";
 import { PageLoader, PageEmpty } from "../components/PageLoader.js";
+import { apiFetch } from "../lib/api.js";
 
 interface Hotspot {
   filePath: string;
@@ -30,7 +31,7 @@ export function HotspotsView() {
   const [hoveredFile, setHoveredFile] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/hotspots")
+    apiFetch("/api/hotspots")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { setReport(d); setLoading(false); })
       .catch(() => setLoading(false));

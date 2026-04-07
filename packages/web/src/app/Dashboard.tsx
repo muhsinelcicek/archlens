@@ -10,6 +10,7 @@ import {
   ShieldCheck, Skull, AlertTriangle, DollarSign, Activity,
   ArrowRight, ExternalLink, ChevronRight,
 } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 /* ─── Types for API responses ──────────────────────────────── */
 
@@ -270,11 +271,11 @@ export function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
     ]).then(([q, c, s, d, td]) => {
       if (q) setQuality(q);
       if (c) setCoupling(c);

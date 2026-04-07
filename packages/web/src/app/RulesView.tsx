@@ -5,6 +5,7 @@ import {
   Code2, Layers, Network, FileWarning, Lock, AlertTriangle, Save, Eye, EyeOff,
 } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
+import { apiFetch } from "../lib/api.js";
 
 interface CustomRule {
   id: string;
@@ -99,7 +100,7 @@ export function RulesView() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/rules")
+    apiFetch("/api/rules")
       .then((r) => r.ok ? r.json() : { rules: [] })
       .then((d) => {
         setRules(d.rules || []);

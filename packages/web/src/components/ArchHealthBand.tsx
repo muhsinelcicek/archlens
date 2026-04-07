@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ArchModel } from "../lib/store.js";
 import { ShieldCheck, GitBranch, Skull, ShieldAlert, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 interface HealthData {
   qualityScore: number;
@@ -18,10 +19,10 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
   useEffect(() => {
     // Fetch quality + security + dead code in parallel
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      fetch("/api/security").then((r) => r.ok ? r.json() : null),
-      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null),
     ]).then(([quality, security, deadcode, coupling]) => {
       const risks: string[] = [];
 

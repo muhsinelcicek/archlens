@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "../lib/store.js";
 import { Printer, Download, FileText } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
+import { apiFetch } from "../lib/api.js";
 
 interface QualityReport { projectScore: number; totalIssues: number; bySeverity: Record<string, number>; modules: any[]; }
 interface CouplingReport { overallHealth: { avgInstability: number; circularCount: number }; circularDependencies: any[]; modules: any[]; }
@@ -20,11 +21,11 @@ export function ReportView() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
     ]).then(([q, c, s, d, td]) => {
       setQuality(q); setCoupling(c); setSecurity(s); setDeadcode(d); setTechDebt(td);
       setLoading(false);

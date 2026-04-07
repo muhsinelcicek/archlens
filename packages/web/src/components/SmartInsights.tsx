@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ArchModel } from "../lib/store.js";
 import { Zap, AlertTriangle, CheckCircle2, TrendingDown, Skull, ShieldAlert, Box, ArrowRight } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 interface Insight {
   type: "critical" | "warning" | "success" | "info";
@@ -22,10 +23,10 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
-      fetch("/api/security").then((r) => r.ok ? r.json() : null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null),
     ]).then(([quality, deadcode, security, coupling]) => {
       const ins: Insight[] = [];
 

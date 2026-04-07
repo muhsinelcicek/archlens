@@ -58,6 +58,34 @@ export const serveCommand = new Command("serve")
 
       const url = new URL(req.url || "/", `http://localhost:${port}`);
 
+      // ─── Helper: load model + projectRoot based on ?project= query ──
+      const loadProjectContext = (): { modelData: any; projectRoot: string } => {
+        const projectName = url.searchParams.get("project");
+        let modelData: any = null;
+        let projectRoot = "";
+
+        if (projectName) {
+          // Explicit project requested — find in registry
+          const proj = registry.find((p) => p.name === projectName);
+          if (proj) {
+            projectRoot = proj.localPath;
+            const mp = path.join(projectRoot, ".archlens", "model.json");
+            if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+          }
+        } else if (singleModel) {
+          // --data flag mode
+          modelData = JSON.parse(JSON.stringify(singleModel));
+          if (options.data) projectRoot = path.dirname(options.data);
+        } else if (registry.length > 0) {
+          // Fallback to first registered
+          projectRoot = registry[0].localPath;
+          const mp = path.join(projectRoot, ".archlens", "model.json");
+          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
+        }
+
+        return { modelData, projectRoot };
+      };
+
       // ─── Multi-project endpoints ───────────────────────────
 
       // List all projects
@@ -177,12 +205,7 @@ export const serveCommand = new Command("serve")
       // ─── Quality report endpoint ─────────────────────────────
 
       if (url.pathname === "/api/quality") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        if (!modelData && registry.length > 0) {
-          const first = registry[0];
-          const mp = path.join(first.localPath, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData } = loadProjectContext();
         if (modelData) {
           // Convert symbols to Map for analyzer
           if (!(modelData.symbols instanceof Map)) {
@@ -201,11 +224,7 @@ export const serveCommand = new Command("serve")
       // ─── Dead code endpoint ──────────────────────────────────
 
       if (url.pathname === "/api/deadcode") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        if (!modelData && registry.length > 0) {
-          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData } = loadProjectContext();
         if (modelData) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           const detector = new DeadCodeDetector(modelData);
@@ -218,16 +237,7 @@ export const serveCommand = new Command("serve")
       // ─── Security scan endpoint ───────────────────────────────
 
       if (url.pathname === "/api/security") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        let projectRoot = "";
-        if (options.data) {
-          projectRoot = path.dirname(options.data);
-          if (!modelData) { const mp = path.join(options.data, "model.json"); if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8")); }
-        } else if (registry.length > 0) {
-          projectRoot = registry[0].localPath;
-          const mp = path.join(projectRoot, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData, projectRoot } = loadProjectContext();
         if (modelData && projectRoot) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           const scanner = new SecurityScanner(modelData, projectRoot);
@@ -308,11 +318,7 @@ export const serveCommand = new Command("serve")
       // ─── Deep pattern analysis endpoint ──────────────────────
 
       if (url.pathname === "/api/patterns") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        if (!modelData && registry.length > 0) {
-          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData } = loadProjectContext();
         if (modelData) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           const analyzer = new PatternDeepAnalyzer(modelData);
@@ -325,11 +331,7 @@ export const serveCommand = new Command("serve")
       // ─── Tech debt endpoint ─────────────────────────────────
 
       if (url.pathname === "/api/techdebt") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        if (!modelData && registry.length > 0) {
-          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData } = loadProjectContext();
         if (modelData) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           const calc = new TechDebtCalculator(modelData);
@@ -342,11 +344,7 @@ export const serveCommand = new Command("serve")
       // ─── Event flow endpoint ──────────────────────────────────
 
       if (url.pathname === "/api/eventflow") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        if (!modelData && registry.length > 0) {
-          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData } = loadProjectContext();
         if (modelData) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           const detector = new EventFlowDetector(modelData);
@@ -359,11 +357,7 @@ export const serveCommand = new Command("serve")
       // ─── Coupling analysis endpoint ──────────────────────────
 
       if (url.pathname === "/api/coupling") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        if (!modelData && registry.length > 0) {
-          const mp = path.join(registry[0].localPath, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData } = loadProjectContext();
         if (modelData) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           const analyzer = new CouplingAnalyzer(modelData);
@@ -398,9 +392,7 @@ export const serveCommand = new Command("serve")
       // ─── SSE: file change watcher ───────────────────────────
 
       if (url.pathname === "/api/watch") {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         res.writeHead(200, {
@@ -441,9 +433,7 @@ export const serveCommand = new Command("serve")
       // ─── Re-analyze trigger ─────────────────────────────────
 
       if (url.pathname === "/api/reanalyze" && req.method === "POST") {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         try {
@@ -467,16 +457,7 @@ export const serveCommand = new Command("serve")
       // ─── Hotspots endpoint (git history × complexity) ──────
 
       if (url.pathname === "/api/hotspots") {
-        let modelData: any = singleModel ? JSON.parse(JSON.stringify(singleModel)) : null;
-        let projectRoot = "";
-        if (options.data) {
-          projectRoot = path.dirname(options.data);
-          if (!modelData) { const mp = path.join(options.data, "model.json"); if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8")); }
-        } else if (registry.length > 0) {
-          projectRoot = registry[0].localPath;
-          const mp = path.join(projectRoot, ".archlens", "model.json");
-          if (fs.existsSync(mp)) modelData = JSON.parse(fs.readFileSync(mp, "utf-8"));
-        }
+        const { modelData, projectRoot } = loadProjectContext();
         if (modelData && projectRoot) {
           if (!(modelData.symbols instanceof Map)) modelData.symbols = new Map(Object.entries(modelData.symbols || {}));
           try {
@@ -495,9 +476,7 @@ export const serveCommand = new Command("serve")
 
       const snapshotMatch = url.pathname.match(/^\/api\/snapshots(?:\/(.+))?$/);
       if (snapshotMatch) {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         const snapDir = path.join(projectRoot, ".archlens", "snapshots");
@@ -571,9 +550,7 @@ export const serveCommand = new Command("serve")
       // ─── Diff endpoint ──────────────────────────────────────
 
       if (url.pathname === "/api/diff" && req.method === "POST") {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         let body = "";
@@ -611,9 +588,7 @@ export const serveCommand = new Command("serve")
       // ─── Comments endpoints ─────────────────────────────────
 
       if (url.pathname === "/api/comments") {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         const commentsPath = path.join(projectRoot, ".archlens", "comments.json");
@@ -670,9 +645,7 @@ export const serveCommand = new Command("serve")
       // ─── Custom Rules endpoints ─────────────────────────────
 
       if (url.pathname === "/api/rules") {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         const rulesPath = path.join(projectRoot, ".archlens", "rules.json");
@@ -701,9 +674,7 @@ export const serveCommand = new Command("serve")
       }
 
       if (url.pathname === "/api/rules/validate" && req.method === "POST") {
-        let projectRoot = "";
-        if (options.data) projectRoot = path.dirname(options.data);
-        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        const { projectRoot } = loadProjectContext();
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         let body = "";

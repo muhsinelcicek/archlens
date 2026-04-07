@@ -7,6 +7,7 @@ import {
   Globe, Server, Zap, Radio, ChevronDown, ChevronRight,
   ArrowDown, Workflow, Send, Inbox,
 } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 interface EventFlow { eventName: string; publisher: { module: string; symbol: string; filePath: string }; subscribers: Array<{ module: string; symbol: string; filePath: string }>; eventType: string; }
 interface BoundedContext { name: string; modules: string[]; entities: string[]; events: string[]; isClean: boolean; }
@@ -29,7 +30,7 @@ export function EventFlowView() {
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/eventflow").then((r) => r.ok ? r.json() : null).then((d) => { setReport(d); setLoading(false); }).catch(() => setLoading(false));
+    apiFetch("/api/eventflow").then((r) => r.ok ? r.json() : null).then((d) => { setReport(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return <PageLoader message="Detecting event flows..." />;

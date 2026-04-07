@@ -6,6 +6,7 @@ import {
   Lightbulb, Target, Zap, ArrowRight, MessageCircle, Send, Trash2,
 } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
+import { apiFetch } from "../lib/api.js";
 
 interface Insight {
   id: string;
@@ -56,13 +57,13 @@ export function InsightsView() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/hotspots").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/comments?target=insights").then((r) => r.ok ? r.json() : []).catch(() => []),
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/hotspots").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/comments?target=insights").then((r) => r.ok ? r.json() : []).catch(() => []),
     ]).then(([q, c, s, d, td, h, cm]) => {
       setQuality(q); setCoupling(c); setSecurity(s); setDeadcode(d);
       setTechDebt(td); setHotspots(h); setComments(cm || []);
@@ -295,7 +296,7 @@ export function InsightsView() {
   };
 
   const deleteComment = async (id: string) => {
-    await fetch(`/api/comments?id=${id}`, { method: "DELETE" });
+    await apiFetch(`/api/comments?id=${id}`, { method: "DELETE" });
     setComments(comments.filter((c) => c.id !== id));
   };
 

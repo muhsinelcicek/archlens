@@ -193,7 +193,7 @@ export function App() {
 
       {/* ── Main Content ── */}
       <main className="flex-1 overflow-y-auto" style={{ backgroundColor: theme.colors.deep }}>
-        <Outlet />
+        <Outlet key={activeProject || "default"} />
       </main>
 
       {/* ── File Change Toast ── */}
