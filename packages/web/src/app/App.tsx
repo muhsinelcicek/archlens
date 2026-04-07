@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import { useStore } from "../lib/store.js";
 import {
   LayoutDashboard, Network, Database, GitBranch, Boxes, Cpu,
   Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare, Plus,
-  Flame, GitCompare, ScrollText,
+  Flame, GitCompare, ScrollText, FileText, Sparkles,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
 import { useI18n } from "../lib/i18n.js";
@@ -18,6 +18,7 @@ const navGroups: NavGroup[] = [
     { to: "/architecture", icon: Network, labelKey: "nav.architecture" },
   ]},
   { labelKey: "nav.group.analysis", items: [
+    { to: "/insights", icon: Sparkles, labelKey: "nav.insights" },
     { to: "/processes", icon: Zap, labelKey: "nav.processes" },
     { to: "/events", icon: MessageSquare, labelKey: "nav.event_flow" },
     { to: "/structure", icon: Boxes, labelKey: "nav.structure" },
@@ -28,6 +29,7 @@ const navGroups: NavGroup[] = [
     { to: "/hotspots", icon: Flame, labelKey: "nav.hotspots" },
     { to: "/diff", icon: GitCompare, labelKey: "nav.diff" },
     { to: "/rules", icon: ScrollText, labelKey: "nav.rules" },
+    { to: "/report", icon: FileText, labelKey: "nav.report" },
   ]},
   { labelKey: "", items: [
     { to: "/onboard", icon: Rocket, labelKey: "nav.onboarding" },
@@ -40,12 +42,40 @@ export function App() {
   const { model, loading, error, projects, activeProject, fetchModel, fetchDiagrams, fetchProjects, switchProject } = useStore();
   const { theme } = useTheme();
   const { t } = useI18n();
+  const [fileChange, setFileChange] = useState<{ file: string; ts: number } | null>(null);
+  const [reanalyzing, setReanalyzing] = useState(false);
 
   useEffect(() => {
     fetchModel();
     fetchDiagrams();
     fetchProjects();
   }, [fetchModel, fetchDiagrams, fetchProjects]);
+
+  // SSE: file watcher
+  useEffect(() => {
+    const es = new EventSource("/api/watch");
+    es.addEventListener("change", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        setFileChange({ file: data.file, ts: data.timestamp });
+      } catch { /* ignore */ }
+    });
+    es.onerror = () => { /* silently ignore disconnects */ };
+    return () => es.close();
+  }, []);
+
+  const reanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      const res = await fetch("/api/reanalyze", { method: "POST" });
+      if (res.ok) {
+        await fetchModel();
+        setFileChange(null);
+      }
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -165,6 +195,36 @@ export function App() {
       <main className="flex-1 overflow-y-auto" style={{ backgroundColor: theme.colors.deep }}>
         <Outlet />
       </main>
+
+      {/* ── File Change Toast ── */}
+      {fileChange && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl border border-archlens-500/30 bg-elevated shadow-2xl shadow-archlens-500/10 p-4 max-w-sm animate-slide-up">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-archlens-500/10 p-2">
+              <AlertCircle className="h-4 w-4 text-archlens-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-[#e4e4ed]">File changed</div>
+              <div className="text-[10px] font-mono text-[#5a5a70] truncate">{fileChange.file}</div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={reanalyze}
+              disabled={reanalyzing}
+              className="flex-1 px-3 py-1.5 rounded-md bg-archlens-500/15 border border-archlens-500/30 text-archlens-300 text-xs font-semibold hover:bg-archlens-500/25 disabled:opacity-50"
+            >
+              {reanalyzing ? "Re-analyzing..." : "Re-analyze"}
+            </button>
+            <button
+              onClick={() => setFileChange(null)}
+              className="px-3 py-1.5 rounded-md text-[#5a5a70] hover:text-[#e4e4ed] text-xs"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

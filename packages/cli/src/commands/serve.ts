@@ -49,7 +49,7 @@ export const serveCommand = new Command("serve")
       }
     }
 
-    const server = http.createServer((req, res) => {
+    const server = http.createServer(async (req, res) => {
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -395,6 +395,74 @@ export const serveCommand = new Command("serve")
         return;
       }
 
+      // ─── SSE: file change watcher ───────────────────────────
+
+      if (url.pathname === "/api/watch") {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        res.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        });
+        res.write(": connected\n\n");
+
+        let lastEvent = 0;
+        const watcher = fs.watch(projectRoot, { recursive: true }, (_event, filename) => {
+          if (!filename) return;
+          // Filter noise
+          const f = String(filename);
+          if (f.includes("node_modules") || f.includes(".git/") || f.includes(".archlens/") || f.includes("dist/")) return;
+          if (!/\.(ts|tsx|js|jsx|py|go|java|cs|swift|rs)$/.test(f)) return;
+
+          // Debounce: 1 event per second max
+          const now = Date.now();
+          if (now - lastEvent < 1000) return;
+          lastEvent = now;
+
+          res.write(`event: change\ndata: ${JSON.stringify({ file: f, timestamp: now })}\n\n`);
+        });
+
+        // Heartbeat every 30s
+        const heartbeat = setInterval(() => {
+          try { res.write(": heartbeat\n\n"); } catch { /* closed */ }
+        }, 30000);
+
+        req.on("close", () => {
+          watcher.close();
+          clearInterval(heartbeat);
+        });
+        return;
+      }
+
+      // ─── Re-analyze trigger ─────────────────────────────────
+
+      if (url.pathname === "/api/reanalyze" && req.method === "POST") {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        try {
+          const { ProjectScanner, JsonExporter } = await import("@archlens/core");
+          const scanner = new ProjectScanner();
+          const newModel = await scanner.scan({ rootDir: projectRoot });
+          const exporter = new JsonExporter(newModel);
+          const dataDir = path.join(projectRoot, ".archlens");
+          if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+          fs.writeFileSync(path.join(dataDir, "model.json"), exporter.toString());
+          singleModel = newModel;
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, stats: newModel.stats }));
+        } catch (err: any) {
+          res.writeHead(500); res.end(err.message);
+        }
+        return;
+      }
+
       // ─── Hotspots endpoint (git history × complexity) ──────
 
       if (url.pathname === "/api/hotspots") {
@@ -536,6 +604,65 @@ export const serveCommand = new Command("serve")
             res.writeHead(500); res.end(err.message);
           }
         });
+        return;
+      }
+
+      // ─── Comments endpoints ─────────────────────────────────
+
+      if (url.pathname === "/api/comments") {
+        let projectRoot = "";
+        if (options.data) projectRoot = path.dirname(options.data);
+        else if (registry.length > 0) projectRoot = registry[0].localPath;
+        if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
+
+        const commentsPath = path.join(projectRoot, ".archlens", "comments.json");
+
+        if (req.method === "POST") {
+          let body = "";
+          req.on("data", (c: Buffer) => { body += c.toString(); });
+          req.on("end", () => {
+            try {
+              const newComment = JSON.parse(body);
+              const existing = fs.existsSync(commentsPath)
+                ? JSON.parse(fs.readFileSync(commentsPath, "utf-8"))
+                : [];
+              const comment = {
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                target: newComment.target || "",
+                text: newComment.text || "",
+                author: newComment.author || "Anonymous",
+                createdAt: new Date().toISOString(),
+              };
+              existing.push(comment);
+              fs.writeFileSync(commentsPath, JSON.stringify(existing, null, 2));
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify(comment));
+            } catch (err: any) { res.writeHead(500); res.end(err.message); }
+          });
+          return;
+        }
+
+        if (req.method === "DELETE") {
+          const id = url.searchParams.get("id");
+          if (!id) { res.writeHead(400); res.end("Missing id"); return; }
+          const existing = fs.existsSync(commentsPath)
+            ? JSON.parse(fs.readFileSync(commentsPath, "utf-8"))
+            : [];
+          const filtered = existing.filter((c: any) => c.id !== id);
+          fs.writeFileSync(commentsPath, JSON.stringify(filtered, null, 2));
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+          return;
+        }
+
+        // GET
+        const target = url.searchParams.get("target");
+        const all = fs.existsSync(commentsPath)
+          ? JSON.parse(fs.readFileSync(commentsPath, "utf-8"))
+          : [];
+        const result = target ? all.filter((c: any) => c.target === target) : all;
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
         return;
       }
 

@@ -15,6 +15,8 @@ import { SettingsView } from "./app/SettingsView.js";
 import { HotspotsView } from "./app/HotspotsView.js";
 import { DiffView } from "./app/DiffView.js";
 import { RulesView } from "./app/RulesView.js";
+import { ReportView } from "./app/ReportView.js";
+import { InsightsView } from "./app/InsightsView.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { initTheme } from "./lib/theme.js";
 import "./index.css";
@@ -39,6 +41,8 @@ createRoot(document.getElementById("root")!).render(
           <Route path="hotspots" element={<ErrorBoundary><HotspotsView /></ErrorBoundary>} />
           <Route path="diff" element={<ErrorBoundary><DiffView /></ErrorBoundary>} />
           <Route path="rules" element={<ErrorBoundary><RulesView /></ErrorBoundary>} />
+          <Route path="report" element={<ErrorBoundary><ReportView /></ErrorBoundary>} />
+          <Route path="insights" element={<ErrorBoundary><InsightsView /></ErrorBoundary>} />
         </Route>
       </Routes>
     </BrowserRouter>
