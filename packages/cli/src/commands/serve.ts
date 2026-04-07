@@ -454,7 +454,8 @@ export const serveCommand = new Command("serve")
           const dataDir = path.join(projectRoot, ".archlens");
           if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
           fs.writeFileSync(path.join(dataDir, "model.json"), exporter.toString());
-          singleModel = newModel;
+          // Convert Map to plain object for in-memory storage (so JSON.stringify works in other endpoints)
+          singleModel = { ...newModel, symbols: Object.fromEntries(newModel.symbols) };
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, stats: newModel.stats }));
         } catch (err: any) {
