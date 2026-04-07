@@ -51,9 +51,10 @@ export function App() {
     fetchProjects();
   }, [fetchModel, fetchDiagrams, fetchProjects]);
 
-  // SSE: file watcher
+  // SSE: file watcher (re-subscribes when active project changes)
   useEffect(() => {
-    const es = new EventSource("/api/watch");
+    const url = activeProject ? `/api/watch?project=${encodeURIComponent(activeProject)}` : "/api/watch";
+    const es = new EventSource(url);
     es.addEventListener("change", (e: MessageEvent) => {
       try {
         const data = JSON.parse(e.data);
@@ -62,14 +63,22 @@ export function App() {
     });
     es.onerror = () => { /* silently ignore disconnects */ };
     return () => es.close();
-  }, []);
+  }, [activeProject]);
 
   const reanalyze = async () => {
     setReanalyzing(true);
     try {
-      const res = await fetch("/api/reanalyze", { method: "POST" });
+      const url = activeProject
+        ? `/api/reanalyze?project=${encodeURIComponent(activeProject)}`
+        : "/api/reanalyze";
+      const res = await fetch(url, { method: "POST" });
       if (res.ok) {
-        await fetchModel();
+        // Reload the active project's model
+        if (activeProject) {
+          await switchProject(activeProject);
+        } else {
+          await fetchModel();
+        }
         setFileChange(null);
       }
     } finally {

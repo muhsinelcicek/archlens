@@ -434,6 +434,7 @@ export const serveCommand = new Command("serve")
 
       if (url.pathname === "/api/reanalyze" && req.method === "POST") {
         const { projectRoot } = loadProjectContext();
+        const requestedProject = url.searchParams.get("project");
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         try {
@@ -444,10 +445,35 @@ export const serveCommand = new Command("serve")
           const dataDir = path.join(projectRoot, ".archlens");
           if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
           fs.writeFileSync(path.join(dataDir, "model.json"), exporter.toString());
-          // Convert Map to plain object for in-memory storage (so JSON.stringify works in other endpoints)
-          singleModel = { ...newModel, symbols: Object.fromEntries(newModel.symbols) };
+
+          // Update in-memory cache:
+          // - In --data mode (no requestedProject param), refresh singleModel
+          // - In multi-project mode, also update registry timestamp
+          if (!requestedProject && options.data) {
+            singleModel = { ...newModel, symbols: Object.fromEntries(newModel.symbols) };
+          }
+          if (requestedProject) {
+            const idx = registry.findIndex((p) => p.name === requestedProject);
+            if (idx >= 0) {
+              registry[idx] = {
+                ...registry[idx],
+                analyzedAt: new Date().toISOString(),
+                stats: {
+                  files: newModel.stats.files,
+                  symbols: newModel.stats.symbols,
+                  modules: newModel.stats.modules,
+                  lines: newModel.stats.totalLines,
+                },
+              };
+              // Persist registry
+              try {
+                const REGISTRY_PATH = path.join(process.env.HOME || "~", ".archlens", "registry.json");
+                fs.writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2));
+              } catch { /* best-effort */ }
+            }
+          }
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, stats: newModel.stats }));
+          res.end(JSON.stringify({ success: true, project: requestedProject || "default", stats: newModel.stats }));
         } catch (err: any) {
           res.writeHead(500); res.end(err.message);
         }
