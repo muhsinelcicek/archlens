@@ -195,6 +195,33 @@ export class ProjectScanner {
     // 6. Assign layers
     const layers = this.assignLayers(modules);
 
+    // 6.5 Framework-specific detection (regex-based, multi-language)
+    try {
+      const { FrameworkDetector } = await import("./framework-detector.js");
+      const fd = new FrameworkDetector();
+      const fwResult = fd.detect(files);
+      // Merge endpoints (dedupe by method+path)
+      const seenEp = new Set(apiEndpoints.map((e) => `${e.method}:${e.path}`));
+      for (const ep of fwResult.endpoints) {
+        const key = `${ep.method}:${ep.path}`;
+        if (!seenEp.has(key)) {
+          // Convert absolute filePath to relative
+          const relPath = path.relative(rootDir, ep.filePath);
+          apiEndpoints.push({ ...ep, filePath: relPath });
+          seenEp.add(key);
+        }
+      }
+      // Merge entities (dedupe by name)
+      const seenEnt = new Set(dbEntities.map((e) => e.name));
+      for (const ent of fwResult.entities) {
+        if (!seenEnt.has(ent.name)) {
+          const relPath = path.relative(rootDir, ent.filePath);
+          dbEntities.push({ ...ent, filePath: relPath });
+          seenEnt.add(ent.name);
+        }
+      }
+    } catch { /* framework detection optional */ }
+
     // 7. Detect tech stack
     const techRadar = await this.detectTechStack(rootDir);
 

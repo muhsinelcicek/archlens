@@ -34,6 +34,7 @@ export { calculateComplexity, getLanguageRules } from "./language-rules.js";
 export { CouplingAnalyzer } from "./coupling-analyzer.js";
 export type { CouplingReport, ModuleCouplingDetail, CircularDependency } from "./coupling-analyzer.js";
 export { ConsistencyChecker } from "./consistency-checker.js";
+export { FrameworkDetector } from "./framework-detector.js";
 export type { ConsistencyReport, ConsistencyIssue } from "./consistency-checker.js";
 export type { SequenceDiagram, SequenceStep } from "./sequence-tracer.js";
 export type { DriftReport, ChangedFile, SymbolChange, DependencyChange, LayerViolation } from "./git-differ.js";
