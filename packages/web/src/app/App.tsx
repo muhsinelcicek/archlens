@@ -4,7 +4,7 @@ import { useStore } from "../lib/store.js";
 import {
   LayoutDashboard, Network, Database, GitBranch, Boxes, Cpu,
   Globe, Loader2, AlertCircle, Zap, Rocket, ShieldCheck, ShieldAlert, Settings, DollarSign, MessageSquare, Plus,
-  Flame, GitCompare, ScrollText, FileText, Sparkles,
+  Flame, GitCompare, ScrollText, FileText, Sparkles, Activity,
 } from "lucide-react";
 import { useTheme } from "../lib/theme.js";
 import { useI18n } from "../lib/i18n.js";
@@ -19,6 +19,7 @@ const navGroups: NavGroup[] = [
   ]},
   { labelKey: "nav.group.analysis", items: [
     { to: "/insights", icon: Sparkles, labelKey: "nav.insights" },
+    { to: "/simulator", icon: Activity, labelKey: "nav.simulator" },
     { to: "/processes", icon: Zap, labelKey: "nav.processes" },
     { to: "/events", icon: MessageSquare, labelKey: "nav.event_flow" },
     { to: "/structure", icon: Boxes, labelKey: "nav.structure" },
