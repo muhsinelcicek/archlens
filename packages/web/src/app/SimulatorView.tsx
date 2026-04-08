@@ -1,19 +1,22 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useStore } from "../lib/store.js";
 import {
   Play, Pause, Server, Database, Cloud, Layers,
-  Users, Plus, RotateCcw, AlertTriangle, Activity,
-  Skull, TrendingUp, Settings, Zap, CheckCircle2, XCircle,
-  Gauge, Clock, Percent,
+  Users, RotateCcw, AlertTriangle, Activity, Skull, TrendingUp,
+  Settings, Zap, CheckCircle2, XCircle, Gauge, Clock, DollarSign,
+  Save, Upload, Sparkles, Shuffle, Scissors, FileText, ChevronDown,
+  BookOpen, Lightbulb, BarChart3,
 } from "lucide-react";
 import {
-  type SimNode, type SimEdge, type NodeType, type SimulatorConfig,
-  type GlobalStats, NODE_DEFAULTS, createNodeMetrics, simulateTick,
-  getGlobalStats,
+  type SimNode, type SimEdge, type NodeType, type TrafficPattern, type SimulatorConfig,
+  type GlobalStats, type EventLogEntry, type RootCauseInsight, type ChaosConfig,
+  simulateTick, getGlobalStats, createNodeMetrics, createCircuitBreaker,
+  makeDefaultNode, analyzeRootCause,
 } from "../lib/simulator-engine.js";
+import { SCENARIO_TEMPLATES, LOAD_TEST_PRESETS } from "../lib/simulator-scenarios.js";
 
 /* ═══════════════════════════════════════════════════════════════
-   Architecture Simulator — queueing theory + time series metrics
+   Architecture Simulator v3 — Production-grade
    ═══════════════════════════════════════════════════════════════ */
 
 const TYPE_CONFIG: Record<NodeType, { icon: React.ElementType; color: string; label: string }> = {
@@ -35,9 +38,21 @@ const LAYER_TO_TYPE: Record<string, NodeType> = {
   config: "service",
 };
 
+const STORAGE_KEY = "archlens-simulator-scenarios";
+
+interface SavedScenario {
+  name: string;
+  savedAt: string;
+  nodes: SimNode[];
+  edges: SimEdge[];
+  trafficPattern: TrafficPattern;
+}
+
 export function SimulatorView() {
   const { model } = useStore();
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Topology
   const [nodes, setNodes] = useState<SimNode[]>([]);
   const [edges, setEdges] = useState<SimEdge[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -45,35 +60,64 @@ export function SimulatorView() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  // Simulation state
+  // Simulation
   const [running, setRunning] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const [trafficRate, setTrafficRate] = useState(500);
+  const [trafficPattern, setTrafficPattern] = useState<TrafficPattern>({
+    type: "constant", baseRate: 500,
+  });
   const [uptime, setUptime] = useState(0);
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
+  const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
+
+  // Chaos
+  const [chaosEnabled, setChaosEnabled] = useState(false);
+  const [chaosConfig, setChaosConfig] = useState<ChaosConfig>({
+    enabled: false,
+    randomKillChancePerMin: 0,
+    latencyInjectionMs: 0,
+    networkPartitionEdges: [],
+  });
+
+  // UI
+  const [showEventLog, setShowEventLog] = useState(true);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showLoadTests, setShowLoadTests] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const [rightTab, setRightTab] = useState<"inspector" | "insights">("inspector");
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+
+  // Simulation refs
   const rafRef = useRef<number | null>(null);
   const lastTickRef = useRef(0);
-  const startTimeRef = useRef(0);
-  const [tick, forceTick] = useState(0); // force re-render on metric updates
+  const tickCounterRef = useRef(0);
+  const [, forceUpdate] = useState(0);
+
+  // ─── Load saved scenarios from localStorage ───────────────
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setSavedScenarios(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
 
   // ─── Initialize from real architecture ─────────────────────
 
   useEffect(() => {
     if (!model || nodes.length > 0) return;
 
-    const mods = model.modules.slice(0, 10);
-    const spacing = 200;
-    const startY = 140;
+    const mods = model.modules.slice(0, 8);
+    const spacing = 220;
+    const startY = 180;
 
     const initial: SimNode[] = [];
 
-    // Client source
-    initial.push(makeNode("client-0", "client", "Users", 50, startY + 100));
+    // Client + LB entry
+    initial.push(makeDefaultNode("client-0", "client", "Users", 40, startY + 80));
+    initial.push(makeDefaultNode("lb-0", "loadbalancer", "Load Balancer", 220, startY + 80));
 
-    // Auto-add a load balancer
-    initial.push(makeNode("lb-0", "loadbalancer", "Load Balancer", 200, startY + 100));
-
-    // Group modules by layer
+    // Group by layer
     const byLayer: Record<string, typeof mods> = {};
     for (const m of mods) {
       const l = m.layer || "unknown";
@@ -85,10 +129,11 @@ export function SimulatorView() {
     let colIdx = 2;
     for (const layer of layerOrder) {
       const layerMods = byLayer[layer];
-      if (!layerMods) continue;
+      if (!layerMods || layerMods.length === 0) continue;
       layerMods.forEach((m, rowIdx) => {
         const type = LAYER_TO_TYPE[layer] || "service";
-        const node = makeNode(`mod-${m.name}`, type, m.name, 50 + colIdx * spacing, startY + rowIdx * 110 - ((layerMods.length - 1) * 55));
+        const y = startY + rowIdx * 110 - ((layerMods.length - 1) * 55);
+        const node = makeDefaultNode(`mod-${m.name}`, type, m.name, 40 + colIdx * spacing, y);
         initial.push(node);
       });
       colIdx++;
@@ -99,32 +144,29 @@ export function SimulatorView() {
     // Edges
     const initialEdges: SimEdge[] = [];
     let eid = 0;
-    // Client → LB
-    initialEdges.push({ id: `e${eid++}`, source: "client-0", target: "lb-0", weight: 1, latencyMs: 1 });
-    // LB → first layer
-    const firstLayerNodes = initial.filter((n) => n.type === "api" && n.id.startsWith("mod-"));
-    if (firstLayerNodes.length === 0) {
-      // If no API layer, connect LB to whatever is after
-      const firstModNode = initial.find((n) => n.id.startsWith("mod-"));
-      if (firstModNode) initialEdges.push({ id: `e${eid++}`, source: "lb-0", target: firstModNode.id, weight: 1, latencyMs: 2 });
-    } else {
+    initialEdges.push(mkEdge(`e${eid++}`, "client-0", "lb-0", 1, 1));
+
+    const moduleNodeIds = new Set(initial.filter((n) => n.id.startsWith("mod-")).map((n) => n.id.replace("mod-", "")));
+    const firstLayerNodes = initial.filter((n) => n.id.startsWith("mod-") && n.type === "api");
+    if (firstLayerNodes.length > 0) {
       for (const apiNode of firstLayerNodes) {
-        initialEdges.push({ id: `e${eid++}`, source: "lb-0", target: apiNode.id, weight: 1 / firstLayerNodes.length, latencyMs: 2 });
+        initialEdges.push(mkEdge(`e${eid++}`, "lb-0", apiNode.id, 1 / firstLayerNodes.length, 2));
       }
+    } else {
+      const firstMod = initial.find((n) => n.id.startsWith("mod-"));
+      if (firstMod) initialEdges.push(mkEdge(`e${eid++}`, "lb-0", firstMod.id, 1, 2));
     }
 
-    // Module → module from real relations
-    const moduleNodeIds = new Set(initial.filter((n) => n.id.startsWith("mod-")).map((n) => n.id.replace("mod-", "")));
     const edgeSet = new Set<string>();
-    for (const rel of model.relations.slice(0, 200)) {
+    for (const rel of model.relations.slice(0, 150)) {
       const src = rel.source.split("/")[0];
-      const tgtSym = (model.symbols as any)[rel.target];
+      const tgtSym = (model.symbols as Record<string, { filePath?: string }>)[rel.target];
       const tgt = tgtSym?.filePath?.split("/")[0];
       if (src && tgt && src !== tgt && moduleNodeIds.has(src) && moduleNodeIds.has(tgt)) {
         const key = `mod-${src}→mod-${tgt}`;
         if (!edgeSet.has(key)) {
           edgeSet.add(key);
-          initialEdges.push({ id: `e${eid++}`, source: `mod-${src}`, target: `mod-${tgt}`, weight: 1, latencyMs: 3 });
+          initialEdges.push(mkEdge(`e${eid++}`, `mod-${src}`, `mod-${tgt}`, 1, 3));
         }
       }
     }
@@ -141,36 +183,59 @@ export function SimulatorView() {
       return;
     }
 
-    startTimeRef.current = Date.now();
-    const tickInterval = 250; // ms between ticks
-    let tickCount = 0;
-
+    const tickIntervalMs = 250;
     const loop = (t: number) => {
       if (!lastTickRef.current) lastTickRef.current = t;
       const dt = t - lastTickRef.current;
 
-      if (dt >= tickInterval / speed) {
+      if (dt >= tickIntervalMs / speed) {
         const tickSeconds = (dt / 1000) * speed;
-        const config: SimulatorConfig = {
-          trafficRate,
-          globalTimeoutMs: 3000,
-          tickMs: tickInterval,
-          metricsWindowSec: 30,
-        };
-        // Mutate nodes in place
+        const nowMs = Date.now();
+
         setNodes((prev) => {
-          const copy = prev.map((n) => ({ ...n, metrics: { ...n.metrics, throughput: [...n.metrics.throughput], latencyP50: [...n.metrics.latencyP50], latencyP95: [...n.metrics.latencyP95], latencyP99: [...n.metrics.latencyP99], errorRate: [...n.metrics.errorRate], queueDepth: [...n.metrics.queueDepth] } }));
-          simulateTick(copy, edges, config, tickSeconds);
+          // Deep clone metrics arrays to avoid mutation issues
+          const copy = prev.map((n) => ({
+            ...n,
+            metrics: {
+              ...n.metrics,
+              throughput: [...n.metrics.throughput],
+              latencyP50: [...n.metrics.latencyP50],
+              latencyP95: [...n.metrics.latencyP95],
+              latencyP99: [...n.metrics.latencyP99],
+              errorRate: [...n.metrics.errorRate],
+              queueDepth: [...n.metrics.queueDepth],
+              replicas: [...n.metrics.replicas],
+            },
+          }));
+
+          const config: SimulatorConfig = {
+            trafficPattern,
+            globalTimeoutMs: 3000,
+            tickMs: tickIntervalMs,
+            metricsWindowSec: 60,
+            chaosConfig: chaosEnabled ? chaosConfig : undefined,
+          };
+
+          const result = simulateTick(copy, edges, config, tickSeconds, uptime, nowMs);
+
+          // Append events
+          if (result.events.length > 0) {
+            setEventLog((prevLog) => {
+              const combined = [...result.events, ...prevLog];
+              return combined.slice(0, 100); // cap at 100
+            });
+          }
+
           return copy;
         });
 
         lastTickRef.current = t;
-        tickCount++;
-        // Update global stats every 4 ticks (1s)
-        if (tickCount % 4 === 0) {
+        tickCounterRef.current++;
+        // Update uptime every 4 ticks (1s)
+        if (tickCounterRef.current % 4 === 0) {
           setUptime((prev) => prev + 1);
-          forceTick((v) => v + 1);
         }
+        forceUpdate((v) => v + 1);
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -179,14 +244,21 @@ export function SimulatorView() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [running, speed, trafficRate, edges]);
+  }, [running, speed, edges, trafficPattern, chaosEnabled, chaosConfig, uptime]);
 
-  // Recalculate global stats on tick
+  // Update global stats
   useEffect(() => {
-    if (!running) return;
-    const stats = getGlobalStats(nodes, uptime);
-    setGlobalStats(stats);
-  }, [tick, running, nodes, uptime]);
+    if (running) {
+      const stats = getGlobalStats(nodes, uptime);
+      setGlobalStats(stats);
+    }
+  }, [uptime, nodes, running]);
+
+  // Root cause insights
+  const insights = useMemo<RootCauseInsight[]>(() => {
+    if (!globalStats || !running) return [];
+    return analyzeRootCause(nodes, globalStats);
+  }, [globalStats, nodes, running]);
 
   // ─── Drag-drop ─────────────────────────────────────────────
 
@@ -197,7 +269,10 @@ export function SimulatorView() {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setDraggingId(id);
-    setDragOffset({ x: e.clientX - rect.left - node.x, y: e.clientY - rect.top - node.y });
+    setDragOffset({
+      x: e.clientX - rect.left - node.x + canvasRef.current!.scrollLeft,
+      y: e.clientY - rect.top - node.y + canvasRef.current!.scrollTop,
+    });
     setSelectedId(id);
   };
 
@@ -205,8 +280,8 @@ export function SimulatorView() {
     if (!draggingId) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const nx = e.clientX - rect.left - dragOffset.x;
-    const ny = e.clientY - rect.top - dragOffset.y;
+    const nx = e.clientX - rect.left - dragOffset.x + canvasRef.current!.scrollLeft;
+    const ny = e.clientY - rect.top - dragOffset.y + canvasRef.current!.scrollTop;
     setNodes((prev) => prev.map((n) => (n.id === draggingId ? { ...n, x: nx, y: ny } : n)));
   };
 
@@ -218,7 +293,7 @@ export function SimulatorView() {
       if (connectFrom !== id) {
         setEdges((prev) => {
           if (prev.some((p) => p.source === connectFrom && p.target === id)) return prev;
-          return [...prev, { id: `e${Date.now()}`, source: connectFrom, target: id, weight: 1, latencyMs: 2 }];
+          return [...prev, mkEdge(`e${Date.now()}`, connectFrom, id, 1, 2)];
         });
       }
       setConnectFrom(null);
@@ -232,9 +307,9 @@ export function SimulatorView() {
   const addNode = (type: NodeType) => {
     const id = `n-${Date.now()}`;
     const rect = canvasRef.current?.getBoundingClientRect();
-    const x = rect ? rect.width / 2 - 60 : 400;
-    const y = rect ? rect.height / 2 - 40 : 300;
-    setNodes((prev) => [...prev, makeNode(id, type, TYPE_CONFIG[type].label, x, y)]);
+    const x = rect ? rect.width / 2 - 60 + (canvasRef.current?.scrollLeft || 0) : 400;
+    const y = rect ? rect.height / 2 - 40 + (canvasRef.current?.scrollTop || 0) : 300;
+    setNodes((prev) => [...prev, makeDefaultNode(id, type, TYPE_CONFIG[type].label, x, y)]);
     setSelectedId(id);
   };
 
@@ -258,8 +333,124 @@ export function SimulatorView() {
   const reset = () => {
     setRunning(false);
     setUptime(0);
-    setNodes((prev) => prev.map((n) => ({ ...n, alive: true, queueDepth: 0, incomingRate: 0, processedRate: 0, droppedRate: 0, utilization: 0, metrics: createNodeMetrics() })));
+    tickCounterRef.current = 0;
+    setEventLog([]);
     setGlobalStats(null);
+    setNodes((prev) => prev.map((n) => ({
+      ...n,
+      alive: true,
+      queueDepth: 0,
+      incomingRate: 0,
+      processedRate: 0,
+      droppedRate: 0,
+      retryingRate: 0,
+      utilization: 0,
+      lastScaleTime: 0,
+      circuitBreaker: createCircuitBreaker(),
+      metrics: createNodeMetrics(),
+    })));
+  };
+
+  const loadTemplate = (templateId: string) => {
+    const tpl = SCENARIO_TEMPLATES.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const { nodes: n, edges: e } = tpl.build();
+    setNodes(n);
+    setEdges(e);
+    setSelectedId(null);
+    setShowTemplates(false);
+    reset();
+  };
+
+  const loadLoadTest = (presetId: string) => {
+    const preset = LOAD_TEST_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    setTrafficPattern(preset.trafficPattern as TrafficPattern);
+    setShowLoadTests(false);
+  };
+
+  const saveCurrent = () => {
+    const name = prompt("Scenario name:");
+    if (!name) return;
+    const scenario: SavedScenario = {
+      name,
+      savedAt: new Date().toISOString(),
+      nodes,
+      edges,
+      trafficPattern,
+    };
+    const next = [scenario, ...savedScenarios.filter((s) => s.name !== name)];
+    setSavedScenarios(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  };
+
+  const loadSaved = (scenario: SavedScenario) => {
+    // Rehydrate nodes with fresh runtime state
+    const freshNodes = scenario.nodes.map((n) => ({
+      ...n,
+      alive: true,
+      queueDepth: 0,
+      incomingRate: 0,
+      processedRate: 0,
+      droppedRate: 0,
+      retryingRate: 0,
+      utilization: 0,
+      circuitBreaker: createCircuitBreaker(),
+      metrics: createNodeMetrics(),
+    }));
+    setNodes(freshNodes);
+    setEdges(scenario.edges);
+    setTrafficPattern(scenario.trafficPattern);
+    setShowSaved(false);
+    reset();
+  };
+
+  const deleteSaved = (name: string) => {
+    const next = savedScenarios.filter((s) => s.name !== name);
+    setSavedScenarios(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  };
+
+  const exportJson = () => {
+    const data = { nodes, edges, trafficPattern, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `simulator-scenario-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (data.nodes && data.edges) {
+          setNodes(data.nodes.map((n: SimNode) => ({
+            ...n,
+            alive: true,
+            queueDepth: 0,
+            incomingRate: 0,
+            processedRate: 0,
+            droppedRate: 0,
+            retryingRate: 0,
+            utilization: 0,
+            circuitBreaker: createCircuitBreaker(),
+            metrics: createNodeMetrics(),
+          })));
+          setEdges(data.edges);
+          if (data.trafficPattern) setTrafficPattern(data.trafficPattern);
+          reset();
+        }
+      } catch (err) {
+        alert("Invalid JSON file");
+      }
+    };
+    reader.readAsText(file);
   };
 
   const selected = nodes.find((n) => n.id === selectedId);
@@ -279,6 +470,7 @@ export function SimulatorView() {
 
   const nodeColor = (n: SimNode) => {
     if (!n.alive) return "#3f3f46";
+    if (n.circuitBreaker.state === "open") return "#9333ea"; // purple for tripped breaker
     if (n.utilization > 1.0) return "#ef4444";
     if (n.utilization > 0.8) return "#f97316";
     if (n.utilization > 0.5) return "#fbbf24";
@@ -287,34 +479,35 @@ export function SimulatorView() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* ── Toolbar ── */}
-      <div className="flex items-center gap-3 border-b border-[#2a2a3a] bg-surface px-5 py-3">
+      {/* ══ Toolbar ══ */}
+      <div className="flex items-center gap-3 border-b border-[#2a2a3a] bg-surface px-5 py-2.5 flex-wrap">
         <h2 className="text-base font-bold flex items-center gap-2">
           <Activity className="h-5 w-5 text-archlens-400" /> Simulator
         </h2>
+
         <div className="h-6 w-px bg-[#2a2a3a]" />
 
         <button
           onClick={() => setRunning(!running)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
             running ? "bg-red-500/15 text-red-400 border border-red-500/30" : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
           }`}
         >
           {running ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Run</>}
         </button>
-        <button onClick={reset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]">
-          <RotateCcw className="h-3.5 w-3.5" /> Reset
+        <button onClick={reset} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]">
+          <RotateCcw className="h-3 w-3" /> Reset
         </button>
 
         <div className="h-6 w-px bg-[#2a2a3a]" />
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <span className="text-[9px] text-[#5a5a70] uppercase">Speed</span>
           {[1, 2, 5, 10].map((s) => (
             <button
               key={s}
               onClick={() => setSpeed(s)}
-              className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${speed === s ? "bg-archlens-500/20 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${speed === s ? "bg-archlens-500/20 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
             >
               {s}x
             </button>
@@ -323,53 +516,204 @@ export function SimulatorView() {
 
         <div className="h-6 w-px bg-[#2a2a3a]" />
 
-        <div className="flex items-center gap-2 flex-1 max-w-sm">
-          <span className="text-[9px] text-[#5a5a70] uppercase">Traffic</span>
+        {/* Traffic Pattern selector */}
+        <select
+          value={trafficPattern.type}
+          onChange={(e) => setTrafficPattern({ ...trafficPattern, type: e.target.value as TrafficPattern["type"] })}
+          className="rounded-md bg-[#1e1e2a] border border-[#2a2a3a] px-2 py-1 text-[10px] text-[#e4e4ed] outline-none"
+        >
+          <option value="constant">📊 Constant</option>
+          <option value="burst">💥 Burst</option>
+          <option value="ramp">📈 Ramp</option>
+          <option value="spike">⚡ Spike</option>
+          <option value="periodic">🌊 Periodic</option>
+          <option value="noise">🌀 Noise</option>
+        </select>
+
+        <div className="flex items-center gap-1.5 flex-1 min-w-[150px] max-w-xs">
+          <span className="text-[9px] text-[#5a5a70] uppercase">Rate</span>
           <input
             type="range"
             min="10"
             max="10000"
             step="10"
-            value={trafficRate}
-            onChange={(e) => setTrafficRate(Number(e.target.value))}
+            value={trafficPattern.baseRate}
+            onChange={(e) => setTrafficPattern({ ...trafficPattern, baseRate: Number(e.target.value) })}
             className="flex-1 accent-archlens-500"
           />
-          <span className="text-xs font-mono text-archlens-300 w-24 text-right">{trafficRate.toLocaleString()} req/s</span>
+          <span className="text-[10px] font-mono text-archlens-300 w-16 text-right">{trafficPattern.baseRate}</span>
         </div>
 
+        <div className="h-6 w-px bg-[#2a2a3a]" />
+
+        {/* Templates */}
+        <div className="relative">
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]"
+          >
+            <BookOpen className="h-3 w-3" /> Templates <ChevronDown className="h-3 w-3" />
+          </button>
+          {showTemplates && (
+            <div className="absolute top-full mt-1 right-0 w-64 rounded-lg bg-elevated border border-[#2a2a3a] shadow-xl z-50 p-1">
+              {SCENARIO_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => loadTemplate(tpl.id)}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-hover flex items-start gap-2"
+                >
+                  <span className="text-lg">{tpl.icon}</span>
+                  <div>
+                    <div className="text-xs font-semibold text-[#e4e4ed]">{tpl.name}</div>
+                    <div className="text-[10px] text-[#5a5a70]">{tpl.description}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Load tests */}
+        <div className="relative">
+          <button
+            onClick={() => setShowLoadTests(!showLoadTests)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]"
+          >
+            <BarChart3 className="h-3 w-3" /> Load Test <ChevronDown className="h-3 w-3" />
+          </button>
+          {showLoadTests && (
+            <div className="absolute top-full mt-1 right-0 w-64 rounded-lg bg-elevated border border-[#2a2a3a] shadow-xl z-50 p-1">
+              {LOAD_TEST_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => loadLoadTest(p.id)}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-hover"
+                >
+                  <div className="text-xs font-semibold text-[#e4e4ed]">{p.name}</div>
+                  <div className="text-[10px] text-[#5a5a70]">{p.description}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="h-6 w-px bg-[#2a2a3a]" />
+
+        {/* Save/Load */}
+        <button onClick={saveCurrent} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed]">
+          <Save className="h-3 w-3" />
+        </button>
+        <button onClick={() => setShowSaved(!showSaved)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed]">
+          <Upload className="h-3 w-3" /> {savedScenarios.length}
+        </button>
+        <button onClick={exportJson} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed]">
+          <FileText className="h-3 w-3" />
+        </button>
+        <label className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed] cursor-pointer">
+          <Upload className="h-3 w-3" />
+          <input type="file" accept=".json" onChange={importJson} className="hidden" />
+        </label>
+
+        <div className="h-6 w-px bg-[#2a2a3a]" />
+
+        {/* Chaos */}
+        <button
+          onClick={() => setChaosEnabled(!chaosEnabled)}
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold ${
+            chaosEnabled ? "bg-red-500/15 border-red-500/30 text-red-400" : "bg-[#1e1e2a] border-[#2a2a3a] text-[#8888a0] hover:text-[#e4e4ed]"
+          }`}
+        >
+          <Shuffle className="h-3 w-3" /> Chaos {chaosEnabled && "ON"}
+        </button>
+
         {running && globalStats && (
-          <div className="ml-auto flex items-center gap-4 text-[10px]">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-[#5a5a70]" />
-              <span className="font-mono text-[#e4e4ed]">{formatUptime(uptime)}</span>
-            </div>
-            <div className={`flex items-center gap-1 font-semibold ${globalStats.sloMet ? "text-emerald-400" : "text-red-400"}`}>
+          <div className="ml-auto flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1 font-mono text-[#8888a0]"><Clock className="h-3 w-3" />{formatUptime(uptime)}</span>
+            <span className={`flex items-center gap-1 font-semibold ${globalStats.sloMet ? "text-emerald-400" : "text-red-400"}`}>
               {globalStats.sloMet ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-              SLO: {globalStats.sloMet ? "OK" : "BREACH"}
-            </div>
+              SLO {globalStats.sloMet ? "OK" : "BREACH"}
+            </span>
           </div>
         )}
       </div>
 
-      {/* ── KPI Bar (when running) ── */}
-      {running && globalStats && (
-        <div className="grid grid-cols-6 gap-2 border-b border-[#2a2a3a] bg-deep px-5 py-2.5">
-          <Kpi icon={<TrendingUp className="h-3 w-3" />} label="Throughput" value={`${Math.round(globalStats.totalRequests / Math.max(1, uptime))}`} unit="req/s" color="#60a5fa" />
-          <Kpi icon={<CheckCircle2 className="h-3 w-3" />} label="Success Rate" value={`${(globalStats.successRate * 100).toFixed(2)}%`} color={globalStats.successRate >= 0.99 ? "#34d399" : "#f97316"} />
-          <Kpi icon={<Gauge className="h-3 w-3" />} label="Avg Latency" value={`${Math.round(globalStats.avgLatencyMs)}`} unit="ms" color="#a78bfa" />
-          <Kpi icon={<Gauge className="h-3 w-3" />} label="P95 Latency" value={`${Math.round(globalStats.p95LatencyMs)}`} unit="ms" color={globalStats.p95LatencyMs < 300 ? "#34d399" : "#f97316"} />
-          <Kpi icon={<Gauge className="h-3 w-3" />} label="P99 Latency" value={`${Math.round(globalStats.p99LatencyMs)}`} unit="ms" color={globalStats.p99LatencyMs < 500 ? "#34d399" : "#ef4444"} />
-          <Kpi icon={<XCircle className="h-3 w-3" />} label="Errors" value={globalStats.totalErrors.toLocaleString()} color={globalStats.totalErrors > 0 ? "#ef4444" : "#34d399"} />
+      {/* ══ Saved scenarios popover ══ */}
+      {showSaved && savedScenarios.length > 0 && (
+        <div className="absolute top-12 right-5 w-72 rounded-lg bg-elevated border border-[#2a2a3a] shadow-xl z-50 p-2 max-h-96 overflow-y-auto">
+          <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1 px-2">Saved Scenarios</div>
+          {savedScenarios.map((s) => (
+            <div key={s.name} className="group flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-hover">
+              <button onClick={() => loadSaved(s)} className="flex-1 text-left">
+                <div className="text-xs font-semibold text-[#e4e4ed]">{s.name}</div>
+                <div className="text-[9px] text-[#5a5a70]">{new Date(s.savedAt).toLocaleString()} · {s.nodes.length} nodes</div>
+              </button>
+              <button onClick={() => deleteSaved(s.name)} className="opacity-0 group-hover:opacity-100 text-red-400 p-1">
+                <Scissors className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* ── Main: palette | canvas | inspector ── */}
+      {/* ══ Chaos Panel ══ */}
+      {chaosEnabled && (
+        <div className="flex items-center gap-3 border-b border-red-500/20 bg-red-500/5 px-5 py-2 text-[10px]">
+          <span className="text-red-400 font-semibold uppercase flex items-center gap-1"><Shuffle className="h-3 w-3" /> Chaos Engineering</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#8888a0]">Random kill /min:</span>
+            <input
+              type="range"
+              min="0"
+              max="10"
+              value={chaosConfig.randomKillChancePerMin}
+              onChange={(e) => setChaosConfig({ ...chaosConfig, randomKillChancePerMin: Number(e.target.value) })}
+              className="w-20 accent-red-500"
+            />
+            <span className="text-red-400 font-mono w-6">{chaosConfig.randomKillChancePerMin}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#8888a0]">+Latency ms:</span>
+            <input
+              type="range"
+              min="0"
+              max="500"
+              value={chaosConfig.latencyInjectionMs}
+              onChange={(e) => setChaosConfig({ ...chaosConfig, latencyInjectionMs: Number(e.target.value) })}
+              className="w-20 accent-red-500"
+            />
+            <span className="text-red-400 font-mono w-10">{chaosConfig.latencyInjectionMs}</span>
+          </div>
+          {selected && (
+            <button
+              onClick={() => updateSelected({ chaosMode: selected.chaosMode === "none" ? "flaky" : selected.chaosMode === "flaky" ? "slow" : "none" })}
+              className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 font-mono"
+            >
+              {selected.label} mode: {selected.chaosMode}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ══ KPI Bar ══ */}
+      {running && globalStats && (
+        <div className="grid grid-cols-7 gap-2 border-b border-[#2a2a3a] bg-deep px-5 py-2">
+          <Kpi icon={<TrendingUp className="h-3 w-3" />} label="Throughput" value={`${Math.round(globalStats.totalRequests / Math.max(1, uptime))}`} unit="r/s" color="#60a5fa" />
+          <Kpi icon={<CheckCircle2 className="h-3 w-3" />} label="Success" value={`${(globalStats.successRate * 100).toFixed(1)}%`} color={globalStats.successRate >= 0.99 ? "#34d399" : "#f97316"} />
+          <Kpi icon={<Gauge className="h-3 w-3" />} label="Avg" value={`${Math.round(globalStats.avgLatencyMs)}`} unit="ms" color="#a78bfa" />
+          <Kpi icon={<Gauge className="h-3 w-3" />} label="P95" value={`${Math.round(globalStats.p95LatencyMs)}`} unit="ms" color={globalStats.p95LatencyMs < 300 ? "#34d399" : "#f97316"} />
+          <Kpi icon={<Gauge className="h-3 w-3" />} label="P99" value={`${Math.round(globalStats.p99LatencyMs)}`} unit="ms" color={globalStats.p99LatencyMs < 500 ? "#34d399" : "#ef4444"} />
+          <Kpi icon={<XCircle className="h-3 w-3" />} label="Errors" value={globalStats.totalErrors.toLocaleString()} color={globalStats.totalErrors > 0 ? "#ef4444" : "#34d399"} />
+          <Kpi icon={<DollarSign className="h-3 w-3" />} label="~Month" value={`$${Math.round(globalStats.monthlyCostEstimate).toLocaleString()}`} color="#fbbf24" />
+        </div>
+      )}
+
+      {/* ══ Main content ══ */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Left: Palette ── */}
-        <aside className="w-44 border-r border-[#2a2a3a] bg-surface overflow-y-auto">
+        {/* ─ Left: Palette ─ */}
+        <aside className="w-44 border-r border-[#2a2a3a] bg-surface overflow-y-auto flex-shrink-0">
           <div className="p-3">
-            <div className="text-[9px] uppercase font-semibold text-[#5a5a70] tracking-wider mb-2">Components</div>
-            <div className="space-y-1.5">
+            <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-2">Add Component</div>
+            <div className="space-y-1">
               {(Object.keys(TYPE_CONFIG) as NodeType[]).map((type) => {
                 const cfg = TYPE_CONFIG[type];
                 const Icon = cfg.icon;
@@ -377,12 +721,12 @@ export function SimulatorView() {
                   <button
                     key={type}
                     onClick={() => addNode(type)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] hover:border-archlens-500/30 hover:bg-hover transition-all group"
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#1e1e2a] border border-[#2a2a3a] hover:border-archlens-500/30 hover:bg-hover"
                   >
-                    <div className="rounded-md p-1" style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}>
+                    <div className="rounded p-1" style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}>
                       <Icon className="h-3 w-3" />
                     </div>
-                    <span className="text-[11px] font-medium text-[#8888a0] group-hover:text-[#e4e4ed]">{cfg.label}</span>
+                    <span className="text-[11px] font-medium text-[#8888a0]">{cfg.label}</span>
                   </button>
                 );
               })}
@@ -390,192 +734,268 @@ export function SimulatorView() {
           </div>
 
           <div className="p-3 border-t border-[#2a2a3a]">
-            <div className="text-[9px] uppercase font-semibold text-[#5a5a70] tracking-wider mb-2">Actions</div>
             <button
               onClick={() => setConnectFrom(selectedId)}
               disabled={!selectedId}
-              className="w-full px-2.5 py-1.5 rounded-md bg-archlens-500/10 border border-archlens-500/20 text-archlens-300 text-[10px] font-semibold disabled:opacity-40 mb-1.5"
+              className="w-full px-2 py-1.5 rounded-md bg-archlens-500/10 border border-archlens-500/20 text-archlens-300 text-[10px] font-semibold disabled:opacity-40 mb-1.5"
             >
-              {connectFrom ? "Click target..." : "Connect Node"}
+              {connectFrom ? "Click target..." : "Connect"}
             </button>
             <button
               onClick={deleteSelected}
               disabled={!selectedId}
-              className="w-full px-2.5 py-1.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-semibold disabled:opacity-40"
+              className="w-full px-2 py-1.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-semibold disabled:opacity-40"
             >
-              Delete Node
+              Delete
             </button>
           </div>
         </aside>
 
-        {/* ── Canvas ── */}
-        <div
-          ref={canvasRef}
-          onMouseMove={onCanvasMouseMove}
-          onMouseUp={onCanvasMouseUp}
-          onMouseLeave={onCanvasMouseUp}
-          onClick={() => { setSelectedId(null); setConnectFrom(null); }}
-          className="flex-1 relative overflow-auto"
-          style={{
-            backgroundImage: "radial-gradient(circle, #1e1e2a 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-            backgroundColor: "#0a0a10",
-            minHeight: "100%",
-          }}
-        >
-          {/* SVG edges */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minHeight: 1000, minWidth: 2000 }}>
-            <defs>
-              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a4a5e" />
-              </marker>
-              <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa" />
-              </marker>
-            </defs>
-            {edges.map((e) => {
-              const ep = getEdgePath(e);
-              if (!ep) return null;
-              const srcNode = nodes.find((n) => n.id === e.source);
-              const isActive = running && srcNode?.alive && srcNode.incomingRate > 0;
-              const strokeWidth = isActive ? Math.min(6, 1 + (srcNode!.incomingRate / 500)) : 1.5;
-              return (
-                <g key={e.id}>
-                  <path
-                    d={ep.path}
-                    fill="none"
-                    stroke={isActive ? "#a78bfa" : "#2a2a3a"}
-                    strokeWidth={strokeWidth}
-                    markerEnd={isActive ? "url(#arrow-active)" : "url(#arrow)"}
-                    opacity={isActive ? 0.75 : 0.5}
-                  />
-                  {/* Flow animation */}
-                  {isActive && (
-                    <circle r="3" fill="#c4b5fd">
-                      <animateMotion dur={`${Math.max(0.5, 3 / speed)}s`} repeatCount="indefinite" path={ep.path} />
-                    </circle>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* Nodes */}
-          {nodes.map((n) => {
-            const cfg = TYPE_CONFIG[n.type];
-            const Icon = cfg.icon;
-            const color = nodeColor(n);
-            const isSelected = selectedId === n.id;
-            const isConnectSource = connectFrom === n.id;
-            const lastP95 = n.metrics.latencyP95[n.metrics.latencyP95.length - 1] || 0;
-            return (
-              <div
-                key={n.id}
-                onMouseDown={(e) => onNodeMouseDown(e, n.id)}
-                onClick={(e) => onNodeClick(e, n.id)}
-                className={`absolute select-none ${isSelected ? "ring-2 ring-archlens-400" : ""} ${isConnectSource ? "ring-2 ring-emerald-400" : ""}`}
-                style={{
-                  left: n.x,
-                  top: n.y,
-                  width: 140,
-                  cursor: draggingId === n.id ? "grabbing" : "grab",
-                  borderRadius: 10,
-                  backgroundColor: n.alive ? "#16161f" : "#0f0f16",
-                  border: `2px solid ${color}`,
-                  boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none",
-                  opacity: n.alive ? 1 : 0.5,
-                  transition: "box-shadow 0.2s, border-color 0.2s",
-                }}
-              >
-                <div className="flex items-center gap-2 p-2">
-                  <div className="rounded-md p-1" style={{ backgroundColor: `${color}20`, color }}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-semibold text-[#e4e4ed] truncate">{n.label}</div>
-                    <div className="text-[8px] text-[#5a5a70] uppercase">{cfg.label}</div>
-                  </div>
-                  {!n.alive && <Skull className="h-3 w-3 text-red-400" />}
-                  {n.replicas > 1 && (
-                    <div className="text-[9px] font-bold text-archlens-300 bg-archlens-500/20 rounded-full w-5 h-5 flex items-center justify-center">
-                      {n.replicas}
-                    </div>
-                  )}
-                </div>
-                {running && n.alive && n.type !== "client" && (
-                  <div className="px-2 pb-1.5">
-                    {/* Saturation bar */}
-                    <div className="flex items-center justify-between text-[8px] mb-0.5">
-                      <span className="text-[#5a5a70]">{Math.round(n.incomingRate)} req/s</span>
-                      <span style={{ color }}>{Math.round(n.utilization * 100)}%</span>
-                    </div>
-                    <div className="h-1 rounded-full bg-[#1e1e2a] overflow-hidden">
-                      <div
-                        className="h-full transition-all duration-200"
-                        style={{ width: `${Math.min(100, n.utilization * 100)}%`, backgroundColor: color }}
+        {/* ─ Canvas ─ */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div
+            ref={canvasRef}
+            onMouseMove={onCanvasMouseMove}
+            onMouseUp={onCanvasMouseUp}
+            onMouseLeave={onCanvasMouseUp}
+            onClick={() => { setSelectedId(null); setConnectFrom(null); setShowTemplates(false); setShowLoadTests(false); setShowSaved(false); }}
+            className="flex-1 relative overflow-auto"
+            style={{
+              backgroundImage: "radial-gradient(circle, #1e1e2a 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+              backgroundColor: "#0a0a10",
+            }}
+          >
+            <div style={{ position: "relative", minWidth: 2000, minHeight: 1200 }}>
+              <svg className="absolute inset-0 pointer-events-none" style={{ width: 2000, height: 1200 }}>
+                <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a4a5e" />
+                  </marker>
+                  <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa" />
+                  </marker>
+                </defs>
+                {edges.map((e) => {
+                  const ep = getEdgePath(e);
+                  if (!ep) return null;
+                  const srcNode = nodes.find((n) => n.id === e.source);
+                  const isActive = running && srcNode?.alive && srcNode.incomingRate > 0;
+                  const strokeWidth = isActive ? Math.min(6, 1 + srcNode!.incomingRate / 500) : 1.5;
+                  return (
+                    <g key={e.id}>
+                      <path
+                        d={ep.path}
+                        fill="none"
+                        stroke={isActive ? "#a78bfa" : "#2a2a3a"}
+                        strokeWidth={strokeWidth}
+                        markerEnd={isActive ? "url(#arrow-active)" : "url(#arrow)"}
+                        opacity={isActive ? 0.75 : 0.5}
                       />
+                      {isActive && (
+                        <circle r="3" fill="#c4b5fd">
+                          <animateMotion dur={`${Math.max(0.5, 3 / speed)}s`} repeatCount="indefinite" path={ep.path} />
+                        </circle>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {nodes.map((n) => {
+                const cfg = TYPE_CONFIG[n.type];
+                const Icon = cfg.icon;
+                const color = nodeColor(n);
+                const isSelected = selectedId === n.id;
+                const isConnectSource = connectFrom === n.id;
+                const lastP95 = n.metrics.latencyP95[n.metrics.latencyP95.length - 1] || 0;
+                const cbState = n.circuitBreaker.state;
+                return (
+                  <div
+                    key={n.id}
+                    onMouseDown={(e) => onNodeMouseDown(e, n.id)}
+                    onClick={(e) => onNodeClick(e, n.id)}
+                    className={`absolute select-none ${isSelected ? "ring-2 ring-archlens-400" : ""} ${isConnectSource ? "ring-2 ring-emerald-400" : ""}`}
+                    style={{
+                      left: n.x,
+                      top: n.y,
+                      width: 140,
+                      cursor: draggingId === n.id ? "grabbing" : "grab",
+                      borderRadius: 10,
+                      backgroundColor: n.alive ? "#16161f" : "#0f0f16",
+                      border: `2px solid ${color}`,
+                      boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none",
+                      opacity: n.alive ? 1 : 0.5,
+                    }}
+                  >
+                    <div className="flex items-center gap-2 p-2">
+                      <div className="rounded-md p-1" style={{ backgroundColor: `${color}20`, color }}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-semibold text-[#e4e4ed] truncate">{n.label}</div>
+                        <div className="text-[8px] text-[#5a5a70] uppercase flex items-center gap-1">
+                          {cfg.label}
+                          {cbState === "open" && <span className="text-purple-400">⚡CB</span>}
+                          {cbState === "half-open" && <span className="text-amber-400">⚡½</span>}
+                        </div>
+                      </div>
+                      {!n.alive && <Skull className="h-3 w-3 text-red-400" />}
+                      {n.replicas > 1 && (
+                        <div className="text-[9px] font-bold text-archlens-300 bg-archlens-500/20 rounded-full w-5 h-5 flex items-center justify-center">
+                          {n.replicas}
+                        </div>
+                      )}
                     </div>
-                    {/* Quick latency */}
-                    <div className="flex items-center justify-between text-[8px] mt-1 text-[#5a5a70]">
-                      <span>p95 {Math.round(lastP95)}ms</span>
-                      {n.queueDepth > 5 && <span className="text-orange-400">Q:{Math.round(n.queueDepth)}</span>}
-                    </div>
+                    {running && n.alive && n.type !== "client" && (
+                      <div className="px-2 pb-1.5">
+                        <div className="flex items-center justify-between text-[8px] mb-0.5">
+                          <span className="text-[#5a5a70]">{Math.round(n.incomingRate)} r/s</span>
+                          <span style={{ color }}>{Math.round(n.utilization * 100)}%</span>
+                        </div>
+                        <div className="h-1 rounded-full bg-[#1e1e2a] overflow-hidden">
+                          <div className="h-full" style={{ width: `${Math.min(100, n.utilization * 100)}%`, backgroundColor: color }} />
+                        </div>
+                        <div className="flex items-center justify-between text-[8px] mt-1 text-[#5a5a70]">
+                          <span>p95 {Math.round(lastP95)}ms</span>
+                          {n.queueDepth > 5 && <span className="text-orange-400">Q:{Math.round(n.queueDepth)}</span>}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─ Event Log (bottom) ─ */}
+          {showEventLog && (
+            <div className="h-32 border-t border-[#2a2a3a] bg-surface overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between px-4 py-1.5 border-b border-[#2a2a3a]">
+                <div className="text-[9px] uppercase font-semibold text-[#5a5a70]">Event Log ({eventLog.length})</div>
+                <button onClick={() => setShowEventLog(false)} className="text-[10px] text-[#5a5a70] hover:text-[#e4e4ed]">hide</button>
+              </div>
+              <div className="flex-1 overflow-y-auto font-mono text-[10px]">
+                {eventLog.length === 0 ? (
+                  <div className="p-3 text-[#5a5a70]">No events yet. Start the simulation.</div>
+                ) : (
+                  eventLog.map((ev) => (
+                    <div key={ev.id} className="px-4 py-0.5 border-b border-[#1e1e2a] flex items-center gap-2">
+                      <span className="text-[#5a5a70] w-10">{formatUptime(ev.timestamp)}</span>
+                      <span className={`w-14 text-[9px] font-bold uppercase ${
+                        ev.severity === "critical" ? "text-red-400" :
+                        ev.severity === "error" ? "text-red-400" :
+                        ev.severity === "warning" ? "text-amber-400" : "text-blue-400"
+                      }`}>{ev.severity}</span>
+                      <span className="w-16 text-[#5a5a70]">[{ev.category}]</span>
+                      <span className="text-[#e4e4ed]">{ev.message}</span>
+                    </div>
+                  ))
                 )}
               </div>
-            );
-          })}
-
-          {nodes.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center text-[#5a5a70] text-sm">
-              Add components from the palette
             </div>
+          )}
+          {!showEventLog && (
+            <button onClick={() => setShowEventLog(true)} className="border-t border-[#2a2a3a] bg-surface px-4 py-1 text-[10px] text-[#5a5a70] hover:text-[#e4e4ed]">
+              Show Event Log ({eventLog.length})
+            </button>
           )}
         </div>
 
-        {/* ── Right: Inspector + charts ── */}
-        <aside className="w-80 border-l border-[#2a2a3a] bg-surface overflow-y-auto">
-          {selected ? (
-            <div className="p-4 space-y-4">
+        {/* ─ Right: Inspector + Insights ─ */}
+        <aside className="w-80 border-l border-[#2a2a3a] bg-surface overflow-y-auto flex-shrink-0">
+          <div className="flex border-b border-[#2a2a3a]">
+            <button
+              onClick={() => setRightTab("inspector")}
+              className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold ${rightTab === "inspector" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70]"}`}
+            >
+              <Settings className="h-3 w-3 inline mr-1" /> Inspector
+            </button>
+            <button
+              onClick={() => setRightTab("insights")}
+              className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold flex items-center justify-center gap-1 ${rightTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70]"}`}
+            >
+              <Lightbulb className="h-3 w-3" /> Insights {insights.length > 0 && <span className="text-red-400">{insights.length}</span>}
+            </button>
+          </div>
+
+          {rightTab === "insights" ? (
+            <div className="p-3 space-y-2">
+              {insights.length === 0 ? (
+                <div className="text-center text-[#5a5a70] text-xs py-8">
+                  <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  Run the simulation to get AI insights
+                </div>
+              ) : (
+                insights.map((ins, i) => {
+                  const color = ins.severity === "critical" ? "#ef4444" : ins.severity === "warning" ? "#f97316" : "#60a5fa";
+                  return (
+                    <div key={i} className="rounded-lg border p-3" style={{ borderColor: `${color}30`, backgroundColor: `${color}08` }}>
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color }} />
+                        <div className="flex-1">
+                          <div className="text-xs font-semibold text-[#e4e4ed]">{ins.title}</div>
+                          <div className="text-[10px] text-[#8888a0] mt-1 leading-relaxed">{ins.explanation}</div>
+                          <div className="text-[10px] text-amber-300 mt-2 leading-relaxed flex items-start gap-1">
+                            <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            {ins.recommendation}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : selected ? (
+            <div className="p-3 space-y-3">
               <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-archlens-400" />
-                <h3 className="text-sm font-semibold text-[#e4e4ed]">{selected.label}</h3>
-                <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70] uppercase">{TYPE_CONFIG[selected.type].label}</span>
+                <h3 className="text-sm font-semibold text-[#e4e4ed] flex-1">{selected.label}</h3>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70] uppercase">{TYPE_CONFIG[selected.type].label}</span>
               </div>
 
-              {/* Config */}
-              <details open className="rounded-lg bg-[#1e1e2a] p-3">
-                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer select-none">Configuration</summary>
-                <div className="mt-3 space-y-2.5">
-                  <ConfigInput label="Label" value={selected.label} onChange={(v) => updateSelected({ label: v })} />
-                  <ConfigInput label="Capacity / replica (req/s)" value={selected.capacityPerReplica} onChange={(v) => updateSelected({ capacityPerReplica: Number(v) || 0 })} type="number" />
-                  <ConfigInput label="Base latency (ms)" value={selected.baseLatencyMs} onChange={(v) => updateSelected({ baseLatencyMs: Number(v) || 0 })} type="number" />
-                  <ConfigInput label="Latency variance (ms)" value={selected.latencyVarianceMs} onChange={(v) => updateSelected({ latencyVarianceMs: Number(v) || 0 })} type="number" />
-                  <ConfigInput label="Timeout (ms)" value={selected.timeoutMs} onChange={(v) => updateSelected({ timeoutMs: Number(v) || 0 })} type="number" />
-                  <div>
-                    <label className="text-[9px] uppercase font-semibold text-[#5a5a70]">Replicas: {selected.replicas}</label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="50"
-                      value={selected.replicas}
-                      onChange={(e) => updateSelected({ replicas: Number(e.target.value) })}
-                      className="w-full mt-1 accent-archlens-500"
-                    />
-                  </div>
+              <details open className="rounded-lg bg-[#1e1e2a] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Config</summary>
+                <div className="mt-2 space-y-2">
+                  <CI label="Label" value={selected.label} onChange={(v) => updateSelected({ label: v })} />
+                  <CI label="Capacity/replica" value={selected.capacityPerReplica} type="number" onChange={(v) => updateSelected({ capacityPerReplica: Number(v) || 0 })} />
+                  <CI label="Base latency (ms)" value={selected.baseLatencyMs} type="number" onChange={(v) => updateSelected({ baseLatencyMs: Number(v) || 0 })} />
+                  <CI label="Timeout (ms)" value={selected.timeoutMs} type="number" onChange={(v) => updateSelected({ timeoutMs: Number(v) || 0 })} />
+                  <Slider label="Replicas" value={selected.replicas} min={1} max={50} onChange={(v) => updateSelected({ replicas: v })} />
                   {selected.type === "cache" && (
-                    <div>
-                      <label className="text-[9px] uppercase font-semibold text-[#5a5a70]">Hit Rate: {Math.round((selected.cacheHitRate || 0) * 100)}%</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={(selected.cacheHitRate || 0) * 100}
-                        onChange={(e) => updateSelected({ cacheHitRate: Number(e.target.value) / 100 })}
-                        className="w-full mt-1 accent-archlens-500"
-                      />
-                    </div>
+                    <Slider label="Hit Rate %" value={Math.round((selected.cacheHitRate || 0) * 100)} min={0} max={100} onChange={(v) => updateSelected({ cacheHitRate: v / 100 })} />
                   )}
+                  {selected.type === "database" && (
+                    <CI label="Connection Pool" value={selected.dbConnectionPoolSize || 50} type="number" onChange={(v) => updateSelected({ dbConnectionPoolSize: Number(v) || 50 })} />
+                  )}
+                </div>
+              </details>
+
+              <details className="rounded-lg bg-[#1e1e2a] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Resilience</summary>
+                <div className="mt-2 space-y-2">
+                  <Toggle label="Circuit Breaker" value={selected.circuitBreakerEnabled} onChange={(v) => updateSelected({ circuitBreakerEnabled: v })} />
+                  <CI label="CB Threshold" value={selected.circuitBreakerThreshold} type="number" onChange={(v) => updateSelected({ circuitBreakerThreshold: Number(v) || 5 })} />
+                  <Slider label="Retries" value={selected.retryCount} min={0} max={5} onChange={(v) => updateSelected({ retryCount: v })} />
+                </div>
+              </details>
+
+              <details className="rounded-lg bg-[#1e1e2a] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Auto-scaling</summary>
+                <div className="mt-2 space-y-2">
+                  <Toggle label="Enabled" value={selected.autoScaleEnabled} onChange={(v) => updateSelected({ autoScaleEnabled: v })} />
+                  <Slider label="Min replicas" value={selected.autoScaleMin} min={1} max={20} onChange={(v) => updateSelected({ autoScaleMin: v })} />
+                  <Slider label="Max replicas" value={selected.autoScaleMax} min={1} max={50} onChange={(v) => updateSelected({ autoScaleMax: v })} />
+                  <Slider label="Scale up at %" value={Math.round(selected.autoScaleUpThreshold * 100)} min={10} max={95} onChange={(v) => updateSelected({ autoScaleUpThreshold: v / 100 })} />
+                </div>
+              </details>
+
+              <details className="rounded-lg bg-[#1e1e2a] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Cost</summary>
+                <div className="mt-2 space-y-2">
+                  <CI label="$/replica/hr" value={selected.costPerReplicaHour} type="number" onChange={(v) => updateSelected({ costPerReplicaHour: Number(v) || 0 })} />
+                  <CI label="$/1M req" value={selected.costPerMillionRequests} type="number" onChange={(v) => updateSelected({ costPerMillionRequests: Number(v) || 0 })} />
+                  <div className="text-[9px] text-[#5a5a70]">Running cost: ${selected.metrics.totalCost.toFixed(4)}</div>
                 </div>
               </details>
 
@@ -585,71 +1005,33 @@ export function SimulatorView() {
                   selected.alive ? "bg-red-500/15 text-red-400 border border-red-500/30" : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                 }`}
               >
-                {selected.alive ? <><Skull className="h-3.5 w-3.5" /> Kill Node</> : <>Revive</>}
+                {selected.alive ? <><Skull className="h-3.5 w-3.5" /> Kill</> : <>Revive</>}
               </button>
 
-              {/* Live stats */}
               {running && selected.alive && selected.type !== "client" && (
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-[#1e1e2a] p-3">
-                    <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-2 flex items-center justify-between">
-                      <span>Live Metrics</span>
-                      <span className="text-emerald-400 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" /> LIVE</span>
+                <>
+                  <div className="rounded-lg bg-[#1e1e2a] p-2.5">
+                    <div className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-2">Live</div>
+                    <div className="grid grid-cols-2 gap-1 text-[10px]">
+                      <Stat label="In" value={`${Math.round(selected.incomingRate)} /s`} />
+                      <Stat label="Out" value={`${Math.round(selected.processedRate)} /s`} />
+                      <Stat label="Util" value={`${Math.round(selected.utilization * 100)}%`} warn={selected.utilization > 0.8} danger={selected.utilization > 1} />
+                      <Stat label="Queue" value={`${Math.round(selected.queueDepth)}`} warn={selected.queueDepth > 10} />
+                      <Stat label="Drop" value={`${Math.round(selected.droppedRate)} /s`} danger={selected.droppedRate > 0} />
+                      <Stat label="CB" value={selected.circuitBreaker.state} warn={selected.circuitBreaker.state !== "closed"} />
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
-                      <Stat label="Incoming" value={`${Math.round(selected.incomingRate)} /s`} />
-                      <Stat label="Processed" value={`${Math.round(selected.processedRate)} /s`} />
-                      <Stat label="Utilization" value={`${Math.round(selected.utilization * 100)}%`} warn={selected.utilization > 0.8} danger={selected.utilization > 1} />
-                      <Stat label="Queue Depth" value={`${Math.round(selected.queueDepth)}`} warn={selected.queueDepth > 10} />
-                      <Stat label="Dropped" value={`${Math.round(selected.droppedRate)} /s`} danger={selected.droppedRate > 0} />
-                      <Stat label="Capacity" value={`${selected.capacityPerReplica * selected.replicas} /s`} />
-                    </div>
-                    {selected.utilization > 1 && (
-                      <div className="mt-2 pt-2 border-t border-red-500/20 flex items-center gap-1.5 text-[10px] text-red-400">
-                        <AlertTriangle className="h-3 w-3" /> OVERLOADED — bottleneck
-                      </div>
-                    )}
                   </div>
-
-                  {/* Throughput chart */}
-                  <MetricChart label="Throughput (req/s)" data={selected.metrics.throughput} color="#60a5fa" unit="/s" />
-
-                  {/* Latency chart */}
-                  <MetricChart
-                    label="Latency P50/P95/P99 (ms)"
-                    data={selected.metrics.latencyP50}
-                    data2={selected.metrics.latencyP95}
-                    data3={selected.metrics.latencyP99}
-                    color="#a78bfa"
-                    color2="#fbbf24"
-                    color3="#ef4444"
-                    unit="ms"
-                  />
-
-                  {/* Error rate */}
-                  <MetricChart label="Error Rate" data={selected.metrics.errorRate.map((e) => e * 100)} color="#ef4444" unit="%" />
-
-                  {/* Queue depth */}
-                  {Math.max(...selected.metrics.queueDepth) > 0 && (
-                    <MetricChart label="Queue Depth" data={selected.metrics.queueDepth} color="#f97316" />
-                  )}
-
-                  {/* Totals */}
-                  <div className="rounded-lg bg-[#1e1e2a] p-3 space-y-1">
-                    <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1.5">Totals</div>
-                    <Stat label="Total Requests" value={selected.metrics.totalRequests.toLocaleString()} />
-                    <Stat label="Total Errors" value={selected.metrics.totalErrors.toLocaleString()} danger={selected.metrics.totalErrors > 0} />
-                    <Stat label="Total Timeouts" value={selected.metrics.totalTimeouts.toLocaleString()} />
-                    <Stat label="Error Rate" value={`${((selected.metrics.totalErrors / Math.max(1, selected.metrics.totalRequests)) * 100).toFixed(2)}%`} warn={(selected.metrics.totalErrors / Math.max(1, selected.metrics.totalRequests)) > 0.01} />
-                  </div>
-                </div>
+                  <Chart label="Throughput" data={selected.metrics.throughput} color="#60a5fa" unit="/s" />
+                  <Chart label="Latency P50/P95/P99" data={selected.metrics.latencyP50} data2={selected.metrics.latencyP95} data3={selected.metrics.latencyP99} color="#a78bfa" color2="#fbbf24" color3="#ef4444" unit="ms" />
+                  <Chart label="Error Rate" data={selected.metrics.errorRate.map((e) => e * 100)} color="#ef4444" unit="%" />
+                  <Chart label="Replicas" data={selected.metrics.replicas} color="#34d399" />
+                </>
               )}
             </div>
           ) : (
             <div className="p-4 text-center text-[#5a5a70] text-xs">
               <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Select a node to inspect</p>
-              <p className="mt-2 text-[10px]">Click "Connect Node" to link nodes</p>
+              Select a node
             </div>
           )}
         </aside>
@@ -660,45 +1042,23 @@ export function SimulatorView() {
 
 /* ─── Helper components ──────────────────────────────────── */
 
-function makeNode(id: string, type: NodeType, label: string, x: number, y: number): SimNode {
-  const defaults = NODE_DEFAULTS[type];
-  return {
-    id,
-    type,
-    label,
-    x,
-    y,
-    capacityPerReplica: defaults.capacityPerReplica!,
-    baseLatencyMs: defaults.baseLatencyMs!,
-    latencyVarianceMs: defaults.latencyVarianceMs!,
-    replicas: defaults.replicas!,
-    timeoutMs: defaults.timeoutMs!,
-    errorRateAtOverload: defaults.errorRateAtOverload!,
-    cacheHitRate: defaults.cacheHitRate,
-    alive: true,
-    queueDepth: 0,
-    activeRequests: 0,
-    incomingRate: 0,
-    processedRate: 0,
-    droppedRate: 0,
-    utilization: 0,
-    metrics: createNodeMetrics(),
-  };
+function mkEdge(id: string, source: string, target: string, weight: number, latencyMs: number): SimEdge {
+  return { id, source, target, weight, latencyMs, retryEnabled: false };
 }
 
 function formatUptime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m${seconds % 60}s`;
+  return `${Math.floor(seconds / 3600)}h${Math.floor((seconds % 3600) / 60)}m`;
 }
 
 function Kpi({ icon, label, value, unit, color }: { icon: React.ReactNode; label: string; value: string; unit?: string; color: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="rounded p-1.5" style={{ backgroundColor: `${color}15`, color }}>{icon}</div>
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="rounded p-1.5 flex-shrink-0" style={{ backgroundColor: `${color}15`, color }}>{icon}</div>
       <div className="min-w-0">
-        <div className="text-[9px] uppercase text-[#5a5a70] leading-tight">{label}</div>
-        <div className="text-sm font-bold leading-tight" style={{ color }}>
+        <div className="text-[9px] uppercase text-[#5a5a70] leading-tight truncate">{label}</div>
+        <div className="text-xs font-bold leading-tight truncate" style={{ color }}>
           {value}{unit && <span className="text-[9px] ml-0.5 text-[#5a5a70]">{unit}</span>}
         </div>
       </div>
@@ -708,14 +1068,14 @@ function Kpi({ icon, label, value, unit, color }: { icon: React.ReactNode; label
 
 function Stat({ label, value, warn, danger }: { label: string; value: string; warn?: boolean; danger?: boolean }) {
   return (
-    <div className="flex items-center justify-between text-[10px]">
+    <div className="flex items-center justify-between">
       <span className="text-[#5a5a70]">{label}</span>
       <span className={`font-mono ${danger ? "text-red-400" : warn ? "text-amber-400" : "text-[#e4e4ed]"}`}>{value}</span>
     </div>
   );
 }
 
-function ConfigInput({ label, value, onChange, type = "text" }: { label: string; value: string | number; onChange: (v: string) => void; type?: string }) {
+function CI({ label, value, onChange, type = "text" }: { label: string; value: string | number; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
       <label className="text-[9px] uppercase font-semibold text-[#5a5a70]">{label}</label>
@@ -729,7 +1089,37 @@ function ConfigInput({ label, value, onChange, type = "text" }: { label: string;
   );
 }
 
-function MetricChart({ label, data, data2, data3, color, color2, color3, unit }: {
+function Slider({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <label className="text-[9px] uppercase font-semibold text-[#5a5a70]">{label}: {value}</label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full mt-0.5 accent-archlens-500"
+      />
+    </div>
+  );
+}
+
+function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <label className="text-[10px] text-[#8888a0]">{label}</label>
+      <button
+        onClick={() => onChange(!value)}
+        className={`relative w-8 h-4 rounded-full transition-colors ${value ? "bg-archlens-500" : "bg-[#2a2a3a]"}`}
+      >
+        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
+      </button>
+    </div>
+  );
+}
+
+function Chart({ label, data, data2, data3, color, color2, color3, unit }: {
   label: string;
   data: number[];
   data2?: number[];
@@ -745,14 +1135,11 @@ function MetricChart({ label, data, data2, data3, color, color2, color3, unit }:
   const last2 = data2 ? data2[data2.length - 1] || 0 : 0;
   const last3 = data3 ? data3[data3.length - 1] || 0 : 0;
 
-  const makePoints = (d: number[]) => {
-    if (d.length === 0) return "";
-    return d.map((v, i) => `${(i / Math.max(d.length - 1, 1)) * 100},${100 - (v / max) * 100}`).join(" ");
-  };
+  const pts = (d: number[]) => d.map((v, i) => `${(i / Math.max(d.length - 1, 1)) * 100},${100 - (v / max) * 100}`).join(" ");
 
   return (
-    <div className="rounded-lg bg-[#1e1e2a] p-3">
-      <div className="flex items-center justify-between mb-2">
+    <div className="rounded-lg bg-[#1e1e2a] p-2.5">
+      <div className="flex items-center justify-between mb-1">
         <span className="text-[9px] uppercase font-semibold text-[#5a5a70]">{label}</span>
         <div className="flex items-center gap-2 text-[9px] font-mono">
           {data3 && <span style={{ color: color3 }}>{Math.round(last3)}{unit}</span>}
@@ -760,10 +1147,10 @@ function MetricChart({ label, data, data2, data3, color, color2, color3, unit }:
           <span style={{ color }}>{Math.round(last)}{unit}</span>
         </div>
       </div>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-16">
-        {data3 && <polyline points={makePoints(data3)} fill="none" stroke={color3} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
-        {data2 && <polyline points={makePoints(data2)} fill="none" stroke={color2} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
-        <polyline points={makePoints(data)} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-14">
+        {data3 && <polyline points={pts(data3)} fill="none" stroke={color3} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
+        {data2 && <polyline points={pts(data2)} fill="none" stroke={color2} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
+        <polyline points={pts(data)} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );
