@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArchLens — See your codebase. Test your architecture. Before production.</title>
+  <meta name="description" content="ArchLens is the first tool that combines brownfield code analysis with distributed-system simulation. 8 languages, 15+ frameworks, queueing-theory simulator.">
+  <meta property="og:title" content="ArchLens — Code Architecture Intelligence">
+  <meta property="og:description" content="See your codebase. Test your architecture. Before production.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: #06060a;
+      color: #e4e4ed;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #a78bfa; text-decoration: none; }
+    a:hover { color: #c4b5fd; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* Hero */
+    .hero {
+      padding: 120px 0 80px;
+      text-align: center;
+      background: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 60%);
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      color: #a78bfa;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 64px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(180deg, #ffffff 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 20px;
+      color: #8888a0;
+      max-width: 720px;
+      margin: 0 auto 40px;
+    }
+    .cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+      color: white;
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(124, 58, 237, 0.4);
+      color: white;
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e4e4ed;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e4e4ed;
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      max-width: 800px;
+      margin: 80px auto 0;
+      padding: 32px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 36px; font-weight: 800; color: #a78bfa; }
+    .stat-label { font-size: 12px; color: #5a5a70; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    /* Section */
+    section { padding: 100px 0; }
+    .section-header { text-align: center; margin-bottom: 64px; }
+    .section-header h2 {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .section-header p {
+      font-size: 18px;
+      color: #8888a0;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* Feature grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature {
+      padding: 32px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s;
+    }
+    .feature:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(124, 58, 237, 0.3);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .feature h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .feature p {
+      color: #8888a0;
+      font-size: 15px;
+    }
+
+    /* Comparison */
+    .comparison {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      padding: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 16px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    th { color: #5a5a70; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    td { color: #e4e4ed; font-size: 14px; }
+    .check { color: #34d399; }
+    .cross { color: #5a5a70; }
+
+    /* Pricing */
+    .pricing {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .price-card {
+      padding: 40px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .price-card.featured {
+      border-color: rgba(124, 58, 237, 0.4);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    }
+    .price-card h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .price-card .price {
+      font-size: 48px;
+      font-weight: 800;
+      margin: 16px 0;
+    }
+    .price-card .price small { font-size: 16px; color: #5a5a70; font-weight: 400; }
+    .price-card ul { list-style: none; margin: 24px 0; }
+    .price-card li { padding: 8px 0; color: #8888a0; }
+    .price-card li::before { content: "✓ "; color: #34d399; font-weight: bold; }
+
+    /* Footer */
+    footer {
+      padding: 60px 0 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+      color: #5a5a70;
+      font-size: 14px;
+    }
+    footer .links { display: flex; gap: 24px; justify-content: center; margin-bottom: 24px; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 40px; }
+      .features, .pricing { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <span class="badge">v0.1.0 · Open Source · MIT</span>
+      <h1>See your codebase.<br>Test your architecture.<br>Before production.</h1>
+      <p>ArchLens is the first tool that combines <strong>brownfield code analysis</strong> with <strong>distributed-system simulation</strong>. Analyze any codebase in 60 seconds, then stress-test it with real queueing theory.</p>
+      <div class="cta">
+        <a href="https://github.com/your-org/archlens" class="btn btn-primary">⭐ Star on GitHub</a>
+        <a href="#quickstart" class="btn btn-secondary">📦 Quick Start</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-value">8</div><div class="stat-label">Languages</div></div>
+        <div class="stat"><div class="stat-value">15+</div><div class="stat-label">Frameworks</div></div>
+        <div class="stat"><div class="stat-value">202</div><div class="stat-label">Tests</div></div>
+        <div class="stat"><div class="stat-value">15</div><div class="stat-label">Pages</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>Everything you need</h2>
+        <p>From parsing to simulation. From insights to action. ArchLens is one platform for understanding any codebase.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">🔍</div>
+          <h3>Multi-language Analysis</h3>
+          <p>Tree-sitter parsing for TypeScript, Python, Go, Java, C#, Swift, Rust, JavaScript. 15+ frameworks auto-detected.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📊</div>
+          <h3>Architecture Insights</h3>
+          <p>Layer detection, coupling metrics (Ca/Ce/I/A/D), pattern recognition (DDD, CQRS, Clean Arch), hotspot analysis.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🎮</div>
+          <h3>Simulator</h3>
+          <p>M/M/c queueing theory, circuit breakers, auto-scaling, chaos engineering. Test capacity before production.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🛡️</div>
+          <h3>Quality + Security</h3>
+          <p>20 analyzers: complexity, dead code, vulnerabilities, tech debt in dollars, custom rules.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🤖</div>
+          <h3>AI Integration</h3>
+          <p>MCP server for Claude Code, Cursor, Windsurf. 7 tools that give your AI instant codebase context.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🎨</div>
+          <h3>Web Dashboard</h3>
+          <p>15 pages, 5 themes, English/Turkish. Drag-drop simulator, executive reports, snapshot comparison.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>How we compare</h2>
+        <p>ArchLens combines features from multiple categories of tools — and adds something nobody else has.</p>
+      </div>
+      <div class="comparison">
+        <table>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>ArchLens</th>
+              <th>SonarQube</th>
+              <th>CodeScene</th>
+              <th>Structurizr</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Multi-language</td><td class="check">✓ 8</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+            <tr><td>Auto-detected layers/patterns</td><td class="check">✓</td><td class="cross">—</td><td class="cross">⚠</td><td class="cross">—</td></tr>
+            <tr><td>Hotspot analysis</td><td class="check">✓</td><td class="cross">—</td><td class="check">✓</td><td class="cross">—</td></tr>
+            <tr><td><strong>Architecture simulator</strong></td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+            <tr><td><strong>Real-code-based simulation</strong></td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+            <tr><td><strong>MCP / AI integration</strong></td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+            <tr><td>Open source</td><td class="check">MIT</td><td class="cross">LGPL</td><td class="cross">proprietary</td><td class="check">MIT</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick start -->
+  <section id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <h2>Get started in 60 seconds</h2>
+        <p>Install, analyze, explore. No signup, no telemetry, runs locally.</p>
+      </div>
+      <div class="comparison">
+        <pre style="font-family: 'SF Mono', Menlo, monospace; color: #c4b5fd; padding: 24px; background: #0a0a10; border-radius: 8px; line-height: 1.8;">
+<span style="color: #5a5a70;"># 1. Install</span>
+npm install -g archlens
+
+<span style="color: #5a5a70;"># 2. Analyze any project</span>
+cd your-project
+archlens analyze .
+
+<span style="color: #5a5a70;"># 3. Open the dashboard</span>
+archlens serve
+<span style="color: #5a5a70;"># → http://localhost:4848</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>Open source. Forever.</h2>
+        <p>The Community Edition is free under MIT. Pro features for teams coming soon.</p>
+      </div>
+      <div class="pricing">
+        <div class="price-card">
+          <h3>Community Edition</h3>
+          <div class="price">Free <small>/ MIT</small></div>
+          <ul>
+            <li>All 8 languages, 15+ frameworks</li>
+            <li>15 dashboard pages</li>
+            <li>Architecture Simulator</li>
+            <li>MCP integration</li>
+            <li>Self-hosted, runs locally</li>
+            <li>Community support</li>
+          </ul>
+          <a href="https://github.com/your-org/archlens" class="btn btn-secondary">Get on GitHub</a>
+        </div>
+        <div class="price-card featured">
+          <h3>Pro / Enterprise</h3>
+          <div class="price">Custom <small>/ team</small></div>
+          <ul>
+            <li>Everything in Community</li>
+            <li>Team collaboration & sharing</li>
+            <li>CI/CD integration</li>
+            <li>SSO / SAML / Audit logs</li>
+            <li>Hosted cloud option</li>
+            <li>Priority support with SLA</li>
+          </ul>
+          <a href="mailto:archlens@example.com" class="btn btn-primary">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="https://github.com/your-org/archlens">GitHub</a>
+        <a href="../README.md">Docs</a>
+        <a href="../CHANGELOG.md">Changelog</a>
+        <a href="../CONTRIBUTING.md">Contributing</a>
+        <a href="../SECURITY.md">Security</a>
+      </div>
+      <div>Built with 💜 by the ArchLens community · MIT License</div>
+    </div>
+  </footer>
+
+</body>
+</html>
