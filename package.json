@@ -15,7 +15,12 @@
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
   }
 }
