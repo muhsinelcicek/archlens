@@ -9,3 +9,5 @@ coverage/
 .archlens/
 *.log
 .DS_Store
+playwright-report/
+test-results/
