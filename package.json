@@ -22,5 +22,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": ["linux", "darwin", "win32"],
+      "cpu": ["x64", "arm64"],
+      "libc": ["glibc", "musl"]
+    }
   }
 }
