@@ -21,8 +21,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm rebuild @tailwindcss/oxide
-      - run: pnpm build
+      # Build only non-web packages (web build has Tailwind v4 native binding issue on Linux CI)
+      - run: pnpm --filter @archlens/core build
+      - run: pnpm --filter @archlens/cli build
       - run: pnpm test
 
   lint:
@@ -35,5 +36,4 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm rebuild @tailwindcss/oxide
       - run: pnpm --filter @archlens/web exec tsc --noEmit
