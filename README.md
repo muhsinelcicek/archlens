@@ -32,6 +32,7 @@
 - [Why ArchLens?](#-why-archlens)
 - [What It Does](#-what-it-does-at-a-glance)
 - [Features](#-features)
+- [Screenshots](#-screenshots)
 - [The Simulator](#-the-simulator-is-what-makes-archlens-different)
 - [Quick Start](#-quick-start)
 - [Architecture](#-how-it-works-internally)
@@ -180,6 +181,43 @@ graph LR
 
 </td></tr>
 </table>
+
+---
+
+## 📸 Screenshots
+
+<table>
+<tr>
+<td width="50%" align="center"><strong>Dashboard</strong><br/><sub>Health score, action items, live metrics</sub><br/><img src="docs/img/dashboard.png" alt="Dashboard" /></td>
+<td width="50%" align="center"><strong>Architecture</strong><br/><sub>War Room: graph + insights + code viewer</sub><br/><img src="docs/img/architecture.png" alt="Architecture View" /></td>
+</tr>
+<tr>
+<td width="50%" align="center"><strong>Simulator</strong><br/><sub>E-commerce template running · SLO OK</sub><br/><img src="docs/img/simulator.png" alt="Simulator" /></td>
+<td width="50%" align="center"><strong>Smart Insights</strong><br/><sub>AI-style narrative from 6 analyzers</sub><br/><img src="docs/img/insights.png" alt="Insights" /></td>
+</tr>
+<tr>
+<td width="50%" align="center"><strong>Code Quality</strong><br/><sub>Score, patterns, coupling, tech debt</sub><br/><img src="docs/img/quality.png" alt="Quality" /></td>
+<td width="50%" align="center"><strong>Hotspots</strong><br/><sub>Git history × complexity risk quadrant</sub><br/><img src="docs/img/hotspots.png" alt="Hotspots" /></td>
+</tr>
+<tr>
+<td width="50%" align="center"><strong>Onboarding</strong><br/><sub>Auto-generated project tour</sub><br/><img src="docs/img/onboard.png" alt="Onboarding" /></td>
+<td width="50%" align="center"><strong>Business Processes</strong><br/><sub>Auto-detected flows with algorithms</sub><br/><img src="docs/img/processes.png" alt="Processes" /></td>
+</tr>
+<tr>
+<td width="50%" align="center"><strong>Event Flow</strong><br/><sub>Bounded contexts + communication patterns</sub><br/><img src="docs/img/events.png" alt="Events" /></td>
+<td width="50%" align="center"><strong>Structure</strong><br/><sub>Modules · Dependencies · ER Diagram</sub><br/><img src="docs/img/structure.png" alt="Structure" /></td>
+</tr>
+<tr>
+<td width="50%" align="center"><strong>API & Stack</strong><br/><sub>Endpoints by module · Tech radar</sub><br/><img src="docs/img/api-stack.png" alt="API Stack" /></td>
+<td width="50%" align="center"><strong>Architecture Diff</strong><br/><sub>Compare snapshots over time</sub><br/><img src="docs/img/diff.png" alt="Diff" /></td>
+</tr>
+<tr>
+<td width="50%" align="center"><strong>Custom Rules</strong><br/><sub>6 templates + JSON editor</sub><br/><img src="docs/img/rules.png" alt="Rules" /></td>
+<td width="50%" align="center"><strong>Executive Report</strong><br/><sub>Print-to-PDF for stakeholders</sub><br/><img src="docs/img/report.png" alt="Report" /></td>
+</tr>
+</table>
+
+> All screenshots are captured automatically via the Playwright script at `scripts/capture-screenshots.py`. To regenerate after UI changes, start the dev server and run it.
 
 ---
 
