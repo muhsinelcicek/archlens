@@ -92,9 +92,11 @@ export function App() {
       <div className="flex h-screen flex-col items-center justify-center bg-[var(--color-void)] gap-4">
         <svg className="h-14 w-14 animate-pulse" viewBox="0 0 40 40" fill="none">
           <rect width="40" height="40" rx="10" fill="#7c3aed"/>
-          <path d="M10.5 30.5 L20 9 L29.5 30.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M14.5 22.5 L23 22.5" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-          <circle cx="26" cy="22.5" r="1.5" fill="white"/>
+          <path d="M9 15 L9 9 L15 9"  stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M25 9 L31 9 L31 15" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M9 25 L9 31 L15 31" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M25 31 L31 31 L31 25" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="20" cy="20" r="3" fill="white"/>
         </svg>
         <Loader2 className="h-4 w-4 animate-spin text-[var(--color-text-muted)]" />
         <p className="text-[var(--color-text-secondary)] font-medium text-sm">Loading architecture model</p>
@@ -128,9 +130,11 @@ export function App() {
           <div className="flex items-center gap-2.5">
             <svg className="h-7 w-7" viewBox="0 0 40 40" fill="none" aria-label="ArchLens">
               <rect width="40" height="40" rx="10" fill="#7c3aed"/>
-              <path d="M10.5 30.5 L20 9 L29.5 30.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M14.5 22.5 L23 22.5" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-              <circle cx="26" cy="22.5" r="1.5" fill="white"/>
+              <path d="M9 15 L9 9 L15 9"  stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M25 9 L31 9 L31 15" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 25 L9 31 L15 31" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M25 31 L31 31 L31 25" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="20" cy="20" r="3" fill="white"/>
             </svg>
             <h1 className="text-[15px] font-semibold tracking-tight">
               <span className="text-[var(--color-text-primary)]">Arch</span><span className="text-[var(--color-text-muted)]">Lens</span>
