@@ -123,6 +123,11 @@ textarea:focus-visible {
 .animate-slide-up { animation: slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .animate-fade-in { animation: fade-in 0.15s ease-out; }
 
+/* ─── Lucide icons — refined stroke width ────────────────── */
+.lucide {
+  stroke-width: 1.5;
+}
+
 /* ─── Utility: card primitive ────────────────────────────── */
 .card {
   background: var(--color-elevated);

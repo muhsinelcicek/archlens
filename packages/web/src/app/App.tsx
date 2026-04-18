@@ -89,12 +89,18 @@ export function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-void gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-archlens-400 to-archlens-700 flex items-center justify-center animate-glow-pulse">
-          <Loader2 className="h-8 w-8 animate-spin text-white" />
-        </div>
-        <p className="text-[var(--color-text-secondary)] font-medium">Loading architecture model...</p>
-        <p className="text-[var(--color-text-muted)] text-sm">Connecting to ArchLens server</p>
+      <div className="flex h-screen flex-col items-center justify-center bg-[var(--color-void)] gap-4">
+        <svg className="h-14 w-14 animate-pulse" viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="9" fill="#7c3aed"/>
+          <rect x="9" y="11" width="22" height="3" rx="1.5" fill="white" opacity="0.95"/>
+          <rect x="9" y="18.5" width="17" height="3" rx="1.5" fill="white" opacity="0.7"/>
+          <rect x="9" y="26" width="12" height="3" rx="1.5" fill="white" opacity="0.45"/>
+          <circle cx="28" cy="27.5" r="2.5" fill="white"/>
+          <circle cx="28" cy="27.5" r="1" fill="#7c3aed"/>
+        </svg>
+        <Loader2 className="h-4 w-4 animate-spin text-[var(--color-text-muted)]" />
+        <p className="text-[var(--color-text-secondary)] font-medium text-sm">Loading architecture model</p>
+        <p className="text-[var(--color-text-muted)] text-xs">Connecting to ArchLens server</p>
       </div>
     );
   }
@@ -122,11 +128,16 @@ export function App() {
         {/* Logo */}
         <div className="p-4 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-archlens-400 to-archlens-700 flex items-center justify-center shadow-lg shadow-archlens-500/20">
-              <Network className="h-4 w-4 text-white" />
-            </div>
-            <h1 className="text-base font-semibold tracking-tight">
-              <span className="text-archlens-400">Arch</span><span className="text-[var(--color-text-primary)]">Lens</span>
+            <svg className="h-7 w-7" viewBox="0 0 40 40" fill="none" aria-label="ArchLens">
+              <rect width="40" height="40" rx="9" fill="#7c3aed"/>
+              <rect x="9" y="11" width="22" height="3" rx="1.5" fill="white" opacity="0.95"/>
+              <rect x="9" y="18.5" width="17" height="3" rx="1.5" fill="white" opacity="0.7"/>
+              <rect x="9" y="26" width="12" height="3" rx="1.5" fill="white" opacity="0.45"/>
+              <circle cx="28" cy="27.5" r="2.5" fill="white"/>
+              <circle cx="28" cy="27.5" r="1" fill="#7c3aed"/>
+            </svg>
+            <h1 className="text-[15px] font-semibold tracking-tight">
+              <span className="text-[var(--color-text-primary)]">Arch</span><span className="text-[var(--color-text-muted)]">Lens</span>
             </h1>
           </div>
 
