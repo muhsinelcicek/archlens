@@ -105,7 +105,7 @@ export function DiffView() {
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <GitCompare className="h-6 w-6 text-archlens-400" /> Architecture Diff
           </h2>
-          <p className="text-sm text-[#5a5a70] mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Compare architecture snapshots over time. Track how the system evolved.
           </p>
         </div>
@@ -119,27 +119,27 @@ export function DiffView() {
 
       {/* Compare Bar */}
       {snapshots.length > 0 ? (
-        <div className="rounded-xl border border-[#2a2a3a] bg-elevated p-4">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex-1 min-w-[200px]">
-              <label className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-1 block">Base</label>
+              <label className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] mb-1 block">Base</label>
               <select
                 value={base}
                 onChange={(e) => setBase(e.target.value)}
-                className="w-full rounded-lg bg-deep border border-[#2a2a3a] px-3 py-2 text-sm text-[#e4e4ed] outline-none focus:border-archlens-500/40"
+                className="w-full rounded-lg bg-deep border border-[var(--color-border-default)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-archlens-500/40"
               >
                 {snapshots.map((s) => (
                   <option key={s.name} value={s.name}>{s.name} ({new Date(s.savedAt).toLocaleDateString()})</option>
                 ))}
               </select>
             </div>
-            <ArrowRight className="h-5 w-5 text-[#5a5a70] mt-5" />
+            <ArrowRight className="h-5 w-5 text-[var(--color-text-muted)] mt-5" />
             <div className="flex-1 min-w-[200px]">
-              <label className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-1 block">Head</label>
+              <label className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] mb-1 block">Head</label>
               <select
                 value={head}
                 onChange={(e) => setHead(e.target.value)}
-                className="w-full rounded-lg bg-deep border border-[#2a2a3a] px-3 py-2 text-sm text-[#e4e4ed] outline-none focus:border-archlens-500/40"
+                className="w-full rounded-lg bg-deep border border-[var(--color-border-default)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-archlens-500/40"
               >
                 <option value="current">Current (live)</option>
                 {snapshots.map((s) => (
@@ -157,10 +157,10 @@ export function DiffView() {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#2a2a3a] bg-elevated p-8 text-center">
-          <Camera className="h-12 w-12 text-[#5a5a70] mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-[#e4e4ed]">No snapshots yet</h3>
-          <p className="text-sm text-[#5a5a70] mt-1 mb-4">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-8 text-center">
+          <Camera className="h-12 w-12 text-[var(--color-text-muted)] mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">No snapshots yet</h3>
+          <p className="text-sm text-[var(--color-text-muted)] mt-1 mb-4">
             Save your first snapshot to start tracking architecture evolution.
           </p>
           <button
@@ -186,9 +186,9 @@ export function DiffView() {
           <div className="rounded-xl border border-archlens-500/20 bg-archlens-500/5 p-4">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="h-4 w-4 text-archlens-400" />
-              <span className="text-xs uppercase font-semibold text-[#5a5a70]">Summary</span>
+              <span className="text-xs uppercase font-semibold text-[var(--color-text-muted)]">Summary</span>
             </div>
-            <p className="text-sm text-[#e4e4ed]">{diff.summary}</p>
+            <p className="text-sm text-[var(--color-text-primary)]">{diff.summary}</p>
           </div>
 
           {/* Stat Cards */}
@@ -199,8 +199,8 @@ export function DiffView() {
               { label: "Entities", added: diff.entitiesAdded.length, removed: diff.entitiesRemoved.length, changed: 0 },
               { label: "Total Changes", added: diff.modulesAdded.length + diff.endpointsAdded.length + diff.entitiesAdded.length, removed: diff.modulesRemoved.length + diff.endpointsRemoved.length + diff.entitiesRemoved.length, changed: diff.modulesChanged.length },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-[#2a2a3a] bg-elevated p-4">
-                <div className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-2">{s.label}</div>
+              <div key={s.label} className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4">
+                <div className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] mb-2">{s.label}</div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-emerald-400 font-bold">+{s.added}</span>
                   <span className="text-red-400 font-bold">−{s.removed}</span>
@@ -221,7 +221,7 @@ export function DiffView() {
                   <span className="text-xs font-semibold text-emerald-300 uppercase">Added ({diff.modulesAdded.length})</span>
                 </div>
                 <div className="space-y-1">
-                  {diff.modulesAdded.length === 0 && <span className="text-xs text-[#5a5a70]">None</span>}
+                  {diff.modulesAdded.length === 0 && <span className="text-xs text-[var(--color-text-muted)]">None</span>}
                   {diff.modulesAdded.map((m) => (
                     <div key={m} className="text-xs font-mono text-emerald-300 truncate">{m}</div>
                   ))}
@@ -234,7 +234,7 @@ export function DiffView() {
                   <span className="text-xs font-semibold text-red-300 uppercase">Removed ({diff.modulesRemoved.length})</span>
                 </div>
                 <div className="space-y-1">
-                  {diff.modulesRemoved.length === 0 && <span className="text-xs text-[#5a5a70]">None</span>}
+                  {diff.modulesRemoved.length === 0 && <span className="text-xs text-[var(--color-text-muted)]">None</span>}
                   {diff.modulesRemoved.map((m) => (
                     <div key={m} className="text-xs font-mono text-red-300 truncate">{m}</div>
                   ))}
@@ -247,11 +247,11 @@ export function DiffView() {
                   <span className="text-xs font-semibold text-amber-300 uppercase">Changed ({diff.modulesChanged.length})</span>
                 </div>
                 <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                  {diff.modulesChanged.length === 0 && <span className="text-xs text-[#5a5a70]">None</span>}
+                  {diff.modulesChanged.length === 0 && <span className="text-xs text-[var(--color-text-muted)]">None</span>}
                   {diff.modulesChanged.map((m) => (
                     <div key={m.name} className="text-xs font-mono text-amber-300">
                       {m.name}
-                      <span className="text-[10px] text-[#5a5a70] ml-2">
+                      <span className="text-[10px] text-[var(--color-text-muted)] ml-2">
                         {m.symbolsDelta > 0 ? "+" : ""}{m.symbolsDelta}s {m.linesDelta > 0 ? "+" : ""}{m.linesDelta}L
                       </span>
                     </div>
@@ -272,7 +272,7 @@ export function DiffView() {
                     {diff.endpointsAdded.map((e, i) => (
                       <div key={i} className="text-xs font-mono">
                         <span className="text-emerald-400 font-bold mr-2">{e.method}</span>
-                        <span className="text-[#8888a0]">{e.path}</span>
+                        <span className="text-[var(--color-text-secondary)]">{e.path}</span>
                       </div>
                     ))}
                   </div>
@@ -283,7 +283,7 @@ export function DiffView() {
                     {diff.endpointsRemoved.map((e, i) => (
                       <div key={i} className="text-xs font-mono">
                         <span className="text-red-400 font-bold mr-2">{e.method}</span>
-                        <span className="text-[#8888a0]">{e.path}</span>
+                        <span className="text-[var(--color-text-secondary)]">{e.path}</span>
                       </div>
                     ))}
                   </div>
@@ -313,18 +313,18 @@ export function DiffView() {
       {snapshots.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold mb-3">Saved Snapshots ({snapshots.length})</h3>
-          <div className="rounded-xl border border-[#2a2a3a] overflow-hidden">
+          <div className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
             {snapshots.map((s) => (
-              <div key={s.name} className="flex items-center justify-between border-t border-[#1e1e2a] first:border-t-0 px-4 py-3 hover:bg-hover transition-colors">
+              <div key={s.name} className="flex items-center justify-between border-t border-[var(--color-border-subtle)] first:border-t-0 px-4 py-3 hover:bg-hover transition-colors">
                 <div>
-                  <div className="text-sm font-mono text-[#e4e4ed]">{s.name}</div>
-                  <div className="text-[10px] text-[#5a5a70]">
+                  <div className="text-sm font-mono text-[var(--color-text-primary)]">{s.name}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)]">
                     {new Date(s.savedAt).toLocaleString()} · {s.stats.files} files · {s.stats.symbols} symbols · {s.stats.modules} modules
                   </div>
                 </div>
                 <button
                   onClick={() => deleteSnapshot(s.name)}
-                  className="p-2 rounded-lg hover:bg-red-500/10 text-[#5a5a70] hover:text-red-400 transition-colors"
+                  className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -337,7 +337,7 @@ export function DiffView() {
       {/* Save Snapshot Modal */}
       {showSaveModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowSaveModal(false)}>
-          <div className="bg-elevated border border-[#2a2a3a] rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-elevated border border-[var(--color-border-default)] rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-4">Save Current Architecture as Snapshot</h3>
             <input
               type="text"
@@ -346,12 +346,12 @@ export function DiffView() {
               placeholder="e.g., before-refactor, v1.0, sprint-23"
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && saveSnapshot()}
-              className="w-full rounded-lg bg-deep border border-[#2a2a3a] px-3 py-2 text-sm text-[#e4e4ed] outline-none focus:border-archlens-500/40 mb-4"
+              className="w-full rounded-lg bg-deep border border-[var(--color-border-default)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-archlens-500/40 mb-4"
             />
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowSaveModal(false)}
-                className="px-4 py-2 rounded-lg text-sm text-[#8888a0] hover:bg-hover"
+                className="px-4 py-2 rounded-lg text-sm text-[var(--color-text-secondary)] hover:bg-hover"
               >
                 Cancel
               </button>

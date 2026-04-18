@@ -17,7 +17,7 @@ function ThemeCard({ theme, isActive, onSelect }: { theme: Theme; isActive: bool
     <button
       onClick={onSelect}
       className={`relative group rounded-xl border-2 p-1 transition-all duration-200 hover:scale-[1.02] ${
-        isActive ? "shadow-lg" : "border-transparent hover:border-[#2a2a3a]"
+        isActive ? "shadow-lg" : "border-transparent hover:border-[var(--color-border-default)]"
       }`}
       style={{ borderColor: isActive ? c.accent : undefined }}
     >
@@ -46,7 +46,7 @@ function ThemeCard({ theme, isActive, onSelect }: { theme: Theme; isActive: bool
         </div>
       </div>
       <div className="flex items-center justify-between mt-2 px-1">
-        <span className="text-sm font-medium" style={{ color: isActive ? c.accent : "#8888a0" }}>{theme.name}</span>
+        <span className="text-sm font-medium" style={{ color: isActive ? c.accent : "var(--color-text-secondary)" }}>{theme.name}</span>
         {isActive && (
           <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: c.accent }}>
             <Check className="h-3 w-3 text-white" />
@@ -64,16 +64,16 @@ function Section({ icon, title, children, defaultOpen = false }: {
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="rounded-xl border border-[#2a2a3a] overflow-hidden">
+    <section className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-3 px-5 py-4 hover:bg-hover transition-colors text-left"
       >
         {icon}
-        <h3 className="text-base font-semibold text-[#e4e4ed] flex-1">{title}</h3>
-        {open ? <ChevronDown className="h-4 w-4 text-[#5a5a70]" /> : <ChevronRight className="h-4 w-4 text-[#5a5a70]" />}
+        <h3 className="text-base font-semibold text-[var(--color-text-primary)] flex-1">{title}</h3>
+        {open ? <ChevronDown className="h-4 w-4 text-[var(--color-text-muted)]" /> : <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" />}
       </button>
-      {open && <div className="border-t border-[#2a2a3a] px-5 py-4">{children}</div>}
+      {open && <div className="border-t border-[var(--color-border-default)] px-5 py-4">{children}</div>}
     </section>
   );
 }
@@ -83,12 +83,12 @@ function Section({ icon, title, children, defaultOpen = false }: {
 function ShortcutRow({ keys, description }: { keys: string[]; description: string }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-[#8888a0]">{description}</span>
+      <span className="text-sm text-[var(--color-text-secondary)]">{description}</span>
       <div className="flex gap-1">
         {keys.map((k, i) => (
           <span key={i}>
-            <kbd className="px-2 py-1 rounded-md bg-[#1e1e2a] border border-[#2a2a3a] text-xs font-mono text-[#e4e4ed]">{k}</kbd>
-            {i < keys.length - 1 && <span className="text-[#5a5a70] mx-0.5">+</span>}
+            <kbd className="px-2 py-1 rounded-md bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-mono text-[var(--color-text-primary)]">{k}</kbd>
+            {i < keys.length - 1 && <span className="text-[var(--color-text-muted)] mx-0.5">+</span>}
           </span>
         ))}
       </div>
@@ -118,7 +118,7 @@ export function SettingsView() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">{t("nav.settings")}</h2>
-        <p className="text-sm text-[#5a5a70] mt-1">Customize your ArchLens experience</p>
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">Customize your ArchLens experience</p>
       </div>
 
       {/* ── Theme ──────────────────────────────────────────── */}
@@ -141,15 +141,15 @@ export function SettingsView() {
               key={lang.id}
               onClick={() => setLocale(lang.id)}
               className={`rounded-xl border-2 p-4 transition-all duration-200 hover:scale-[1.02] text-left ${
-                locale === lang.id ? "shadow-lg" : "border-transparent hover:border-[#2a2a3a]"
+                locale === lang.id ? "shadow-lg" : "border-transparent hover:border-[var(--color-border-default)]"
               }`}
               style={{ borderColor: locale === lang.id ? accent : undefined }}
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{lang.flag}</span>
                 <div>
-                  <div className="font-semibold" style={{ color: locale === lang.id ? accent : "#e4e4ed" }}>{lang.label}</div>
-                  <div className="text-xs text-[#5a5a70]">{lang.desc}</div>
+                  <div className="font-semibold" style={{ color: locale === lang.id ? accent : "var(--color-text-primary)" }}>{lang.label}</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">{lang.desc}</div>
                 </div>
                 {locale === lang.id && (
                   <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
@@ -174,9 +174,9 @@ export function SettingsView() {
                 { label: "Root Path", value: model.project.rootPath, mono: true },
                 { label: "Version", value: `ArchLens v${model.project.version}` },
               ].map((item) => (
-                <div key={item.label} className="rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] p-3">
-                  <div className="text-[10px] text-[#5a5a70] uppercase font-semibold mb-1">{item.label}</div>
-                  <div className={`text-sm text-[#e4e4ed] truncate ${item.mono ? "font-mono text-xs" : ""}`}>{item.value}</div>
+                <div key={item.label} className="rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] p-3">
+                  <div className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mb-1">{item.label}</div>
+                  <div className={`text-sm text-[var(--color-text-primary)] truncate ${item.mono ? "font-mono text-xs" : ""}`}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -193,23 +193,23 @@ export function SettingsView() {
                 { label: "DB Tables", value: model.dbEntities.length, color: "#f87171" },
                 { label: "Tech Stack", value: model.techRadar.length, color: "#fbbf24" },
               ].map((s) => (
-                <div key={s.label} className="rounded-lg bg-[#1e1e2a] p-2 text-center">
+                <div key={s.label} className="rounded-lg bg-[var(--color-border-subtle)] p-2 text-center">
                   <div className="text-lg font-bold" style={{ color: s.color }}>{s.value}</div>
-                  <div className="text-[9px] text-[#5a5a70] uppercase">{s.label}</div>
+                  <div className="text-[9px] text-[var(--color-text-muted)] uppercase">{s.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Languages */}
             <div>
-              <div className="text-[10px] text-[#5a5a70] uppercase font-semibold mb-2">Languages</div>
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mb-2">Languages</div>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(model.stats.languages)
                   .sort(([, a], [, b]) => (b as number) - (a as number))
                   .map(([lang, count]) => (
-                    <span key={lang} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-xs">
-                      <span className="text-[#e4e4ed] font-medium capitalize">{lang}</span>
-                      <span className="text-[#5a5a70]">{count as number} symbols</span>
+                    <span key={lang} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs">
+                      <span className="text-[var(--color-text-primary)] font-medium capitalize">{lang}</span>
+                      <span className="text-[var(--color-text-muted)]">{count as number} symbols</span>
                     </span>
                   ))}
               </div>
@@ -218,15 +218,15 @@ export function SettingsView() {
             {/* Multi-project */}
             {projects.length > 1 && (
               <div>
-                <div className="text-[10px] text-[#5a5a70] uppercase font-semibold mb-2">All Projects ({projects.length})</div>
+                <div className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mb-2">All Projects ({projects.length})</div>
                 <div className="space-y-1.5">
                   {projects.map((p) => (
-                    <div key={p.name} className="flex items-center justify-between rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] px-3 py-2">
+                    <div key={p.name} className="flex items-center justify-between rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] px-3 py-2">
                       <div>
-                        <span className="text-sm font-mono text-[#e4e4ed]">{p.name}</span>
-                        <span className="text-[10px] text-[#5a5a70] ml-2">{p.stats.files}f · {p.stats.symbols}s · {p.stats.lines?.toLocaleString()}L</span>
+                        <span className="text-sm font-mono text-[var(--color-text-primary)]">{p.name}</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)] ml-2">{p.stats.files}f · {p.stats.symbols}s · {p.stats.lines?.toLocaleString()}L</span>
                       </div>
-                      <span className="text-[10px] text-[#5a5a70]">{new Date(p.analyzedAt).toLocaleDateString()}</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">{new Date(p.analyzedAt).toLocaleDateString()}</span>
                     </div>
                   ))}
                 </div>
@@ -314,14 +314,14 @@ export function SettingsView() {
               <button
                 key={exp.id}
                 onClick={exp.action}
-                className="flex items-center gap-3 rounded-xl border border-[#2a2a3a] p-4 text-left hover:bg-hover hover:border-[#3a3a4a] transition-all group"
+                className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] p-4 text-left hover:bg-hover hover:border-[#3a3a4a] transition-all group"
               >
-                <div className="rounded-lg p-2.5 bg-[#1e1e2a] group-hover:bg-[#2a2a3a] transition-colors" style={{ color: accent }}>
+                <div className="rounded-lg p-2.5 bg-[var(--color-border-subtle)] group-hover:bg-[var(--color-border-default)] transition-colors" style={{ color: accent }}>
                   {exp.icon}
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-[#e4e4ed]">{exp.label}</div>
-                  <div className="text-[10px] text-[#5a5a70]">{exp.desc}</div>
+                  <div className="text-sm font-medium text-[var(--color-text-primary)]">{exp.label}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)]">{exp.desc}</div>
                 </div>
               </button>
             ))}
@@ -331,14 +331,14 @@ export function SettingsView() {
 
       {/* ── MCP Configuration ──────────────────────────────── */}
       <Section icon={<Cpu className="h-5 w-5" style={{ color: accent }} />} title="MCP Integration">
-        <p className="text-sm text-[#8888a0] mb-4">
+        <p className="text-sm text-[var(--color-text-secondary)] mb-4">
           Connect ArchLens to AI coding assistants via Model Context Protocol.
         </p>
 
         {/* Config snippet */}
-        <div className="rounded-xl bg-[#1e1e2a] border border-[#2a2a3a] overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-[#2a2a3a]">
-            <span className="text-[10px] text-[#5a5a70] uppercase font-semibold">MCP Config</span>
+        <div className="rounded-xl bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border-default)]">
+            <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">MCP Config</span>
             <button
               onClick={() => {
                 const config = JSON.stringify({
@@ -351,13 +351,13 @@ export function SettingsView() {
                 }, null, 2);
                 copyToClipboard(config, "mcp");
               }}
-              className="flex items-center gap-1 text-[10px] font-medium hover:text-[#e4e4ed] transition-colors"
+              className="flex items-center gap-1 text-[10px] font-medium hover:text-[var(--color-text-primary)] transition-colors"
               style={{ color: accent }}
             >
               {copied === "mcp" ? <><CheckCircle2 className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
             </button>
           </div>
-          <pre className="p-4 text-xs font-mono text-[#8888a0] overflow-x-auto">
+          <pre className="p-4 text-xs font-mono text-[var(--color-text-secondary)] overflow-x-auto">
 {`{
   "mcpServers": {
     "archlens": {
@@ -371,7 +371,7 @@ export function SettingsView() {
 
         {/* Available Tools */}
         <div className="mt-4">
-          <div className="text-[10px] text-[#5a5a70] uppercase font-semibold mb-2">Available MCP Tools (7)</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mb-2">Available MCP Tools (7)</div>
           <div className="grid grid-cols-2 gap-2">
             {[
               { name: "architecture", desc: "Codebase structure & modules", icon: <Network className="h-3.5 w-3.5" /> },
@@ -382,11 +382,11 @@ export function SettingsView() {
               { name: "sequence", desc: "Call chain tracing", icon: <MessageSquare className="h-3.5 w-3.5" /> },
               { name: "explain", desc: "Symbol explanation", icon: <Search className="h-3.5 w-3.5" /> },
             ].map((tool) => (
-              <div key={tool.name} className="flex items-center gap-2.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] px-3 py-2">
+              <div key={tool.name} className="flex items-center gap-2.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] px-3 py-2">
                 <span style={{ color: accent }}>{tool.icon}</span>
                 <div>
-                  <div className="text-xs font-mono text-[#e4e4ed]">{tool.name}</div>
-                  <div className="text-[9px] text-[#5a5a70]">{tool.desc}</div>
+                  <div className="text-xs font-mono text-[var(--color-text-primary)]">{tool.name}</div>
+                  <div className="text-[9px] text-[var(--color-text-muted)]">{tool.desc}</div>
                 </div>
               </div>
             ))}
@@ -396,7 +396,7 @@ export function SettingsView() {
 
       {/* ── Keyboard Shortcuts ─────────────────────────────── */}
       <Section icon={<Keyboard className="h-5 w-5" style={{ color: accent }} />} title="Keyboard Shortcuts">
-        <div className="divide-y divide-[#1e1e2a]">
+        <div className="divide-y divide-[var(--color-border-subtle)]">
           <ShortcutRow keys={["⌘", "K"]} description="Global Search" />
           <ShortcutRow keys={["⌘", "/"]} description="Toggle sidebar" />
           <ShortcutRow keys={["Esc"]} description="Close panel / Deselect" />
@@ -422,9 +422,9 @@ export function SettingsView() {
             { cmd: "archlens mcp", desc: "Start MCP server for AI tools" },
             { cmd: "archlens setup", desc: "Configure MCP for Claude Code / Cursor" },
           ].map((item) => (
-            <div key={item.cmd} className="flex items-center justify-between rounded-lg bg-[#1e1e2a] px-3 py-2 group">
+            <div key={item.cmd} className="flex items-center justify-between rounded-lg bg-[var(--color-border-subtle)] px-3 py-2 group">
               <code className="text-xs font-mono" style={{ color: accent }}>{item.cmd}</code>
-              <span className="text-[10px] text-[#5a5a70]">{item.desc}</span>
+              <span className="text-[10px] text-[var(--color-text-muted)]">{item.desc}</span>
             </div>
           ))}
         </div>
@@ -439,9 +439,9 @@ export function SettingsView() {
             </div>
             <div>
               <h4 className="text-lg font-bold">
-                <span style={{ color: accent }}>Arch</span><span className="text-[#e4e4ed]">Lens</span>
+                <span style={{ color: accent }}>Arch</span><span className="text-[var(--color-text-primary)]">Lens</span>
               </h4>
-              <p className="text-sm text-[#5a5a70]">Code Architecture Intelligence Platform</p>
+              <p className="text-sm text-[var(--color-text-muted)]">Code Architecture Intelligence Platform</p>
             </div>
           </div>
 
@@ -455,8 +455,8 @@ export function SettingsView() {
               { label: "Analyzers", value: "20" },
             ].map((item) => (
               <div key={item.label} className="flex justify-between">
-                <span className="text-[#5a5a70]">{item.label}</span>
-                <span className="text-[#e4e4ed] font-medium">{item.value}</span>
+                <span className="text-[var(--color-text-muted)]">{item.label}</span>
+                <span className="text-[var(--color-text-primary)] font-medium">{item.value}</span>
               </div>
             ))}
           </div>
@@ -466,7 +466,7 @@ export function SettingsView() {
               href="https://github.com/user/archlens"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-xs font-medium text-[#8888a0] hover:text-[#e4e4ed] hover:border-[#3a3a4a] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[#3a3a4a] transition-colors"
             >
               <GitBranch className="h-3.5 w-3.5" /> GitHub
               <ExternalLink className="h-3 w-3" />
@@ -475,7 +475,7 @@ export function SettingsView() {
               href="https://github.com/user/archlens/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-xs font-medium text-[#8888a0] hover:text-[#e4e4ed] hover:border-[#3a3a4a] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[#3a3a4a] transition-colors"
             >
               <Shield className="h-3.5 w-3.5" /> Report Issue
               <ExternalLink className="h-3 w-3" />

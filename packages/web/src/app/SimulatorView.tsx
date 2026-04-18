@@ -469,7 +469,7 @@ export function SimulatorView() {
   };
 
   const nodeColor = (n: SimNode) => {
-    if (!n.alive) return "#3f3f46";
+    if (!n.alive) return "var(--color-dim)";
     if (n.circuitBreaker.state === "open") return "#9333ea"; // purple for tripped breaker
     if (n.utilization > 1.0) return "#ef4444";
     if (n.utilization > 0.8) return "#f97316";
@@ -480,12 +480,12 @@ export function SimulatorView() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* ══ Toolbar ══ */}
-      <div className="flex items-center gap-3 border-b border-[#2a2a3a] bg-surface px-5 py-2.5 flex-wrap">
+      <div className="flex items-center gap-3 border-b border-[var(--color-border-default)] bg-surface px-5 py-2.5 flex-wrap">
         <h2 className="text-base font-bold flex items-center gap-2">
           <Activity className="h-5 w-5 text-archlens-400" /> Simulator
         </h2>
 
-        <div className="h-6 w-px bg-[#2a2a3a]" />
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
         <button
           onClick={() => setRunning(!running)}
@@ -495,32 +495,32 @@ export function SimulatorView() {
         >
           {running ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Run</>}
         </button>
-        <button onClick={reset} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]">
+        <button onClick={reset} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]">
           <RotateCcw className="h-3 w-3" /> Reset
         </button>
 
-        <div className="h-6 w-px bg-[#2a2a3a]" />
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
         <div className="flex items-center gap-1">
-          <span className="text-[9px] text-[#5a5a70] uppercase">Speed</span>
+          <span className="text-[9px] text-[var(--color-text-muted)] uppercase">Speed</span>
           {[1, 2, 5, 10].map((s) => (
             <button
               key={s}
               onClick={() => setSpeed(s)}
-              className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${speed === s ? "bg-archlens-500/20 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${speed === s ? "bg-archlens-500/20 text-archlens-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}
             >
               {s}x
             </button>
           ))}
         </div>
 
-        <div className="h-6 w-px bg-[#2a2a3a]" />
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
         {/* Traffic Pattern selector */}
         <select
           value={trafficPattern.type}
           onChange={(e) => setTrafficPattern({ ...trafficPattern, type: e.target.value as TrafficPattern["type"] })}
-          className="rounded-md bg-[#1e1e2a] border border-[#2a2a3a] px-2 py-1 text-[10px] text-[#e4e4ed] outline-none"
+          className="rounded-md bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] px-2 py-1 text-[10px] text-[var(--color-text-primary)] outline-none"
         >
           <option value="constant">📊 Constant</option>
           <option value="burst">💥 Burst</option>
@@ -531,7 +531,7 @@ export function SimulatorView() {
         </select>
 
         <div className="flex items-center gap-1.5 flex-1 min-w-[150px] max-w-xs">
-          <span className="text-[9px] text-[#5a5a70] uppercase">Rate</span>
+          <span className="text-[9px] text-[var(--color-text-muted)] uppercase">Rate</span>
           <input
             type="range"
             min="10"
@@ -544,18 +544,18 @@ export function SimulatorView() {
           <span className="text-[10px] font-mono text-archlens-300 w-16 text-right">{trafficPattern.baseRate}</span>
         </div>
 
-        <div className="h-6 w-px bg-[#2a2a3a]" />
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
         {/* Templates */}
         <div className="relative">
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]"
           >
             <BookOpen className="h-3 w-3" /> Templates <ChevronDown className="h-3 w-3" />
           </button>
           {showTemplates && (
-            <div className="absolute top-full mt-1 right-0 w-64 rounded-lg bg-elevated border border-[#2a2a3a] shadow-xl z-50 p-1">
+            <div className="absolute top-full mt-1 right-0 w-64 rounded-lg bg-elevated border border-[var(--color-border-default)] shadow-xl z-50 p-1">
               {SCENARIO_TEMPLATES.map((tpl) => (
                 <button
                   key={tpl.id}
@@ -564,8 +564,8 @@ export function SimulatorView() {
                 >
                   <span className="text-lg">{tpl.icon}</span>
                   <div>
-                    <div className="text-xs font-semibold text-[#e4e4ed]">{tpl.name}</div>
-                    <div className="text-[10px] text-[#5a5a70]">{tpl.description}</div>
+                    <div className="text-xs font-semibold text-[var(--color-text-primary)]">{tpl.name}</div>
+                    <div className="text-[10px] text-[var(--color-text-muted)]">{tpl.description}</div>
                   </div>
                 </button>
               ))}
@@ -577,50 +577,50 @@ export function SimulatorView() {
         <div className="relative">
           <button
             onClick={() => setShowLoadTests(!showLoadTests)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]"
           >
             <BarChart3 className="h-3 w-3" /> Load Test <ChevronDown className="h-3 w-3" />
           </button>
           {showLoadTests && (
-            <div className="absolute top-full mt-1 right-0 w-64 rounded-lg bg-elevated border border-[#2a2a3a] shadow-xl z-50 p-1">
+            <div className="absolute top-full mt-1 right-0 w-64 rounded-lg bg-elevated border border-[var(--color-border-default)] shadow-xl z-50 p-1">
               {LOAD_TEST_PRESETS.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => loadLoadTest(p.id)}
                   className="w-full text-left px-3 py-2 rounded-md hover:bg-hover"
                 >
-                  <div className="text-xs font-semibold text-[#e4e4ed]">{p.name}</div>
-                  <div className="text-[10px] text-[#5a5a70]">{p.description}</div>
+                  <div className="text-xs font-semibold text-[var(--color-text-primary)]">{p.name}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)]">{p.description}</div>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="h-6 w-px bg-[#2a2a3a]" />
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
         {/* Save/Load */}
-        <button onClick={saveCurrent} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed]">
+        <button onClick={saveCurrent} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-[10px] hover:text-[var(--color-text-primary)]">
           <Save className="h-3 w-3" />
         </button>
-        <button onClick={() => setShowSaved(!showSaved)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed]">
+        <button onClick={() => setShowSaved(!showSaved)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-[10px] hover:text-[var(--color-text-primary)]">
           <Upload className="h-3 w-3" /> {savedScenarios.length}
         </button>
-        <button onClick={exportJson} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed]">
+        <button onClick={exportJson} className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-[10px] hover:text-[var(--color-text-primary)]">
           <FileText className="h-3 w-3" />
         </button>
-        <label className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-[10px] hover:text-[#e4e4ed] cursor-pointer">
+        <label className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-[10px] hover:text-[var(--color-text-primary)] cursor-pointer">
           <Upload className="h-3 w-3" />
           <input type="file" accept=".json" onChange={importJson} className="hidden" />
         </label>
 
-        <div className="h-6 w-px bg-[#2a2a3a]" />
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
         {/* Chaos */}
         <button
           onClick={() => setChaosEnabled(!chaosEnabled)}
           className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold ${
-            chaosEnabled ? "bg-red-500/15 border-red-500/30 text-red-400" : "bg-[#1e1e2a] border-[#2a2a3a] text-[#8888a0] hover:text-[#e4e4ed]"
+            chaosEnabled ? "bg-red-500/15 border-red-500/30 text-red-400" : "bg-[var(--color-border-subtle)] border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           }`}
         >
           <Shuffle className="h-3 w-3" /> Chaos {chaosEnabled && "ON"}
@@ -628,7 +628,7 @@ export function SimulatorView() {
 
         {running && globalStats && (
           <div className="ml-auto flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1 font-mono text-[#8888a0]"><Clock className="h-3 w-3" />{formatUptime(uptime)}</span>
+            <span className="flex items-center gap-1 font-mono text-[var(--color-text-secondary)]"><Clock className="h-3 w-3" />{formatUptime(uptime)}</span>
             <span className={`flex items-center gap-1 font-semibold ${globalStats.sloMet ? "text-emerald-400" : "text-red-400"}`}>
               {globalStats.sloMet ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
               SLO {globalStats.sloMet ? "OK" : "BREACH"}
@@ -639,13 +639,13 @@ export function SimulatorView() {
 
       {/* ══ Saved scenarios popover ══ */}
       {showSaved && savedScenarios.length > 0 && (
-        <div className="absolute top-12 right-5 w-72 rounded-lg bg-elevated border border-[#2a2a3a] shadow-xl z-50 p-2 max-h-96 overflow-y-auto">
-          <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1 px-2">Saved Scenarios</div>
+        <div className="absolute top-12 right-5 w-72 rounded-lg bg-elevated border border-[var(--color-border-default)] shadow-xl z-50 p-2 max-h-96 overflow-y-auto">
+          <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] mb-1 px-2">Saved Scenarios</div>
           {savedScenarios.map((s) => (
             <div key={s.name} className="group flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-hover">
               <button onClick={() => loadSaved(s)} className="flex-1 text-left">
-                <div className="text-xs font-semibold text-[#e4e4ed]">{s.name}</div>
-                <div className="text-[9px] text-[#5a5a70]">{new Date(s.savedAt).toLocaleString()} · {s.nodes.length} nodes</div>
+                <div className="text-xs font-semibold text-[var(--color-text-primary)]">{s.name}</div>
+                <div className="text-[9px] text-[var(--color-text-muted)]">{new Date(s.savedAt).toLocaleString()} · {s.nodes.length} nodes</div>
               </button>
               <button onClick={() => deleteSaved(s.name)} className="opacity-0 group-hover:opacity-100 text-red-400 p-1">
                 <Scissors className="h-3 w-3" />
@@ -660,7 +660,7 @@ export function SimulatorView() {
         <div className="flex items-center gap-3 border-b border-red-500/20 bg-red-500/5 px-5 py-2 text-[10px]">
           <span className="text-red-400 font-semibold uppercase flex items-center gap-1"><Shuffle className="h-3 w-3" /> Chaos Engineering</span>
           <div className="flex items-center gap-1.5">
-            <span className="text-[#8888a0]">Random kill /min:</span>
+            <span className="text-[var(--color-text-secondary)]">Random kill /min:</span>
             <input
               type="range"
               min="0"
@@ -672,7 +672,7 @@ export function SimulatorView() {
             <span className="text-red-400 font-mono w-6">{chaosConfig.randomKillChancePerMin}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[#8888a0]">+Latency ms:</span>
+            <span className="text-[var(--color-text-secondary)]">+Latency ms:</span>
             <input
               type="range"
               min="0"
@@ -696,7 +696,7 @@ export function SimulatorView() {
 
       {/* ══ KPI Bar ══ */}
       {running && globalStats && (
-        <div className="grid grid-cols-7 gap-2 border-b border-[#2a2a3a] bg-deep px-5 py-2">
+        <div className="grid grid-cols-7 gap-2 border-b border-[var(--color-border-default)] bg-deep px-5 py-2">
           <Kpi icon={<TrendingUp className="h-3 w-3" />} label="Throughput" value={`${Math.round(globalStats.totalRequests / Math.max(1, uptime))}`} unit="r/s" color="#60a5fa" />
           <Kpi icon={<CheckCircle2 className="h-3 w-3" />} label="Success" value={`${(globalStats.successRate * 100).toFixed(1)}%`} color={globalStats.successRate >= 0.99 ? "#34d399" : "#f97316"} />
           <Kpi icon={<Gauge className="h-3 w-3" />} label="Avg" value={`${Math.round(globalStats.avgLatencyMs)}`} unit="ms" color="#a78bfa" />
@@ -710,9 +710,9 @@ export function SimulatorView() {
       {/* ══ Main content ══ */}
       <div className="flex flex-1 overflow-hidden">
         {/* ─ Left: Palette ─ */}
-        <aside className="w-44 border-r border-[#2a2a3a] bg-surface overflow-y-auto flex-shrink-0">
+        <aside className="w-44 border-r border-[var(--color-border-default)] bg-surface overflow-y-auto flex-shrink-0">
           <div className="p-3">
-            <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-2">Add Component</div>
+            <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] mb-2">Add Component</div>
             <div className="space-y-1">
               {(Object.keys(TYPE_CONFIG) as NodeType[]).map((type) => {
                 const cfg = TYPE_CONFIG[type];
@@ -721,19 +721,19 @@ export function SimulatorView() {
                   <button
                     key={type}
                     onClick={() => addNode(type)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#1e1e2a] border border-[#2a2a3a] hover:border-archlens-500/30 hover:bg-hover"
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] hover:border-archlens-500/30 hover:bg-hover"
                   >
                     <div className="rounded p-1" style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}>
                       <Icon className="h-3 w-3" />
                     </div>
-                    <span className="text-[11px] font-medium text-[#8888a0]">{cfg.label}</span>
+                    <span className="text-[11px] font-medium text-[var(--color-text-secondary)]">{cfg.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="p-3 border-t border-[#2a2a3a]">
+          <div className="p-3 border-t border-[var(--color-border-default)]">
             <button
               onClick={() => setConnectFrom(selectedId)}
               disabled={!selectedId}
@@ -763,7 +763,7 @@ export function SimulatorView() {
             style={{
               backgroundImage: "radial-gradient(circle, #1e1e2a 1px, transparent 1px)",
               backgroundSize: "20px 20px",
-              backgroundColor: "#0a0a10",
+              backgroundColor: "var(--color-deep)",
             }}
           >
             <div style={{ position: "relative", minWidth: 2000, minHeight: 1200 }}>
@@ -787,7 +787,7 @@ export function SimulatorView() {
                       <path
                         d={ep.path}
                         fill="none"
-                        stroke={isActive ? "#a78bfa" : "#2a2a3a"}
+                        stroke={isActive ? "#a78bfa" : "var(--color-border-default)"}
                         strokeWidth={strokeWidth}
                         markerEnd={isActive ? "url(#arrow-active)" : "url(#arrow)"}
                         opacity={isActive ? 0.75 : 0.5}
@@ -822,7 +822,7 @@ export function SimulatorView() {
                       width: 140,
                       cursor: draggingId === n.id ? "grabbing" : "grab",
                       borderRadius: 10,
-                      backgroundColor: n.alive ? "#16161f" : "#0f0f16",
+                      backgroundColor: n.alive ? "var(--color-elevated)" : "#0f0f16",
                       border: `2px solid ${color}`,
                       boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none",
                       opacity: n.alive ? 1 : 0.5,
@@ -833,8 +833,8 @@ export function SimulatorView() {
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-semibold text-[#e4e4ed] truncate">{n.label}</div>
-                        <div className="text-[8px] text-[#5a5a70] uppercase flex items-center gap-1">
+                        <div className="text-[11px] font-semibold text-[var(--color-text-primary)] truncate">{n.label}</div>
+                        <div className="text-[8px] text-[var(--color-text-muted)] uppercase flex items-center gap-1">
                           {cfg.label}
                           {cbState === "open" && <span className="text-purple-400">⚡CB</span>}
                           {cbState === "half-open" && <span className="text-amber-400">⚡½</span>}
@@ -850,13 +850,13 @@ export function SimulatorView() {
                     {running && n.alive && n.type !== "client" && (
                       <div className="px-2 pb-1.5">
                         <div className="flex items-center justify-between text-[8px] mb-0.5">
-                          <span className="text-[#5a5a70]">{Math.round(n.incomingRate)} r/s</span>
+                          <span className="text-[var(--color-text-muted)]">{Math.round(n.incomingRate)} r/s</span>
                           <span style={{ color }}>{Math.round(n.utilization * 100)}%</span>
                         </div>
-                        <div className="h-1 rounded-full bg-[#1e1e2a] overflow-hidden">
+                        <div className="h-1 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
                           <div className="h-full" style={{ width: `${Math.min(100, n.utilization * 100)}%`, backgroundColor: color }} />
                         </div>
-                        <div className="flex items-center justify-between text-[8px] mt-1 text-[#5a5a70]">
+                        <div className="flex items-center justify-between text-[8px] mt-1 text-[var(--color-text-muted)]">
                           <span>p95 {Math.round(lastP95)}ms</span>
                           {n.queueDepth > 5 && <span className="text-orange-400">Q:{Math.round(n.queueDepth)}</span>}
                         </div>
@@ -870,25 +870,25 @@ export function SimulatorView() {
 
           {/* ─ Event Log (bottom) ─ */}
           {showEventLog && (
-            <div className="h-32 border-t border-[#2a2a3a] bg-surface overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-4 py-1.5 border-b border-[#2a2a3a]">
-                <div className="text-[9px] uppercase font-semibold text-[#5a5a70]">Event Log ({eventLog.length})</div>
-                <button onClick={() => setShowEventLog(false)} className="text-[10px] text-[#5a5a70] hover:text-[#e4e4ed]">hide</button>
+            <div className="h-32 border-t border-[var(--color-border-default)] bg-surface overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between px-4 py-1.5 border-b border-[var(--color-border-default)]">
+                <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)]">Event Log ({eventLog.length})</div>
+                <button onClick={() => setShowEventLog(false)} className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">hide</button>
               </div>
               <div className="flex-1 overflow-y-auto font-mono text-[10px]">
                 {eventLog.length === 0 ? (
-                  <div className="p-3 text-[#5a5a70]">No events yet. Start the simulation.</div>
+                  <div className="p-3 text-[var(--color-text-muted)]">No events yet. Start the simulation.</div>
                 ) : (
                   eventLog.map((ev) => (
-                    <div key={ev.id} className="px-4 py-0.5 border-b border-[#1e1e2a] flex items-center gap-2">
-                      <span className="text-[#5a5a70] w-10">{formatUptime(ev.timestamp)}</span>
+                    <div key={ev.id} className="px-4 py-0.5 border-b border-[var(--color-border-subtle)] flex items-center gap-2">
+                      <span className="text-[var(--color-text-muted)] w-10">{formatUptime(ev.timestamp)}</span>
                       <span className={`w-14 text-[9px] font-bold uppercase ${
                         ev.severity === "critical" ? "text-red-400" :
                         ev.severity === "error" ? "text-red-400" :
                         ev.severity === "warning" ? "text-amber-400" : "text-blue-400"
                       }`}>{ev.severity}</span>
-                      <span className="w-16 text-[#5a5a70]">[{ev.category}]</span>
-                      <span className="text-[#e4e4ed]">{ev.message}</span>
+                      <span className="w-16 text-[var(--color-text-muted)]">[{ev.category}]</span>
+                      <span className="text-[var(--color-text-primary)]">{ev.message}</span>
                     </div>
                   ))
                 )}
@@ -896,24 +896,24 @@ export function SimulatorView() {
             </div>
           )}
           {!showEventLog && (
-            <button onClick={() => setShowEventLog(true)} className="border-t border-[#2a2a3a] bg-surface px-4 py-1 text-[10px] text-[#5a5a70] hover:text-[#e4e4ed]">
+            <button onClick={() => setShowEventLog(true)} className="border-t border-[var(--color-border-default)] bg-surface px-4 py-1 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
               Show Event Log ({eventLog.length})
             </button>
           )}
         </div>
 
         {/* ─ Right: Inspector + Insights ─ */}
-        <aside className="w-80 border-l border-[#2a2a3a] bg-surface overflow-y-auto flex-shrink-0">
-          <div className="flex border-b border-[#2a2a3a]">
+        <aside className="w-80 border-l border-[var(--color-border-default)] bg-surface overflow-y-auto flex-shrink-0">
+          <div className="flex border-b border-[var(--color-border-default)]">
             <button
               onClick={() => setRightTab("inspector")}
-              className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold ${rightTab === "inspector" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70]"}`}
+              className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold ${rightTab === "inspector" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)]"}`}
             >
               <Settings className="h-3 w-3 inline mr-1" /> Inspector
             </button>
             <button
               onClick={() => setRightTab("insights")}
-              className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold flex items-center justify-center gap-1 ${rightTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70]"}`}
+              className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold flex items-center justify-center gap-1 ${rightTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)]"}`}
             >
               <Lightbulb className="h-3 w-3" /> Insights {insights.length > 0 && <span className="text-red-400">{insights.length}</span>}
             </button>
@@ -922,7 +922,7 @@ export function SimulatorView() {
           {rightTab === "insights" ? (
             <div className="p-3 space-y-2">
               {insights.length === 0 ? (
-                <div className="text-center text-[#5a5a70] text-xs py-8">
+                <div className="text-center text-[var(--color-text-muted)] text-xs py-8">
                   <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   Run the simulation to get AI insights
                 </div>
@@ -934,8 +934,8 @@ export function SimulatorView() {
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color }} />
                         <div className="flex-1">
-                          <div className="text-xs font-semibold text-[#e4e4ed]">{ins.title}</div>
-                          <div className="text-[10px] text-[#8888a0] mt-1 leading-relaxed">{ins.explanation}</div>
+                          <div className="text-xs font-semibold text-[var(--color-text-primary)]">{ins.title}</div>
+                          <div className="text-[10px] text-[var(--color-text-secondary)] mt-1 leading-relaxed">{ins.explanation}</div>
                           <div className="text-[10px] text-amber-300 mt-2 leading-relaxed flex items-start gap-1">
                             <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
                             {ins.recommendation}
@@ -950,12 +950,12 @@ export function SimulatorView() {
           ) : selected ? (
             <div className="p-3 space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-[#e4e4ed] flex-1">{selected.label}</h3>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70] uppercase">{TYPE_CONFIG[selected.type].label}</span>
+                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] flex-1">{selected.label}</h3>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-border-subtle)] text-[var(--color-text-muted)] uppercase">{TYPE_CONFIG[selected.type].label}</span>
               </div>
 
-              <details open className="rounded-lg bg-[#1e1e2a] p-2.5">
-                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Config</summary>
+              <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Config</summary>
                 <div className="mt-2 space-y-2">
                   <CI label="Label" value={selected.label} onChange={(v) => updateSelected({ label: v })} />
                   <CI label="Capacity/replica" value={selected.capacityPerReplica} type="number" onChange={(v) => updateSelected({ capacityPerReplica: Number(v) || 0 })} />
@@ -971,8 +971,8 @@ export function SimulatorView() {
                 </div>
               </details>
 
-              <details className="rounded-lg bg-[#1e1e2a] p-2.5">
-                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Resilience</summary>
+              <details className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Resilience</summary>
                 <div className="mt-2 space-y-2">
                   <Toggle label="Circuit Breaker" value={selected.circuitBreakerEnabled} onChange={(v) => updateSelected({ circuitBreakerEnabled: v })} />
                   <CI label="CB Threshold" value={selected.circuitBreakerThreshold} type="number" onChange={(v) => updateSelected({ circuitBreakerThreshold: Number(v) || 5 })} />
@@ -980,8 +980,8 @@ export function SimulatorView() {
                 </div>
               </details>
 
-              <details className="rounded-lg bg-[#1e1e2a] p-2.5">
-                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Auto-scaling</summary>
+              <details className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Auto-scaling</summary>
                 <div className="mt-2 space-y-2">
                   <Toggle label="Enabled" value={selected.autoScaleEnabled} onChange={(v) => updateSelected({ autoScaleEnabled: v })} />
                   <Slider label="Min replicas" value={selected.autoScaleMin} min={1} max={20} onChange={(v) => updateSelected({ autoScaleMin: v })} />
@@ -990,12 +990,12 @@ export function SimulatorView() {
                 </div>
               </details>
 
-              <details className="rounded-lg bg-[#1e1e2a] p-2.5">
-                <summary className="text-[10px] uppercase font-semibold text-[#5a5a70] cursor-pointer">Cost</summary>
+              <details className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Cost</summary>
                 <div className="mt-2 space-y-2">
                   <CI label="$/replica/hr" value={selected.costPerReplicaHour} type="number" onChange={(v) => updateSelected({ costPerReplicaHour: Number(v) || 0 })} />
                   <CI label="$/1M req" value={selected.costPerMillionRequests} type="number" onChange={(v) => updateSelected({ costPerMillionRequests: Number(v) || 0 })} />
-                  <div className="text-[9px] text-[#5a5a70]">Running cost: ${selected.metrics.totalCost.toFixed(4)}</div>
+                  <div className="text-[9px] text-[var(--color-text-muted)]">Running cost: ${selected.metrics.totalCost.toFixed(4)}</div>
                 </div>
               </details>
 
@@ -1010,8 +1010,8 @@ export function SimulatorView() {
 
               {running && selected.alive && selected.type !== "client" && (
                 <>
-                  <div className="rounded-lg bg-[#1e1e2a] p-2.5">
-                    <div className="text-[10px] uppercase font-semibold text-[#5a5a70] mb-2">Live</div>
+                  <div className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                    <div className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] mb-2">Live</div>
                     <div className="grid grid-cols-2 gap-1 text-[10px]">
                       <Stat label="In" value={`${Math.round(selected.incomingRate)} /s`} />
                       <Stat label="Out" value={`${Math.round(selected.processedRate)} /s`} />
@@ -1029,7 +1029,7 @@ export function SimulatorView() {
               )}
             </div>
           ) : (
-            <div className="p-4 text-center text-[#5a5a70] text-xs">
+            <div className="p-4 text-center text-[var(--color-text-muted)] text-xs">
               <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
               Select a node
             </div>
@@ -1057,9 +1057,9 @@ function Kpi({ icon, label, value, unit, color }: { icon: React.ReactNode; label
     <div className="flex items-center gap-2 min-w-0">
       <div className="rounded p-1.5 flex-shrink-0" style={{ backgroundColor: `${color}15`, color }}>{icon}</div>
       <div className="min-w-0">
-        <div className="text-[9px] uppercase text-[#5a5a70] leading-tight truncate">{label}</div>
+        <div className="text-[9px] uppercase text-[var(--color-text-muted)] leading-tight truncate">{label}</div>
         <div className="text-xs font-bold leading-tight truncate" style={{ color }}>
-          {value}{unit && <span className="text-[9px] ml-0.5 text-[#5a5a70]">{unit}</span>}
+          {value}{unit && <span className="text-[9px] ml-0.5 text-[var(--color-text-muted)]">{unit}</span>}
         </div>
       </div>
     </div>
@@ -1069,8 +1069,8 @@ function Kpi({ icon, label, value, unit, color }: { icon: React.ReactNode; label
 function Stat({ label, value, warn, danger }: { label: string; value: string; warn?: boolean; danger?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[#5a5a70]">{label}</span>
-      <span className={`font-mono ${danger ? "text-red-400" : warn ? "text-amber-400" : "text-[#e4e4ed]"}`}>{value}</span>
+      <span className="text-[var(--color-text-muted)]">{label}</span>
+      <span className={`font-mono ${danger ? "text-red-400" : warn ? "text-amber-400" : "text-[var(--color-text-primary)]"}`}>{value}</span>
     </div>
   );
 }
@@ -1078,12 +1078,12 @@ function Stat({ label, value, warn, danger }: { label: string; value: string; wa
 function CI({ label, value, onChange, type = "text" }: { label: string; value: string | number; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
-      <label className="text-[9px] uppercase font-semibold text-[#5a5a70]">{label}</label>
+      <label className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)]">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full mt-0.5 rounded-md bg-deep border border-[#2a2a3a] px-2 py-1 text-[11px] text-[#e4e4ed] outline-none focus:border-archlens-500/40"
+        className="w-full mt-0.5 rounded-md bg-deep border border-[var(--color-border-default)] px-2 py-1 text-[11px] text-[var(--color-text-primary)] outline-none focus:border-archlens-500/40"
       />
     </div>
   );
@@ -1092,7 +1092,7 @@ function CI({ label, value, onChange, type = "text" }: { label: string; value: s
 function Slider({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
   return (
     <div>
-      <label className="text-[9px] uppercase font-semibold text-[#5a5a70]">{label}: {value}</label>
+      <label className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)]">{label}: {value}</label>
       <input
         type="range"
         min={min}
@@ -1108,10 +1108,10 @@ function Slider({ label, value, min, max, onChange }: { label: string; value: nu
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
     <div className="flex items-center justify-between">
-      <label className="text-[10px] text-[#8888a0]">{label}</label>
+      <label className="text-[10px] text-[var(--color-text-secondary)]">{label}</label>
       <button
         onClick={() => onChange(!value)}
-        className={`relative w-8 h-4 rounded-full transition-colors ${value ? "bg-archlens-500" : "bg-[#2a2a3a]"}`}
+        className={`relative w-8 h-4 rounded-full transition-colors ${value ? "bg-archlens-500" : "bg-[var(--color-border-default)]"}`}
       >
         <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
       </button>
@@ -1138,9 +1138,9 @@ function Chart({ label, data, data2, data3, color, color2, color3, unit }: {
   const pts = (d: number[]) => d.map((v, i) => `${(i / Math.max(d.length - 1, 1)) * 100},${100 - (v / max) * 100}`).join(" ");
 
   return (
-    <div className="rounded-lg bg-[#1e1e2a] p-2.5">
+    <div className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[9px] uppercase font-semibold text-[#5a5a70]">{label}</span>
+        <span className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)]">{label}</span>
         <div className="flex items-center gap-2 text-[9px] font-mono">
           {data3 && <span style={{ color: color3 }}>{Math.round(last3)}{unit}</span>}
           {data2 && <span style={{ color: color2 }}>{Math.round(last2)}{unit}</span>}

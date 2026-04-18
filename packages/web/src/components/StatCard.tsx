@@ -53,10 +53,10 @@ export function StatCard({ label, value, icon, color, borderColor, suffix, trend
 
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-[#5a5a70]">{label}</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">{label}</p>
           <p className="mt-2 text-3xl font-bold tabular-nums" style={{ color }}>
             {animatedValue.toLocaleString()}
-            {suffix && <span className="text-lg text-[#5a5a70] ml-1">{suffix}</span>}
+            {suffix && <span className="text-lg text-[var(--color-text-muted)] ml-1">{suffix}</span>}
           </p>
         </div>
         <div className="rounded-lg p-2.5" style={{ backgroundColor: `${color}15` }}>
@@ -69,7 +69,7 @@ export function StatCard({ label, value, icon, color, borderColor, suffix, trend
           <span className={trend >= 0 ? "text-emerald-400" : "text-red-400"}>
             {trend >= 0 ? "+" : ""}{trend}%
           </span>
-          <span className="text-[#5a5a70]">vs last scan</span>
+          <span className="text-[var(--color-text-muted)]">vs last scan</span>
         </div>
       )}
     </div>

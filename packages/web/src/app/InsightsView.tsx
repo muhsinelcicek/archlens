@@ -325,7 +325,7 @@ export function InsightsView() {
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-archlens-400" /> Smart Insights
         </h2>
-        <p className="text-sm text-[#5a5a70] mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Aggregated narrative analysis from all detection engines.
         </p>
       </div>
@@ -335,10 +335,10 @@ export function InsightsView() {
         <div className="flex items-center gap-2 text-[10px] uppercase font-semibold text-archlens-300 tracking-widest mb-2">
           <Sparkles className="h-3 w-3" /> Executive Summary
         </div>
-        <h3 className="text-xl font-bold text-[#e4e4ed] leading-snug">
+        <h3 className="text-xl font-bold text-[var(--color-text-primary)] leading-snug">
           The codebase {verdict}.
         </h3>
-        <p className="text-sm text-[#8888a0] mt-2">
+        <p className="text-sm text-[var(--color-text-secondary)] mt-2">
           {insights.length} findings across {new Set(insights.map((i) => i.category)).size} categories.
           {counts.critical > 0 && <span className="text-red-400"> {counts.critical} critical {counts.critical === 1 ? "issue" : "issues"} need attention.</span>}
           {counts.opportunity > 0 && <span className="text-blue-400"> {counts.opportunity} {counts.opportunity === 1 ? "opportunity" : "opportunities"} for improvement.</span>}
@@ -386,15 +386,15 @@ export function InsightsView() {
                         <span className="text-[9px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: `${color}15`, color }}>
                           {insight.type}
                         </span>
-                        <span className="text-[9px] text-[#5a5a70] uppercase">{insight.category}</span>
+                        <span className="text-[9px] text-[var(--color-text-muted)] uppercase">{insight.category}</span>
                       </div>
-                      <h4 className="text-base font-semibold text-[#e4e4ed] mb-2">{insight.title}</h4>
-                      <p className="text-sm text-[#8888a0] leading-relaxed">{insight.narrative}</p>
+                      <h4 className="text-base font-semibold text-[var(--color-text-primary)] mb-2">{insight.title}</h4>
+                      <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">{insight.narrative}</p>
 
                       {insight.evidence.length > 0 && (
                         <div className="mt-3 space-y-1">
                           {insight.evidence.map((e, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs text-[#5a5a70]">
+                            <div key={i} className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
                               <Zap className="h-3 w-3" style={{ color }} />
                               <span className="font-mono">{e}</span>
                             </div>
@@ -421,7 +421,7 @@ export function InsightsView() {
       </section>
 
       {/* Comments */}
-      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-5">
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-5">
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <MessageCircle className="h-4 w-4 text-archlens-400" /> Team Notes ({comments.length})
         </h3>
@@ -434,7 +434,7 @@ export function InsightsView() {
             onChange={(e) => setNewComment(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addComment()}
             placeholder="Add a note about these findings..."
-            className="flex-1 rounded-lg bg-deep border border-[#2a2a3a] px-3 py-2 text-sm text-[#e4e4ed] outline-none focus:border-archlens-500/40"
+            className="flex-1 rounded-lg bg-deep border border-[var(--color-border-default)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-archlens-500/40"
           />
           <button
             onClick={addComment}
@@ -447,22 +447,22 @@ export function InsightsView() {
 
         {/* Comments list */}
         {comments.length === 0 ? (
-          <p className="text-xs text-[#5a5a70] italic">No notes yet. Add one to start a discussion with your team.</p>
+          <p className="text-xs text-[var(--color-text-muted)] italic">No notes yet. Add one to start a discussion with your team.</p>
         ) : (
           <div className="space-y-2">
             {comments.map((c) => (
-              <div key={c.id} className="rounded-lg bg-[#1e1e2a] p-3 group">
+              <div key={c.id} className="rounded-lg bg-[var(--color-border-subtle)] p-3 group">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-archlens-300">{c.author}</span>
-                      <span className="text-[10px] text-[#5a5a70]">{new Date(c.createdAt).toLocaleString()}</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">{new Date(c.createdAt).toLocaleString()}</span>
                     </div>
-                    <p className="text-sm text-[#e4e4ed]">{c.text}</p>
+                    <p className="text-sm text-[var(--color-text-primary)]">{c.text}</p>
                   </div>
                   <button
                     onClick={() => deleteComment(c.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-[#5a5a70] hover:text-red-400 transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-[var(--color-text-muted)] hover:text-red-400 transition-all"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

@@ -93,8 +93,8 @@ export function App() {
         <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-archlens-400 to-archlens-700 flex items-center justify-center animate-glow-pulse">
           <Loader2 className="h-8 w-8 animate-spin text-white" />
         </div>
-        <p className="text-[#8888a0] font-medium">Loading architecture model...</p>
-        <p className="text-[#5a5a70] text-sm">Connecting to ArchLens server</p>
+        <p className="text-[var(--color-text-secondary)] font-medium">Loading architecture model...</p>
+        <p className="text-[var(--color-text-muted)] text-sm">Connecting to ArchLens server</p>
       </div>
     );
   }
@@ -105,9 +105,9 @@ export function App() {
         <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
           <AlertCircle className="h-8 w-8 text-red-500" />
         </div>
-        <h2 className="text-xl font-semibold text-[#e4e4ed]">Connection Error</h2>
-        <p className="text-[#5a5a70] text-sm">{error}</p>
-        <div className="rounded-xl bg-surface border border-[#1e1e2a] p-4 text-left">
+        <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Connection Error</h2>
+        <p className="text-[var(--color-text-muted)] text-sm">{error}</p>
+        <div className="rounded-xl bg-surface border border-[var(--color-border-subtle)] p-4 text-left">
           <code className="text-archlens-400 text-xs block">archlens analyze .</code>
           <code className="text-archlens-400 text-xs block mt-1">archlens serve</code>
         </div>
@@ -120,13 +120,13 @@ export function App() {
       {/* ── Sidebar ── */}
       <aside className="w-56 flex flex-col" style={{ backgroundColor: theme.colors.surface, borderRight: `1px solid ${theme.colors.borderSubtle}` }}>
         {/* Logo */}
-        <div className="p-4 border-b border-[#1e1e2a]">
+        <div className="p-4 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-archlens-400 to-archlens-700 flex items-center justify-center shadow-lg shadow-archlens-500/20">
               <Network className="h-4 w-4 text-white" />
             </div>
             <h1 className="text-base font-semibold tracking-tight">
-              <span className="text-archlens-400">Arch</span><span className="text-[#e4e4ed]">Lens</span>
+              <span className="text-archlens-400">Arch</span><span className="text-[var(--color-text-primary)]">Lens</span>
             </h1>
           </div>
 
@@ -135,21 +135,21 @@ export function App() {
             <select
               value={activeProject || model?.project.name || ""}
               onChange={(e) => switchProject(e.target.value)}
-              className="mt-3 w-full rounded-lg bg-elevated border border-[#2a2a3a] px-2.5 py-1.5 text-xs font-mono text-archlens-300 outline-none cursor-pointer hover:border-archlens-500/40 transition-colors"
+              className="mt-3 w-full rounded-lg bg-elevated border border-[var(--color-border-default)] px-2.5 py-1.5 text-xs font-mono text-archlens-300 outline-none cursor-pointer hover:border-archlens-500/40 transition-colors"
             >
               {projects.map((p, i) => (
                 <option key={`${p.name}-${i}`} value={p.name}>{p.name} ({p.stats.files}f)</option>
               ))}
             </select>
           ) : model ? (
-            <div className="mt-3 rounded-lg bg-elevated border border-[#2a2a3a] px-2.5 py-1.5">
+            <div className="mt-3 rounded-lg bg-elevated border border-[var(--color-border-default)] px-2.5 py-1.5">
               <p className="text-xs font-mono text-archlens-300 truncate">{model.project.name}</p>
             </div>
           ) : null}
         </div>
 
         {/* Global Search */}
-        <div className="px-3 py-2 border-b border-[#1e1e2a]">
+        <div className="px-3 py-2 border-b border-[var(--color-border-subtle)]">
           <GlobalSearch />
         </div>
 
@@ -158,7 +158,7 @@ export function App() {
           {navGroups.map((group, gi) => (
             <div key={gi} className={group.labelKey ? "mt-3 mb-1" : "mb-0.5"}>
               {group.labelKey && (
-                <div className="px-3 py-1 text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70]">{t(group.labelKey)}</div>
+                <div className="px-3 py-1 text-[9px] uppercase font-semibold tracking-wider text-[var(--color-text-muted)]">{t(group.labelKey)}</div>
               )}
               {group.items.map((item) => (
                 <NavLink
@@ -169,7 +169,7 @@ export function App() {
                     `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 ${
                       isActive
                         ? "bg-archlens-500/12 text-archlens-300 shadow-sm shadow-archlens-500/5 border-l-2 border-archlens-400"
-                        : "text-[#8888a0] hover:text-[#e4e4ed] hover:bg-hover"
+                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-hover"
                     }`
                   }
                 >
@@ -183,7 +183,7 @@ export function App() {
 
         {/* Footer Stats */}
         {model && (
-          <div className="p-3 border-t border-[#1e1e2a]">
+          <div className="p-3 border-t border-[var(--color-border-subtle)]">
             <div className="grid grid-cols-2 gap-1.5 text-center">
               {[
                 { v: model.stats.files, l: "files" },
@@ -192,8 +192,8 @@ export function App() {
                 { v: model.stats.totalLines.toLocaleString(), l: "lines" },
               ].map((s) => (
                 <div key={s.l} className="rounded-lg bg-elevated px-2 py-1.5">
-                  <div className="text-sm font-semibold text-[#e4e4ed]">{s.v}</div>
-                  <div className="text-[9px] text-[#5a5a70] uppercase tracking-wider">{s.l}</div>
+                  <div className="text-sm font-semibold text-[var(--color-text-primary)]">{s.v}</div>
+                  <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider">{s.l}</div>
                 </div>
               ))}
             </div>
@@ -214,8 +214,8 @@ export function App() {
               <AlertCircle className="h-4 w-4 text-archlens-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#e4e4ed]">File changed</div>
-              <div className="text-[10px] font-mono text-[#5a5a70] truncate">{fileChange.file}</div>
+              <div className="text-sm font-semibold text-[var(--color-text-primary)]">File changed</div>
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] truncate">{fileChange.file}</div>
             </div>
           </div>
           <div className="flex gap-2 mt-3">
@@ -228,7 +228,7 @@ export function App() {
             </button>
             <button
               onClick={() => setFileChange(null)}
-              className="px-3 py-1.5 rounded-md text-[#5a5a70] hover:text-[#e4e4ed] text-xs"
+              className="px-3 py-1.5 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] text-xs"
             >
               Dismiss
             </button>

@@ -117,7 +117,7 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
     <div className="h-full flex flex-col overflow-hidden">
       {/* Insights */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
-        <div className="text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70] mb-1 flex items-center gap-1">
+        <div className="text-[9px] uppercase font-semibold tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center gap-1">
           <Zap className="h-3 w-3" /> Key Findings
         </div>
 
@@ -126,8 +126,8 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
             <div className="flex items-start gap-2">
               {iconMap[ins.type]}
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-semibold text-[#e4e4ed]">{ins.title}</div>
-                <div className="text-[10px] text-[#8888a0] mt-0.5">{ins.detail}</div>
+                <div className="text-[11px] font-semibold text-[var(--color-text-primary)]">{ins.title}</div>
+                <div className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">{ins.detail}</div>
                 {ins.action && (
                   <div className="text-[9px] text-archlens-400 mt-1 flex items-center gap-1">
                     <ArrowRight className="h-2.5 w-2.5" /> {ins.action}
@@ -140,8 +140,8 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
       </div>
 
       {/* Module Ranking */}
-      <div className="border-t border-[#1e1e2a] px-3 py-2">
-        <div className="text-[9px] uppercase font-semibold tracking-wider text-[#5a5a70] mb-1.5 flex items-center gap-1">
+      <div className="border-t border-[var(--color-border-subtle)] px-3 py-2">
+        <div className="text-[9px] uppercase font-semibold tracking-wider text-[var(--color-text-muted)] mb-1.5 flex items-center gap-1">
           <Box className="h-3 w-3" /> Module Risk Ranking
         </div>
         <div className="space-y-1 max-h-[200px] overflow-y-auto">
@@ -156,11 +156,11 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
                 <div className="w-6 text-right">
                   <span className="text-[10px] font-bold" style={{ color: sc }}>{mod.score}</span>
                 </div>
-                <div className="flex-1 h-1.5 rounded-full bg-[#1e1e2a] overflow-hidden">
+                <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
                   <div className="h-full rounded-full transition-all" style={{ width: `${mod.score}%`, backgroundColor: sc }} />
                 </div>
-                <span className="text-[10px] font-mono text-[#8888a0] truncate max-w-[100px]">{mod.name}</span>
-                <span className="text-[9px] text-[#5a5a70]">{mod.issues}</span>
+                <span className="text-[10px] font-mono text-[var(--color-text-secondary)] truncate max-w-[100px]">{mod.name}</span>
+                <span className="text-[9px] text-[var(--color-text-muted)]">{mod.issues}</span>
               </button>
             );
           })}

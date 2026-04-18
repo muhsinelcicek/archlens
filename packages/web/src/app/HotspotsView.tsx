@@ -57,10 +57,10 @@ export function HotspotsView() {
           <AlertTriangle className="h-6 w-6 text-amber-400 flex-shrink-0 mt-1" />
           <div>
             <h3 className="text-base font-semibold text-amber-300 mb-2">Git history required</h3>
-            <p className="text-sm text-[#8888a0]">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               Hotspot analysis requires git history. Make sure your project is a git repository with commit history.
             </p>
-            {report.error && <p className="text-xs text-[#5a5a70] mt-2 font-mono">{report.error}</p>}
+            {report.error && <p className="text-xs text-[var(--color-text-muted)] mt-2 font-mono">{report.error}</p>}
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function HotspotsView() {
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Flame className="h-6 w-6 text-orange-400" /> Code Hotspots
           </h2>
-          <p className="text-sm text-[#5a5a70] mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Files that change frequently AND have high complexity. These are your highest-risk areas.
           </p>
         </div>
@@ -106,10 +106,10 @@ export function HotspotsView() {
       {top20pctRatio > 50 && (
         <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 flex items-start gap-3">
           <Activity className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-[#8888a0]">
+          <div className="text-sm text-[var(--color-text-secondary)]">
             <span className="font-semibold text-orange-300">{top20pctRatio}% of all changes</span>
-            {" "}are concentrated in just <span className="font-semibold text-[#e4e4ed]">{top20pct} files</span> ({Math.round((top20pct / validHotspots.length) * 100)}% of analyzed files).
-            {topFile && <> Top hotspot: <code className="text-orange-300 font-mono">{topFile.filePath.split("/").pop()}</code> changed <span className="font-semibold text-[#e4e4ed]">{topFile.changeFrequency}</span> times.</>}
+            {" "}are concentrated in just <span className="font-semibold text-[var(--color-text-primary)]">{top20pct} files</span> ({Math.round((top20pct / validHotspots.length) * 100)}% of analyzed files).
+            {topFile && <> Top hotspot: <code className="text-orange-300 font-mono">{topFile.filePath.split("/").pop()}</code> changed <span className="font-semibold text-[var(--color-text-primary)]">{topFile.changeFrequency}</span> times.</>}
           </div>
         </div>
       )}
@@ -122,12 +122,12 @@ export function HotspotsView() {
           { label: "Avg Risk Score", value: avgRisk, icon: <Activity className="h-4 w-4" />, color: "#fbbf24" },
           { label: "Riskiest Module", value: report.riskiestModule || "—", icon: <GitBranch className="h-4 w-4" />, color: "#a78bfa", small: true },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-[#2a2a3a] bg-elevated p-4">
+          <div key={s.label} className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4">
             <div className="flex items-center gap-2 mb-2" style={{ color: s.color }}>
               {s.icon}
               <span className="text-[10px] uppercase font-semibold tracking-wider">{s.label}</span>
             </div>
-            <div className={`font-bold text-[#e4e4ed] ${s.small ? "text-sm font-mono truncate" : "text-2xl"}`}>
+            <div className={`font-bold text-[var(--color-text-primary)] ${s.small ? "text-sm font-mono truncate" : "text-2xl"}`}>
               {s.value}
             </div>
           </div>
@@ -135,11 +135,11 @@ export function HotspotsView() {
       </div>
 
       {/* Risk Quadrant Chart */}
-      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-5">
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-5">
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <Activity className="h-4 w-4 text-archlens-400" /> Risk Quadrant
         </h3>
-        <p className="text-xs text-[#5a5a70] mb-4">
+        <p className="text-xs text-[var(--color-text-muted)] mb-4">
           X = Complexity · Y = Change Frequency. Top-right = Refactor priority.
         </p>
         <div className="relative w-full" style={{ aspectRatio: "2 / 1" }}>
@@ -151,8 +151,8 @@ export function HotspotsView() {
             <rect x="400" y="200" width="400" height="200" fill="#60a5fa08" />
 
             {/* Quadrant borders */}
-            <line x1="400" y1="0" x2="400" y2="400" stroke="#2a2a3a" strokeDasharray="4 4" />
-            <line x1="0" y1="200" x2="800" y2="200" stroke="#2a2a3a" strokeDasharray="4 4" />
+            <line x1="400" y1="0" x2="400" y2="400" stroke="var(--color-border-default)" strokeDasharray="4 4" />
+            <line x1="0" y1="200" x2="800" y2="200" stroke="var(--color-border-default)" strokeDasharray="4 4" />
 
             {/* Quadrant labels */}
             <text x="20" y="25" fontSize="11" fill="#fbbf24" fontWeight="600">⚡ Active &amp; Simple</text>
@@ -161,8 +161,8 @@ export function HotspotsView() {
             <text x="780" y="395" fontSize="11" fill="#60a5fa" fontWeight="600" textAnchor="end">📦 Legacy &amp; Stable</text>
 
             {/* Axis labels */}
-            <text x="400" y="395" fontSize="10" fill="#5a5a70" textAnchor="middle">→ complexity</text>
-            <text x="5" y="200" fontSize="10" fill="#5a5a70" textAnchor="start" transform="rotate(-90 5 200)">↑ change frequency</text>
+            <text x="400" y="395" fontSize="10" fill="var(--color-text-muted)" textAnchor="middle">→ complexity</text>
+            <text x="5" y="200" fontSize="10" fill="var(--color-text-muted)" textAnchor="start" transform="rotate(-90 5 200)">↑ change frequency</text>
 
             {/* Dots */}
             {validHotspots.map((h, i) => {
@@ -190,9 +190,9 @@ export function HotspotsView() {
             })}
           </svg>
           {hoveredFile && (
-            <div className="absolute top-2 right-2 rounded-lg bg-[#1e1e2a] border border-[#3a3a4a] px-3 py-2 text-xs pointer-events-none shadow-lg">
-              <div className="font-mono text-[#e4e4ed]">{hoveredFile.split("/").pop()}</div>
-              <div className="text-[10px] text-[#5a5a70] truncate max-w-[300px]">{hoveredFile}</div>
+            <div className="absolute top-2 right-2 rounded-lg bg-[var(--color-border-subtle)] border border-[#3a3a4a] px-3 py-2 text-xs pointer-events-none shadow-lg">
+              <div className="font-mono text-[var(--color-text-primary)]">{hoveredFile.split("/").pop()}</div>
+              <div className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[300px]">{hoveredFile}</div>
             </div>
           )}
         </div>
@@ -208,7 +208,7 @@ export function HotspotsView() {
                 key={k}
                 onClick={() => setSortKey(k)}
                 className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase transition-colors ${
-                  sortKey === k ? "bg-archlens-500/15 text-archlens-300" : "bg-[#1e1e2a] text-[#5a5a70] hover:text-[#8888a0]"
+                  sortKey === k ? "bg-archlens-500/15 text-archlens-300" : "bg-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
                 }`}
               >
                 {k}
@@ -217,10 +217,10 @@ export function HotspotsView() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#2a2a3a] overflow-hidden">
+        <div className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
           <table className="w-full text-xs">
             <thead className="bg-surface">
-              <tr className="text-[10px] uppercase text-[#5a5a70]">
+              <tr className="text-[10px] uppercase text-[var(--color-text-muted)]">
                 <th className="text-left py-2 px-3">File</th>
                 <th className="text-left py-2 px-2">Module</th>
                 <th className="text-right py-2 px-2">Changes</th>
@@ -236,18 +236,18 @@ export function HotspotsView() {
                   <tr
                     key={i}
                     onClick={() => goToFile(h.filePath)}
-                    className="border-t border-[#1e1e2a] hover:bg-hover cursor-pointer transition-colors"
+                    className="border-t border-[var(--color-border-subtle)] hover:bg-hover cursor-pointer transition-colors"
                   >
-                    <td className="py-2 px-3 font-mono text-[#e4e4ed] truncate max-w-[400px]">
+                    <td className="py-2 px-3 font-mono text-[var(--color-text-primary)] truncate max-w-[400px]">
                       {h.filePath.split("/").pop()}
-                      <div className="text-[9px] text-[#5a5a70] truncate">{h.filePath}</div>
+                      <div className="text-[9px] text-[var(--color-text-muted)] truncate">{h.filePath}</div>
                     </td>
-                    <td className="py-2 px-2 text-[#8888a0] font-mono">{h.module}</td>
-                    <td className="py-2 px-2 text-right text-[#8888a0]">{h.changeFrequency}</td>
-                    <td className="py-2 px-2 text-right text-[#8888a0]">{h.complexity}</td>
+                    <td className="py-2 px-2 text-[var(--color-text-secondary)] font-mono">{h.module}</td>
+                    <td className="py-2 px-2 text-right text-[var(--color-text-secondary)]">{h.changeFrequency}</td>
+                    <td className="py-2 px-2 text-right text-[var(--color-text-secondary)]">{h.complexity}</td>
                     <td className="py-2 px-2 text-right">
                       {h.authors.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[#5a5a70]">
+                        <span className="inline-flex items-center gap-1 text-[var(--color-text-muted)]">
                           <Users className="h-3 w-3" /> {h.authors.length}
                         </span>
                       )}
@@ -266,7 +266,7 @@ export function HotspotsView() {
             </tbody>
           </table>
           {sorted.length > 50 && (
-            <div className="py-2 text-center text-[10px] text-[#5a5a70] bg-surface">
+            <div className="py-2 text-center text-[10px] text-[var(--color-text-muted)] bg-surface">
               +{sorted.length - 50} more files
             </div>
           )}

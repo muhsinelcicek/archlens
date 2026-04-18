@@ -189,14 +189,14 @@ export function RulesView() {
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <ScrollText className="h-6 w-6 text-archlens-400" /> Architecture Rules
           </h2>
-          <p className="text-sm text-[#5a5a70] mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Define rules to enforce architectural decisions and detect violations automatically.
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setJsonView(!jsonView)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[#8888a0] text-xs font-medium hover:text-[#e4e4ed]"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]"
           >
             {jsonView ? <><EyeOff className="h-3.5 w-3.5" /> Visual</> : <><Eye className="h-3.5 w-3.5" /> JSON</>}
           </button>
@@ -224,7 +224,7 @@ export function RulesView() {
           <textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            className="w-full h-[400px] rounded-xl bg-deep border border-[#2a2a3a] p-4 text-xs font-mono text-[#e4e4ed] outline-none focus:border-archlens-500/40"
+            className="w-full h-[400px] rounded-xl bg-deep border border-[var(--color-border-default)] p-4 text-xs font-mono text-[var(--color-text-primary)] outline-none focus:border-archlens-500/40"
           />
           <button
             onClick={saveJson}
@@ -246,14 +246,14 @@ export function RulesView() {
               return (
                 <div
                   key={tpl.id}
-                  className="rounded-xl border border-[#2a2a3a] bg-elevated p-4 flex flex-col"
+                  className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col"
                 >
                   <div className="flex items-center gap-2 mb-2" style={{ color: sev }}>
                     {TEMPLATE_ICONS[tpl.id]}
                     <span className="text-[10px] uppercase font-semibold">{tpl.severity}</span>
                   </div>
-                  <h4 className="text-sm font-semibold text-[#e4e4ed] mb-1">{tpl.name}</h4>
-                  <p className="text-xs text-[#5a5a70] flex-1">{tpl.description}</p>
+                  <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">{tpl.name}</h4>
+                  <p className="text-xs text-[var(--color-text-muted)] flex-1">{tpl.description}</p>
                   <button
                     onClick={() => addTemplate(tpl)}
                     disabled={added}
@@ -276,12 +276,12 @@ export function RulesView() {
       {!jsonView && (
         <section>
           <h3 className="text-sm font-semibold mb-3">
-            My Rules ({rules.length}) {saving && <span className="text-[10px] text-[#5a5a70] ml-2">Saving...</span>}
+            My Rules ({rules.length}) {saving && <span className="text-[10px] text-[var(--color-text-muted)] ml-2">Saving...</span>}
           </h3>
           {rules.length === 0 ? (
-            <div className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 text-center">
-              <ScrollText className="h-10 w-10 text-[#5a5a70] mx-auto mb-2" />
-              <p className="text-sm text-[#5a5a70]">No rules defined. Add a template above to get started.</p>
+            <div className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-6 text-center">
+              <ScrollText className="h-10 w-10 text-[var(--color-text-muted)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--color-text-muted)]">No rules defined. Add a template above to get started.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -290,23 +290,23 @@ export function RulesView() {
                 const violations = violationsByRule.get(rule.id) || [];
                 const enabled = rule.enabled !== false;
                 return (
-                  <div key={rule.id} className="rounded-xl border border-[#2a2a3a] bg-elevated overflow-hidden">
+                  <div key={rule.id} className="rounded-xl border border-[var(--color-border-default)] bg-elevated overflow-hidden">
                     <div className="flex items-center gap-3 p-4">
                       <button
                         onClick={() => toggleRule(rule.id)}
-                        className={`relative w-10 h-5 rounded-full transition-colors ${enabled ? "bg-archlens-500" : "bg-[#2a2a3a]"}`}
+                        className={`relative w-10 h-5 rounded-full transition-colors ${enabled ? "bg-archlens-500" : "bg-[var(--color-border-default)]"}`}
                       >
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`} />
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`text-sm font-semibold ${enabled ? "text-[#e4e4ed]" : "text-[#5a5a70]"}`}>{rule.name}</span>
+                          <span className={`text-sm font-semibold ${enabled ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>{rule.name}</span>
                           <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase" style={{ backgroundColor: `${sev}15`, color: sev }}>
                             {rule.severity}
                           </span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70]">{rule.type}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-border-subtle)] text-[var(--color-text-muted)]">{rule.type}</span>
                         </div>
-                        <p className="text-[10px] text-[#5a5a70] mt-0.5">{rule.description}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{rule.description}</p>
                       </div>
                       {validation && (
                         <span className={`text-[10px] px-2 py-1 rounded-full font-semibold ${
@@ -317,25 +317,25 @@ export function RulesView() {
                       )}
                       <button
                         onClick={() => deleteRule(rule.id)}
-                        className="p-2 rounded-lg hover:bg-red-500/10 text-[#5a5a70] hover:text-red-400"
+                        className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--color-text-muted)] hover:text-red-400"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                     {violations.length > 0 && (
-                      <div className="border-t border-[#2a2a3a] bg-deep px-4 py-2 max-h-[200px] overflow-y-auto">
+                      <div className="border-t border-[var(--color-border-default)] bg-deep px-4 py-2 max-h-[200px] overflow-y-auto">
                         {violations.slice(0, 5).map((v, i) => (
                           <div
                             key={i}
                             onClick={() => v.filePath && (sessionStorage.setItem("archlens-goto-file", v.filePath), navigate("/architecture"))}
-                            className="flex items-start gap-2 py-1 text-xs cursor-pointer hover:text-[#e4e4ed]"
+                            className="flex items-start gap-2 py-1 text-xs cursor-pointer hover:text-[var(--color-text-primary)]"
                           >
                             <XCircle className="h-3 w-3 mt-0.5 text-red-400 flex-shrink-0" />
-                            <span className="text-[#8888a0]">{v.message}</span>
+                            <span className="text-[var(--color-text-secondary)]">{v.message}</span>
                           </div>
                         ))}
                         {violations.length > 5 && (
-                          <div className="text-[10px] text-[#5a5a70] mt-1">+{violations.length - 5} more</div>
+                          <div className="text-[10px] text-[var(--color-text-muted)] mt-1">+{violations.length - 5} more</div>
                         )}
                       </div>
                     )}
@@ -349,19 +349,19 @@ export function RulesView() {
 
       {/* Violations Summary */}
       {validation && (
-        <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-5">
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-5">
           <h3 className="text-sm font-semibold mb-3">Validation Report</h3>
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-lg bg-[#1e1e2a] p-3">
-              <div className="text-[10px] uppercase text-[#5a5a70]">Total Rules</div>
-              <div className="text-2xl font-bold text-[#e4e4ed]">{validation.totalRules}</div>
+            <div className="rounded-lg bg-[var(--color-border-subtle)] p-3">
+              <div className="text-[10px] uppercase text-[var(--color-text-muted)]">Total Rules</div>
+              <div className="text-2xl font-bold text-[var(--color-text-primary)]">{validation.totalRules}</div>
             </div>
-            <div className="rounded-lg bg-[#1e1e2a] p-3">
-              <div className="text-[10px] uppercase text-[#5a5a70]">Passed</div>
+            <div className="rounded-lg bg-[var(--color-border-subtle)] p-3">
+              <div className="text-[10px] uppercase text-[var(--color-text-muted)]">Passed</div>
               <div className="text-2xl font-bold text-emerald-400">{validation.passedRules.length}</div>
             </div>
-            <div className="rounded-lg bg-[#1e1e2a] p-3">
-              <div className="text-[10px] uppercase text-[#5a5a70]">Violations</div>
+            <div className="rounded-lg bg-[var(--color-border-subtle)] p-3">
+              <div className="text-[10px] uppercase text-[var(--color-text-muted)]">Violations</div>
               <div className="text-2xl font-bold text-red-400">{validation.totalViolations}</div>
             </div>
           </div>

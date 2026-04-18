@@ -78,14 +78,14 @@ function StatCard({ icon: Icon, label, value, sub, color }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string; color: string;
 }) {
   return (
-    <div className="rounded-xl border border-[#2a2a3a] bg-deep p-4 flex items-start gap-3 min-w-0">
+    <div className="rounded-xl border border-[var(--color-border-default)] bg-deep p-4 flex items-start gap-3 min-w-0">
       <div className="rounded-lg p-2 flex-shrink-0" style={{ backgroundColor: `${color}12` }}>
         <Icon className="h-4 w-4" style={{ color }} />
       </div>
       <div className="min-w-0">
-        <div className="text-[10px] uppercase font-semibold text-[#5a5a70] tracking-wider">{label}</div>
-        <div className="text-xl font-bold text-[#e4e4ed] mt-0.5">{value}</div>
-        {sub && <div className="text-[10px] text-[#5a5a70] mt-0.5 truncate">{sub}</div>}
+        <div className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] tracking-wider">{label}</div>
+        <div className="text-xl font-bold text-[var(--color-text-primary)] mt-0.5">{value}</div>
+        {sub && <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 truncate">{sub}</div>}
       </div>
     </div>
   );
@@ -153,12 +153,12 @@ function SystemMap({ model, processes, highlightedModules }: {
     .filter((l) => layers.has(l));
 
   return (
-    <div className="rounded-xl border border-[#2a2a3a] bg-deep p-5 overflow-x-auto">
+    <div className="rounded-xl border border-[var(--color-border-default)] bg-deep p-5 overflow-x-auto">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Server className="h-4 w-4 text-archlens-400" />
-          <span className="text-sm font-semibold text-[#e4e4ed]">System Architecture Map</span>
-          <span className="text-[10px] text-[#5a5a70] ml-2">
+          <span className="text-sm font-semibold text-[var(--color-text-primary)]">System Architecture Map</span>
+          <span className="text-[10px] text-[var(--color-text-muted)] ml-2">
             {model.modules.length} services &middot; {model.apiEndpoints.length} endpoints &middot; {model.dbEntities.length} tables
           </span>
         </div>
@@ -175,16 +175,16 @@ function SystemMap({ model, processes, highlightedModules }: {
         <div className="flex gap-3 min-w-max items-stretch">
           {/* Client node */}
           <div className="flex flex-col items-center justify-center gap-1">
-            <div className="w-14 h-14 rounded-xl bg-[#1e1e2a] border border-[#2a2a3a] flex items-center justify-center">
-              <Monitor className="h-5 w-5 text-[#5a5a70]" />
+            <div className="w-14 h-14 rounded-xl bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] flex items-center justify-center">
+              <Monitor className="h-5 w-5 text-[var(--color-text-muted)]" />
             </div>
-            <span className="text-[8px] text-[#5a5a70]">Client</span>
+            <span className="text-[8px] text-[var(--color-text-muted)]">Client</span>
           </div>
 
           {/* Connector */}
           <div className="flex items-center">
             <svg width="32" height="2" className="flex-shrink-0">
-              <line x1="0" y1="1" x2="32" y2="1" stroke="#2a2a3a" strokeWidth="2" strokeDasharray="4 2" />
+              <line x1="0" y1="1" x2="32" y2="1" stroke="var(--color-border-default)" strokeWidth="2" strokeDasharray="4 2" />
               <polygon points="28,0 32,1 28,2" fill="#3a3a4a" />
             </svg>
           </div>
@@ -224,7 +224,7 @@ function SystemMap({ model, processes, highlightedModules }: {
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: c }} />
                           <span className="text-[9px] font-mono text-[#9898b0] truncate max-w-[100px]">{m.name}</span>
                           {(epCount > 0 || procCount > 0) && (
-                            <span className="text-[7px] text-[#5a5a70] ml-auto whitespace-nowrap">
+                            <span className="text-[7px] text-[var(--color-text-muted)] ml-auto whitespace-nowrap">
                               {epCount > 0 && <span>{epCount}ep</span>}
                               {epCount > 0 && procCount > 0 && <span> &middot; </span>}
                               {procCount > 0 && <span>{procCount}p</span>}
@@ -235,12 +235,12 @@ function SystemMap({ model, processes, highlightedModules }: {
                     })}
                   </div>
                   {mods.length > 6 && (
-                    <span className="text-[8px] text-[#5a5a70] mt-1 block">+{mods.length - 6} more</span>
+                    <span className="text-[8px] text-[var(--color-text-muted)] mt-1 block">+{mods.length - 6} more</span>
                   )}
                 </div>
                 {i < orderedLayers.length - 1 && (
                   <svg width="32" height="2" className="flex-shrink-0">
-                    <line x1="0" y1="1" x2="32" y2="1" stroke="#2a2a3a" strokeWidth="2" strokeDasharray="4 2" />
+                    <line x1="0" y1="1" x2="32" y2="1" stroke="var(--color-border-default)" strokeWidth="2" strokeDasharray="4 2" />
                     <polygon points="28,0 32,1 28,2" fill="#3a3a4a" />
                   </svg>
                 )}
@@ -251,26 +251,26 @@ function SystemMap({ model, processes, highlightedModules }: {
           {/* Connector */}
           <div className="flex items-center">
             <svg width="32" height="2" className="flex-shrink-0">
-              <line x1="0" y1="1" x2="32" y2="1" stroke="#2a2a3a" strokeWidth="2" strokeDasharray="4 2" />
+              <line x1="0" y1="1" x2="32" y2="1" stroke="var(--color-border-default)" strokeWidth="2" strokeDasharray="4 2" />
               <polygon points="28,0 32,1 28,2" fill="#3a3a4a" />
             </svg>
           </div>
 
           {/* Database node */}
           <div className="flex flex-col items-center justify-center gap-1">
-            <div className="w-14 h-14 rounded-xl bg-[#1e1e2a] border border-[#2a2a3a] flex items-center justify-center">
-              <Database className="h-5 w-5 text-[#5a5a70]" />
+            <div className="w-14 h-14 rounded-xl bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] flex items-center justify-center">
+              <Database className="h-5 w-5 text-[var(--color-text-muted)]" />
             </div>
-            <span className="text-[8px] text-[#5a5a70]">{model.dbEntities.length} tables</span>
+            <span className="text-[8px] text-[var(--color-text-muted)]">{model.dbEntities.length} tables</span>
           </div>
         </div>
       </div>
 
       {/* Hovered module info bar */}
       {hoveredModule && hoveredProcesses.size > 0 && (
-        <div className="mt-3 px-3 py-2 rounded-lg bg-[#1e1e2a] border border-[#2a2a3a] text-[10px] text-[#8888a0] flex items-center gap-2 animate-slide-up">
+        <div className="mt-3 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[10px] text-[var(--color-text-secondary)] flex items-center gap-2 animate-slide-up">
           <Box className="h-3 w-3 text-archlens-400 flex-shrink-0" />
-          <span className="font-semibold text-[#e4e4ed]">{hoveredModule}</span>
+          <span className="font-semibold text-[var(--color-text-primary)]">{hoveredModule}</span>
           <span>&middot;</span>
           <span>Involved in {hoveredProcesses.size} process{hoveredProcesses.size !== 1 ? "es" : ""}</span>
         </div>
@@ -331,15 +331,15 @@ function VerticalTimeline({ process, modules, cfg }: {
             <div className="rounded-lg border p-3 transition-all hover:shadow-md" style={{ borderColor: `${cfg.color}15`, backgroundColor: `${cfg.color}03` }}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h5 className="text-sm font-semibold text-[#e4e4ed]">{step.name}</h5>
-                  <p className="text-[11px] text-[#8888a0] mt-0.5 leading-relaxed">{step.description}</p>
+                  <h5 className="text-sm font-semibold text-[var(--color-text-primary)]">{step.name}</h5>
+                  <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">{step.description}</p>
                 </div>
               </div>
 
               {/* I/O badges */}
               <div className="flex items-center gap-2 mt-2 text-[10px] font-mono flex-wrap">
                 <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">{step.inputData}</span>
-                <ArrowRight className="h-3 w-3 text-[#5a5a70] flex-shrink-0" />
+                <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)] flex-shrink-0" />
                 <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{step.outputData}</span>
               </div>
 
@@ -349,20 +349,20 @@ function VerticalTimeline({ process, modules, cfg }: {
                   <div className="flex items-center gap-1 text-[9px] font-semibold uppercase text-amber-500 mb-0.5">
                     <Lightbulb className="h-3 w-3" /> Algorithm
                   </div>
-                  <p className="text-[10px] text-[#8888a0] font-mono leading-relaxed">{step.algorithm}</p>
+                  <p className="text-[10px] text-[var(--color-text-secondary)] font-mono leading-relaxed">{step.algorithm}</p>
                 </div>
               )}
 
               {/* Details */}
               {step.details?.map((d, j) => (
-                <div key={j} className="flex items-start gap-2 text-[10px] text-[#8888a0] mt-1">
+                <div key={j} className="flex items-start gap-2 text-[10px] text-[var(--color-text-secondary)] mt-1">
                   <Zap className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: cfg.color }} />{d}
                 </div>
               ))}
 
               {/* Symbol ref badge */}
               {step.symbolRef && (
-                <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 rounded bg-[#1e1e2a] border border-[#2a2a3a] text-[#6a6a80]">
+                <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[#6a6a80]">
                   <Hash className="h-2.5 w-2.5" /> {step.symbolRef}
                 </div>
               )}
@@ -391,8 +391,8 @@ function VerticalTimeline({ process, modules, cfg }: {
 
       {/* Module references + navigation */}
       {involvedModules.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-[#1e1e2a]">
-          <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1.5 flex items-center gap-1">
+        <div className="mt-4 pt-3 border-t border-[var(--color-border-subtle)]">
+          <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] mb-1.5 flex items-center gap-1">
             <Layers className="h-3 w-3" /> Involved Modules
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -403,7 +403,7 @@ function VerticalTimeline({ process, modules, cfg }: {
                 className="text-[10px] px-2 py-1 rounded-md bg-archlens-500/8 text-archlens-400 border border-archlens-500/20 font-mono hover:bg-archlens-500/15 transition-colors flex items-center gap-1"
               >
                 <Box className="h-2.5 w-2.5" /> {m.name}
-                <span className="text-[8px] text-[#5a5a70]">({m.layer})</span>
+                <span className="text-[8px] text-[var(--color-text-muted)]">({m.layer})</span>
               </button>
             ))}
           </div>
@@ -431,10 +431,10 @@ function HorizontalPipeline({ process, cfg }: {
             <div className="text-[8px] text-cyan-600 uppercase mb-0.5">Input</div>
             <div className="text-[10px] text-cyan-300 font-mono">{process.dataSources.map((d) => d.name).join(", ")}</div>
           </div>
-          <ArrowRight className="h-3 w-3 text-[#2a2a3a] flex-shrink-0" />
+          <ArrowRight className="h-3 w-3 text-[var(--color-border-default)] flex-shrink-0" />
           {process.steps.map((step, i) => (
             <div key={i} className="flex items-center gap-1 flex-shrink-0">
-              {i > 0 && <ArrowRight className="h-2.5 w-2.5 text-[#2a2a3a]" />}
+              {i > 0 && <ArrowRight className="h-2.5 w-2.5 text-[var(--color-border-default)]" />}
               <button
                 onClick={() => setExpandedStep(expandedStep === i ? null : i)}
                 className="rounded-lg border px-3 py-2 text-[10px] font-medium whitespace-nowrap transition-all"
@@ -454,7 +454,7 @@ function HorizontalPipeline({ process, cfg }: {
               </button>
             </div>
           ))}
-          <ArrowRight className="h-3 w-3 text-[#2a2a3a] flex-shrink-0" />
+          <ArrowRight className="h-3 w-3 text-[var(--color-border-default)] flex-shrink-0" />
           <div className="flex-shrink-0 rounded-lg bg-emerald-500/8 border border-emerald-500/20 px-3 py-2">
             <div className="text-[8px] text-emerald-600 uppercase mb-0.5">Output</div>
             <div className="text-[10px] text-emerald-300 font-mono">{process.outputs.map((o) => o.name).join(", ")}</div>
@@ -463,7 +463,7 @@ function HorizontalPipeline({ process, cfg }: {
       </div>
 
       {expandedStep !== null && process.steps[expandedStep] && (
-        <div className="px-5 py-4 border-t border-[#1e1e2a] animate-slide-up">
+        <div className="px-5 py-4 border-t border-[var(--color-border-subtle)] animate-slide-up">
           <div className="flex items-start gap-3">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -472,26 +472,26 @@ function HorizontalPipeline({ process, cfg }: {
               {process.steps[expandedStep].order}
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm text-[#e4e4ed]">{process.steps[expandedStep].name}</h4>
-              <p className="text-xs text-[#8888a0] mt-1">{process.steps[expandedStep].description}</p>
+              <h4 className="font-semibold text-sm text-[var(--color-text-primary)]">{process.steps[expandedStep].name}</h4>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">{process.steps[expandedStep].description}</p>
               <div className="flex items-center gap-2 mt-2 text-[10px] font-mono">
                 <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">{process.steps[expandedStep].inputData}</span>
-                <ArrowRight className="h-3 w-3 text-[#5a5a70]" />
+                <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)]" />
                 <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{process.steps[expandedStep].outputData}</span>
               </div>
               {process.steps[expandedStep].algorithm && (
                 <div className="mt-3 rounded-lg bg-amber-500/5 border border-amber-500/20 p-3">
                   <div className="flex items-center gap-1 text-[9px] font-semibold uppercase text-amber-500 mb-1"><Lightbulb className="h-3 w-3" /> Algorithm</div>
-                  <p className="text-[11px] text-[#8888a0] font-mono leading-relaxed">{process.steps[expandedStep].algorithm}</p>
+                  <p className="text-[11px] text-[var(--color-text-secondary)] font-mono leading-relaxed">{process.steps[expandedStep].algorithm}</p>
                 </div>
               )}
               {process.steps[expandedStep].details?.map((d, j) => (
-                <div key={j} className="flex items-start gap-2 text-[10px] text-[#8888a0] mt-1">
+                <div key={j} className="flex items-start gap-2 text-[10px] text-[var(--color-text-secondary)] mt-1">
                   <Zap className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: cfg.color }} />{d}
                 </div>
               ))}
               {process.steps[expandedStep].symbolRef && (
-                <div className="mt-2 text-[9px] font-mono text-[#5a5a70]">ref: {process.steps[expandedStep].symbolRef}</div>
+                <div className="mt-2 text-[9px] font-mono text-[var(--color-text-muted)]">ref: {process.steps[expandedStep].symbolRef}</div>
               )}
             </div>
           </div>
@@ -539,7 +539,7 @@ function ProcessCard({ process, isExpanded, onToggle, modules, viewMode }: {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-[#e4e4ed]">{process.name}</h3>
+            <h3 className="font-semibold text-[var(--color-text-primary)]">{process.name}</h3>
             {/* Complexity badge */}
             <span
               className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${complexity.bg}`}
@@ -548,7 +548,7 @@ function ProcessCard({ process, isExpanded, onToggle, modules, viewMode }: {
               {complexity.label}
             </span>
           </div>
-          <p className="text-[10px] text-[#5a5a70] mt-0.5 line-clamp-1">{process.description}</p>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 line-clamp-1">{process.description}</p>
           {/* Data flow summary */}
           <div className="text-[9px] text-[#6a6a80] mt-1 font-mono flex items-center gap-1">
             <GitBranch className="h-2.5 w-2.5 flex-shrink-0" />
@@ -556,7 +556,7 @@ function ProcessCard({ process, isExpanded, onToggle, modules, viewMode }: {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-          <div className="flex items-center gap-2 text-[10px] text-[#5a5a70]">
+          <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
             <span>{process.steps.length} steps</span>
             <span
               className="rounded-full px-2 py-0.5"
@@ -578,7 +578,7 @@ function ProcessCard({ process, isExpanded, onToggle, modules, viewMode }: {
                 </span>
               ))}
               {involvedModules.length > 3 && (
-                <span className="text-[8px] text-[#5a5a70]">+{involvedModules.length - 3}</span>
+                <span className="text-[8px] text-[var(--color-text-muted)]">+{involvedModules.length - 3}</span>
               )}
             </div>
           )}
@@ -595,11 +595,11 @@ function ProcessCard({ process, isExpanded, onToggle, modules, viewMode }: {
           )}
 
           {/* Footer with view in architecture button */}
-          <div className="px-5 py-3 border-t border-[#1e1e2a] flex items-center justify-between">
+          <div className="px-5 py-3 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
               {involvedModules.length > 0 && viewMode === "horizontal" && (
                 <>
-                  <span className="text-[9px] uppercase font-semibold text-[#5a5a70]">Modules:</span>
+                  <span className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)]">Modules:</span>
                   {involvedModules.map((m) => (
                     <span
                       key={m.name}
@@ -707,7 +707,7 @@ export function ProcessView() {
       {/* Title */}
       <div>
         <h2 className="text-2xl font-bold">{t("proc.title")}</h2>
-        <p className="text-sm text-[#5a5a70] mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           {processes.length} processes &middot; {stats.totalSteps} steps &mdash; click to explore algorithms and data flow
         </p>
       </div>
@@ -728,18 +728,18 @@ export function ProcessView() {
         {/* Search + sort row */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5a5a70]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--color-text-muted)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search processes by name, description, or step..."
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-deep border border-[#2a2a3a] text-sm text-[#e4e4ed] placeholder:text-[#3a3a50] focus:outline-none focus:border-archlens-500/40 transition-colors"
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-deep border border-[var(--color-border-default)] text-sm text-[var(--color-text-primary)] placeholder:text-[#3a3a50] focus:outline-none focus:border-archlens-500/40 transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5a5a70] hover:text-[#8888a0]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
               >
                 &times;
               </button>
@@ -749,24 +749,24 @@ export function ProcessView() {
           {/* Sort button */}
           <button
             onClick={cycleSortKey}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#2a2a3a] text-xs text-[#8888a0] hover:text-[#e4e4ed] hover:border-[#3a3a4a] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--color-border-default)] text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[#3a3a4a] transition-colors"
           >
             <ArrowUpDown className="h-3 w-3" />
             Sort: {sortKey === "name" ? "Name" : sortKey === "steps" ? "Steps" : "Category"}
           </button>
 
           {/* View mode toggle */}
-          <div className="flex items-center border border-[#2a2a3a] rounded-lg overflow-hidden">
+          <div className="flex items-center border border-[var(--color-border-default)] rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode("horizontal")}
-              className={`px-2.5 py-2 transition-colors ${viewMode === "horizontal" ? "bg-archlens-500/12 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
+              className={`px-2.5 py-2 transition-colors ${viewMode === "horizontal" ? "bg-archlens-500/12 text-archlens-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}
               title="Horizontal pipeline view"
             >
               <AlignJustify className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => setViewMode("vertical")}
-              className={`px-2.5 py-2 transition-colors ${viewMode === "vertical" ? "bg-archlens-500/12 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}
+              className={`px-2.5 py-2 transition-colors ${viewMode === "vertical" ? "bg-archlens-500/12 text-archlens-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}
               title="Vertical timeline view"
             >
               <List className="h-3.5 w-3.5" />
@@ -781,7 +781,7 @@ export function ProcessView() {
             className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
               !filterCategory
                 ? "bg-archlens-500/12 border-archlens-500/30 text-archlens-300"
-                : "border-[#2a2a3a] text-[#5a5a70] hover:text-[#8888a0]"
+                : "border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
             }`}
           >
             All ({processes.length})
@@ -796,8 +796,8 @@ export function ProcessView() {
                 className="rounded-lg px-3 py-1.5 text-xs font-medium border flex items-center gap-1.5 transition-colors"
                 style={{
                   backgroundColor: filterCategory === cat ? `${c.color}12` : "transparent",
-                  borderColor: filterCategory === cat ? `${c.color}30` : "#2a2a3a",
-                  color: filterCategory === cat ? c.color : "#5a5a70",
+                  borderColor: filterCategory === cat ? `${c.color}30` : "var(--color-border-default)",
+                  color: filterCategory === cat ? c.color : "var(--color-text-muted)",
                 }}
               >
                 <CatIcon className="h-3 w-3" />
@@ -810,7 +810,7 @@ export function ProcessView() {
 
       {/* Results count */}
       {(searchQuery || filterCategory) && (
-        <div className="text-[11px] text-[#5a5a70]">
+        <div className="text-[11px] text-[var(--color-text-muted)]">
           Showing {filtered.length} of {processes.length} processes
           {searchQuery && <span> matching &ldquo;{searchQuery}&rdquo;</span>}
         </div>
@@ -819,9 +819,9 @@ export function ProcessView() {
       {/* Process Cards */}
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="rounded-xl border border-[#2a2a3a] bg-deep p-8 text-center">
-            <Search className="h-8 w-8 text-[#2a2a3a] mx-auto mb-2" />
-            <p className="text-sm text-[#5a5a70]">No processes match your search.</p>
+          <div className="rounded-xl border border-[var(--color-border-default)] bg-deep p-8 text-center">
+            <Search className="h-8 w-8 text-[var(--color-border-default)] mx-auto mb-2" />
+            <p className="text-sm text-[var(--color-text-muted)]">No processes match your search.</p>
             <button onClick={() => { setSearchQuery(""); setFilterCategory(null); }} className="text-xs text-archlens-400 hover:text-archlens-300 mt-1">
               Clear filters
             </button>

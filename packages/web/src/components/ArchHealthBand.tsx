@@ -98,13 +98,13 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
   const debtCost = health.techDebtHours * 150;
 
   return (
-    <div className="bg-surface border-b border-[#1e1e2a] px-4 py-3">
+    <div className="bg-surface border-b border-[var(--color-border-subtle)] px-4 py-3">
       <div className="flex items-center gap-4">
         {/* Score */}
-        <div className="flex items-center gap-3 pr-4 border-r border-[#1e1e2a]">
+        <div className="flex items-center gap-3 pr-4 border-r border-[var(--color-border-subtle)]">
           <div className="relative w-12 h-12">
             <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="#1e1e2a" strokeWidth="4" />
+              <circle cx="24" cy="24" r="20" fill="none" stroke="var(--color-border-subtle)" strokeWidth="4" />
               <circle cx="24" cy="24" r="20" fill="none" stroke={scoreColor} strokeWidth="4"
                 strokeDasharray={`${(overallScore / 100) * 125.6} 125.6`} strokeLinecap="round" />
             </svg>
@@ -113,7 +113,7 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-[#5a5a70] font-semibold">Health</div>
+            <div className="text-[10px] uppercase text-[var(--color-text-muted)] font-semibold">Health</div>
             <div className="text-xs font-medium" style={{ color: scoreColor }}>{overallScore >= 80 ? "Healthy" : overallScore >= 60 ? "Moderate" : "At Risk"}</div>
           </div>
         </div>
@@ -129,10 +129,10 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
 
         {/* Top Risks */}
         {health.topRisks.length > 0 && (
-          <div className="pl-4 border-l border-[#1e1e2a] max-w-[300px]">
-            <div className="text-[9px] uppercase text-[#5a5a70] font-semibold mb-1">Top Risks</div>
+          <div className="pl-4 border-l border-[var(--color-border-subtle)] max-w-[300px]">
+            <div className="text-[9px] uppercase text-[var(--color-text-muted)] font-semibold mb-1">Top Risks</div>
             {health.topRisks.map((risk, i) => (
-              <div key={i} className="text-[10px] text-[#8888a0] truncate flex items-center gap-1">
+              <div key={i} className="text-[10px] text-[var(--color-text-secondary)] truncate flex items-center gap-1">
                 <span className="text-red-400">⚡</span> {risk}
               </div>
             ))}
@@ -148,7 +148,7 @@ function MetricChip({ icon, label, value, color }: { icon: React.ReactNode; labe
     <div className="flex items-center gap-2 bg-elevated rounded-lg px-2.5 py-1.5">
       <span style={{ color }}>{icon}</span>
       <div>
-        <div className="text-[9px] text-[#5a5a70] uppercase">{label}</div>
+        <div className="text-[9px] text-[var(--color-text-muted)] uppercase">{label}</div>
         <div className="text-xs font-bold" style={{ color }}>{value}</div>
       </div>
     </div>

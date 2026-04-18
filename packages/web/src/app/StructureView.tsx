@@ -162,14 +162,14 @@ export function StructureView() {
   return (
     <div className="flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex border-b border-[#2a2a3a] px-6 pt-4">
+      <div className="flex border-b border-[var(--color-border-default)] px-6 pt-4">
         {[
           { id: "modules" as const, icon: Boxes, label: `${t("nav.modules")} (${model.modules.length})` },
           { id: "deps" as const, icon: GitBranch, label: `${t("nav.dependencies")} (${allDepEdges.length})` },
           { id: "database" as const, icon: Database, label: `${t("nav.er_diagram")} (${model.dbEntities.length})` },
         ].map((tb) => (
           <button key={tb.id} onClick={() => setTab(tb.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-colors ${tab === tb.id ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-colors ${tab === tb.id ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
             <tb.icon className="h-3.5 w-3.5" /> {tb.label}
           </button>
         ))}
@@ -182,18 +182,18 @@ export function StructureView() {
             {/* Search + Sort bar */}
             <div className="flex items-center gap-3 mb-4">
               <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5a5a70]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
                 <input
                   type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search modules..."
-                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-elevated border border-[#2a2a3a] text-sm text-[#e4e4ed] placeholder-[#5a5a70] focus:outline-none focus:border-archlens-400/50"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-elevated border border-[var(--color-border-default)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-archlens-400/50"
                 />
               </div>
-              <div className="flex items-center gap-1 text-xs text-[#5a5a70]">
+              <div className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
                 <ArrowUpDown className="h-3 w-3" />
                 {(["lines", "name", "instability"] as SortKey[]).map((key) => (
                   <button key={key} onClick={() => setSortBy(key)}
-                    className={`px-2.5 py-1.5 rounded-md font-medium transition-colors ${sortBy === key ? "bg-archlens-500/12 text-archlens-300 border border-archlens-500/30" : "border border-[#2a2a3a] hover:text-[#8888a0]"}`}>
+                    className={`px-2.5 py-1.5 rounded-md font-medium transition-colors ${sortBy === key ? "bg-archlens-500/12 text-archlens-300 border border-archlens-500/30" : "border border-[var(--color-border-default)] hover:text-[var(--color-text-secondary)]"}`}>
                     {key === "lines" ? "Size" : key === "name" ? "Name" : "Instability"}
                   </button>
                 ))}
@@ -203,7 +203,7 @@ export function StructureView() {
             {/* Layer filter pills */}
             <div className="flex flex-wrap gap-2 mb-4">
               <button onClick={() => setFilterLayer(null)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${!filterLayer ? "bg-archlens-500/12 border-archlens-500/30 text-archlens-300" : "border-[#2a2a3a] text-[#5a5a70] hover:text-[#8888a0]"}`}>
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${!filterLayer ? "bg-archlens-500/12 border-archlens-500/30 text-archlens-300" : "border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
                 All ({model.modules.length})
               </button>
               {[...layerCounts.entries()].map(([layer, count]) => {
@@ -213,8 +213,8 @@ export function StructureView() {
                     className="rounded-lg px-3 py-1.5 text-xs font-medium border flex items-center gap-1.5 transition-colors"
                     style={{
                       backgroundColor: filterLayer === layer ? `${cfg.color}12` : "transparent",
-                      borderColor: filterLayer === layer ? `${cfg.color}30` : "#2a2a3a",
-                      color: filterLayer === layer ? cfg.color : "#5a5a70",
+                      borderColor: filterLayer === layer ? `${cfg.color}30` : "var(--color-border-default)",
+                      color: filterLayer === layer ? cfg.color : "var(--color-text-muted)",
                     }}>
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.color }} />
                     {cfg.label} ({count})
@@ -254,14 +254,14 @@ export function StructureView() {
                     <div className="px-4 py-3 bg-surface">
                       {/* Stats row */}
                       <div className="grid grid-cols-3 gap-3 text-center">
-                        <div><Files className="h-3 w-3 text-[#5a5a70] mx-auto mb-0.5" /><div className="text-lg font-bold text-[#e4e4ed]">{mod.fileCount}</div><div className="text-[9px] text-[#5a5a70] uppercase">{t("modules.files")}</div></div>
-                        <div><Code2 className="h-3 w-3 text-[#5a5a70] mx-auto mb-0.5" /><div className="text-lg font-bold text-[#e4e4ed]">{mod.symbols.length}</div><div className="text-[9px] text-[#5a5a70] uppercase">{t("modules.symbols")}</div></div>
-                        <div><FileCode className="h-3 w-3 text-[#5a5a70] mx-auto mb-0.5" /><div className="text-lg font-bold text-[#e4e4ed]">{mod.lineCount.toLocaleString()}</div><div className="text-[9px] text-[#5a5a70] uppercase">{t("modules.lines")}</div></div>
+                        <div><Files className="h-3 w-3 text-[var(--color-text-muted)] mx-auto mb-0.5" /><div className="text-lg font-bold text-[var(--color-text-primary)]">{mod.fileCount}</div><div className="text-[9px] text-[var(--color-text-muted)] uppercase">{t("modules.files")}</div></div>
+                        <div><Code2 className="h-3 w-3 text-[var(--color-text-muted)] mx-auto mb-0.5" /><div className="text-lg font-bold text-[var(--color-text-primary)]">{mod.symbols.length}</div><div className="text-[9px] text-[var(--color-text-muted)] uppercase">{t("modules.symbols")}</div></div>
+                        <div><FileCode className="h-3 w-3 text-[var(--color-text-muted)] mx-auto mb-0.5" /><div className="text-lg font-bold text-[var(--color-text-primary)]">{mod.lineCount.toLocaleString()}</div><div className="text-[9px] text-[var(--color-text-muted)] uppercase">{t("modules.lines")}</div></div>
                       </div>
 
                       {/* Dependencies info */}
-                      <div className="mt-2.5 flex items-center justify-between text-[10px] text-[#8888a0]">
-                        <span>Depends on <span className="text-[#e4e4ed] font-semibold">{ce}</span> · Depended by <span className="text-[#e4e4ed] font-semibold">{ca}</span></span>
+                      <div className="mt-2.5 flex items-center justify-between text-[10px] text-[var(--color-text-secondary)]">
+                        <span>Depends on <span className="text-[var(--color-text-primary)] font-semibold">{ce}</span> · Depended by <span className="text-[var(--color-text-primary)] font-semibold">{ca}</span></span>
                         <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold" style={{ backgroundColor: `${instColor}18`, color: instColor }}>
                           I={instability.toFixed(2)}
                         </span>
@@ -272,8 +272,8 @@ export function StructureView() {
                         <div className="h-full rounded-full" style={{ width: `${barWidth}%`, backgroundColor: cfg.color }} />
                       </div>
                       <div className="flex justify-between mt-1">
-                        <span className="text-[9px] font-mono text-[#5a5a70]">{mod.language}</span>
-                        <span className="text-[9px] text-[#5a5a70]">{barWidth.toFixed(0)}%</span>
+                        <span className="text-[9px] font-mono text-[var(--color-text-muted)]">{mod.language}</span>
+                        <span className="text-[9px] text-[var(--color-text-muted)]">{barWidth.toFixed(0)}%</span>
                       </div>
                     </div>
                   </div>
@@ -282,7 +282,7 @@ export function StructureView() {
             </div>
 
             {filteredModules.length === 0 && (
-              <div className="text-center text-[#5a5a70] py-12 text-sm">No modules match your search.</div>
+              <div className="text-center text-[var(--color-text-muted)] py-12 text-sm">No modules match your search.</div>
             )}
           </div>
         )}
@@ -290,13 +290,13 @@ export function StructureView() {
         {tab === "deps" && (
           <div className="flex flex-col h-full">
             {/* Stats bar + edge type filters */}
-            <div className="px-6 py-3 border-b border-[#2a2a3a] flex items-center gap-4 flex-wrap">
+            <div className="px-6 py-3 border-b border-[var(--color-border-default)] flex items-center gap-4 flex-wrap">
               {/* Stats */}
-              <div className="flex items-center gap-3 text-xs text-[#8888a0]">
-                <span><span className="text-[#e4e4ed] font-semibold">{model.modules.length}</span> modules</span>
-                <span className="text-[#2a2a3a]">·</span>
-                <span><span className="text-[#e4e4ed] font-semibold">{filteredDepEdges.length}</span> edges</span>
-                <span className="text-[#2a2a3a]">·</span>
+              <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
+                <span><span className="text-[var(--color-text-primary)] font-semibold">{model.modules.length}</span> modules</span>
+                <span className="text-[var(--color-border-default)]">·</span>
+                <span><span className="text-[var(--color-text-primary)] font-semibold">{filteredDepEdges.length}</span> edges</span>
+                <span className="text-[var(--color-border-default)]">·</span>
                 <span className="flex items-center gap-1">
                   {layerViolations.length > 0 ? (
                     <><AlertTriangle className="h-3 w-3 text-red-400" /><span className="text-red-400 font-semibold">{layerViolations.length} layer violation{layerViolations.length !== 1 ? "s" : ""}</span></>
@@ -307,7 +307,7 @@ export function StructureView() {
               </div>
 
               <div className="ml-auto flex items-center gap-2">
-                <span className="text-[10px] text-[#5a5a70] uppercase font-semibold">Edge types:</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">Edge types:</span>
                 {(["imports", "calls", "extends", "implements"] as EdgeTypeFilter[]).map((type) => {
                   const isPresent = presentEdgeTypes.includes(type);
                   const isActive = edgeTypeFilters.has(type);
@@ -320,7 +320,7 @@ export function StructureView() {
                         disabled={!isPresent}
                         className="accent-archlens-400 h-3 w-3"
                       />
-                      <span className={isActive ? "text-[#e4e4ed]" : "text-[#5a5a70]"}>{type}</span>
+                      <span className={isActive ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}>{type}</span>
                     </label>
                   );
                 })}

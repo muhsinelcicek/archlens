@@ -157,16 +157,16 @@ export function ApiStackView() {
   return (
     <div className="flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex border-b border-[#2a2a3a] px-6 pt-4">
+      <div className="flex border-b border-[var(--color-border-default)] px-6 pt-4">
         <button
           onClick={() => setTab("endpoints")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold ${tab === "endpoints" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70]"}`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold ${tab === "endpoints" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)]"}`}
         >
           <Globe className="h-3.5 w-3.5" /> Endpoints ({endpoints.length})
         </button>
         <button
           onClick={() => setTab("techstack")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold ${tab === "techstack" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70]"}`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold ${tab === "techstack" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)]"}`}
         >
           <Cpu className="h-3.5 w-3.5" /> Tech Stack ({techEntries.length})
         </button>
@@ -180,7 +180,7 @@ export function ApiStackView() {
             <div className="flex items-end justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold">{t("nav.api_map")}</h2>
-                <p className="text-xs text-[#5a5a70]">
+                <p className="text-xs text-[var(--color-text-muted)]">
                   {endpoints.length} endpoints across {moduleGroups.size} modules
                 </p>
               </div>
@@ -192,7 +192,7 @@ export function ApiStackView() {
                       key={method}
                       className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-mono font-bold ${methodStyle[method] || ""}`}
                     >
-                      {method} <span className="text-[#5a5a70]">{count}</span>
+                      {method} <span className="text-[var(--color-text-muted)]">{count}</span>
                     </span>
                   ))}
               </div>
@@ -200,13 +200,13 @@ export function ApiStackView() {
 
             {/* Search */}
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5a5a70]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search endpoints, handlers, files..."
-                className="w-full rounded-lg border border-[#2a2a3a] bg-deep py-2.5 pl-10 pr-4 text-sm text-[#e4e4ed] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/30"
+                className="w-full rounded-lg border border-[var(--color-border-default)] bg-deep py-2.5 pl-10 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:border-archlens-500/30"
               />
             </div>
 
@@ -215,31 +215,31 @@ export function ApiStackView() {
               {sortedGroups.map(([groupName, { module: mod, endpoints: eps }]) => {
                 const isCollapsed = collapsedGroups.has(groupName);
                 return (
-                  <div key={groupName} className="rounded-xl border border-[#2a2a3a] overflow-hidden">
+                  <div key={groupName} className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
                     {/* Group header */}
                     <button
                       onClick={() => toggleGroup(groupName)}
                       className="w-full flex items-center gap-3 px-4 py-3 bg-surface hover:bg-hover transition-colors text-left"
                     >
                       {isCollapsed ? (
-                        <ChevronRight className="h-4 w-4 text-[#5a5a70] flex-shrink-0" />
+                        <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-[#5a5a70] flex-shrink-0" />
+                        <ChevronDown className="h-4 w-4 text-[var(--color-text-muted)] flex-shrink-0" />
                       )}
-                      <span className="font-semibold text-sm text-[#e4e4ed]">{groupName}</span>
+                      <span className="font-semibold text-sm text-[var(--color-text-primary)]">{groupName}</span>
                       {mod?.layer && (
                         <span
-                          className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${layerColors[mod.layer.toLowerCase()] || "bg-[#2a2a3a] text-[#8888a0] border-[#3a3a4a]"}`}
+                          className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${layerColors[mod.layer.toLowerCase()] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[#3a3a4a]"}`}
                         >
                           {mod.layer}
                         </span>
                       )}
-                      <span className="ml-auto text-xs text-[#5a5a70]">{eps.length} endpoints</span>
+                      <span className="ml-auto text-xs text-[var(--color-text-muted)]">{eps.length} endpoints</span>
                     </button>
 
                     {/* Endpoint rows */}
                     {!isCollapsed && (
-                      <div className="divide-y divide-[#1e1e2a]">
+                      <div className="divide-y divide-[var(--color-border-subtle)]">
                         {eps.map((ep, i) => {
                           const handlerName = extractHandlerName(ep);
                           const fileName = extractFileName(ep.filePath);
@@ -257,19 +257,19 @@ export function ApiStackView() {
                               </span>
 
                               {/* Path */}
-                              <span className="font-mono text-sm text-[#e4e4ed] flex-1 min-w-0 truncate">
+                              <span className="font-mono text-sm text-[var(--color-text-primary)] flex-1 min-w-0 truncate">
                                 {ep.path}
                               </span>
 
                               {/* Handler name */}
                               {handlerName && (
-                                <span className="text-xs text-[#8888a0] font-mono flex-shrink-0 hidden sm:inline">
+                                <span className="text-xs text-[var(--color-text-secondary)] font-mono flex-shrink-0 hidden sm:inline">
                                   {handlerName}
                                 </span>
                               )}
 
                               {/* File location - always visible */}
-                              <span className="text-xs text-[#5a5a70] font-mono flex-shrink-0 flex items-center gap-1">
+                              <span className="text-xs text-[var(--color-text-muted)] font-mono flex-shrink-0 flex items-center gap-1">
                                 {fileName}:{ep.line}
                                 <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </span>
@@ -283,7 +283,7 @@ export function ApiStackView() {
               })}
 
               {sortedGroups.length === 0 && (
-                <div className="text-center py-12 text-[#5a5a70] text-sm">No endpoints match your search.</div>
+                <div className="text-center py-12 text-[var(--color-text-muted)] text-sm">No endpoints match your search.</div>
               )}
             </div>
           </div>
@@ -302,20 +302,20 @@ export function ApiStackView() {
                 return (
                   <div
                     key={category}
-                    className="rounded-xl border border-[#2a2a3a] bg-surface p-3"
+                    className="rounded-xl border border-[var(--color-border-default)] bg-surface p-3"
                   >
                     <div className="flex items-center gap-2 mb-1.5">
                       <span
-                        className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[category] || "bg-[#2a2a3a] text-[#8888a0] border-[#3a3a4a]"}`}
+                        className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[category] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[#3a3a4a]"}`}
                       >
                         {category}
                       </span>
-                      <span className="text-xs text-[#5a5a70] ml-auto">{items.length}</span>
+                      <span className="text-xs text-[var(--color-text-muted)] ml-auto">{items.length}</span>
                     </div>
-                    <p className="text-xs text-[#8888a0] leading-relaxed">
+                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
                       {topItems.join(", ")}
                       {remaining > 0 && (
-                        <span className="text-[#5a5a70]"> +{remaining} more</span>
+                        <span className="text-[var(--color-text-muted)]"> +{remaining} more</span>
                       )}
                     </p>
                   </div>
@@ -327,13 +327,13 @@ export function ApiStackView() {
             <div className="flex items-center gap-2 mb-4">
               <button
                 onClick={() => setTechViewMode("radar")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${techViewMode === "radar" ? "bg-archlens-500/20 text-archlens-300 border border-archlens-500/30" : "text-[#5a5a70] border border-[#2a2a3a] hover:text-[#8888a0]"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${techViewMode === "radar" ? "bg-archlens-500/20 text-archlens-300 border border-archlens-500/30" : "text-[var(--color-text-muted)] border border-[var(--color-border-default)] hover:text-[var(--color-text-secondary)]"}`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" /> Radar
               </button>
               <button
                 onClick={() => setTechViewMode("table")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${techViewMode === "table" ? "bg-archlens-500/20 text-archlens-300 border border-archlens-500/30" : "text-[#5a5a70] border border-[#2a2a3a] hover:text-[#8888a0]"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${techViewMode === "table" ? "bg-archlens-500/20 text-archlens-300 border border-archlens-500/30" : "text-[var(--color-text-muted)] border border-[var(--color-border-default)] hover:text-[var(--color-text-secondary)]"}`}
               >
                 <List className="h-3.5 w-3.5" /> Table
               </button>
@@ -346,12 +346,12 @@ export function ApiStackView() {
 
             {/* Table view */}
             {techViewMode === "table" && (
-              <div className="rounded-xl border border-[#2a2a3a] overflow-hidden">
+              <div className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_100px_120px_1fr] gap-2 px-4 py-2.5 bg-surface text-[10px] font-bold uppercase tracking-wider text-[#5a5a70]">
+                <div className="grid grid-cols-[1fr_100px_120px_1fr] gap-2 px-4 py-2.5 bg-surface text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
                   <button
                     onClick={() => setTechSortBy("name")}
-                    className="flex items-center gap-1 hover:text-[#8888a0] transition-colors text-left"
+                    className="flex items-center gap-1 hover:text-[var(--color-text-secondary)] transition-colors text-left"
                   >
                     Name
                     {techSortBy === "name" && <ArrowUpDown className="h-3 w-3" />}
@@ -359,7 +359,7 @@ export function ApiStackView() {
                   <span>Version</span>
                   <button
                     onClick={() => setTechSortBy("category")}
-                    className="flex items-center gap-1 hover:text-[#8888a0] transition-colors text-left"
+                    className="flex items-center gap-1 hover:text-[var(--color-text-secondary)] transition-colors text-left"
                   >
                     Category
                     {techSortBy === "category" && <ArrowUpDown className="h-3 w-3" />}
@@ -368,20 +368,20 @@ export function ApiStackView() {
                 </div>
 
                 {/* Table rows */}
-                <div className="divide-y divide-[#1e1e2a] max-h-[calc(100vh-400px)] overflow-auto">
+                <div className="divide-y divide-[var(--color-border-subtle)] max-h-[calc(100vh-400px)] overflow-auto">
                   {sortedTechEntries.map((entry, i) => (
                     <div
                       key={i}
                       className="grid grid-cols-[1fr_100px_120px_1fr] gap-2 px-4 py-2 hover:bg-hover transition-colors"
                     >
-                      <span className="text-sm text-[#e4e4ed] font-medium truncate">{entry.name}</span>
-                      <span className="text-xs text-[#8888a0] font-mono">{entry.version || "-"}</span>
+                      <span className="text-sm text-[var(--color-text-primary)] font-medium truncate">{entry.name}</span>
+                      <span className="text-xs text-[var(--color-text-secondary)] font-mono">{entry.version || "-"}</span>
                       <span
-                        className={`inline-flex self-center w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[entry.category] || "bg-[#2a2a3a] text-[#8888a0] border-[#3a3a4a]"}`}
+                        className={`inline-flex self-center w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[entry.category] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[#3a3a4a]"}`}
                       >
                         {entry.category}
                       </span>
-                      <span className="text-xs text-[#5a5a70] font-mono truncate">{entry.source}</span>
+                      <span className="text-xs text-[var(--color-text-muted)] font-mono truncate">{entry.source}</span>
                     </div>
                   ))}
                 </div>

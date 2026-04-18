@@ -189,7 +189,7 @@ function ScoreRing({ score, size = 80, label }: { score: number; size?: number; 
     <div className="flex flex-col items-center gap-1">
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1e1e2a" strokeWidth="5" />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-border-subtle)" strokeWidth="5" />
           <circle
             cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="5"
             strokeDasharray={`${dashLen} ${circumference}`} strokeLinecap="round"
@@ -200,7 +200,7 @@ function ScoreRing({ score, size = 80, label }: { score: number; size?: number; 
           <span className="text-lg font-bold" style={{ color }}>{score}</span>
         </div>
       </div>
-      {label && <span className="text-[10px] text-[#5a5a70] uppercase font-semibold">{label}</span>}
+      {label && <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{label}</span>}
     </div>
   );
 }
@@ -225,7 +225,7 @@ function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[#2a2a3a] bg-surface overflow-hidden transition-all duration-300">
+    <section className="rounded-2xl border border-[var(--color-border-default)] bg-surface overflow-hidden transition-all duration-300">
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-3 p-5 hover:bg-hover transition-colors text-left"
@@ -233,18 +233,18 @@ function CollapsibleSection({
         <div
           className="flex items-center justify-center h-8 w-8 rounded-lg text-xs font-bold flex-shrink-0"
           style={{
-            backgroundColor: visited ? "#34d39920" : "#2a2a3a",
-            color: visited ? "#34d399" : "#5a5a70",
+            backgroundColor: visited ? "#34d39920" : "var(--color-border-default)",
+            color: visited ? "#34d399" : "var(--color-text-muted)",
           }}
         >
           {visited ? <CheckCircle2 className="h-4 w-4" /> : stepNumber}
         </div>
         <Icon className="h-5 w-5 text-archlens-500 flex-shrink-0" />
-        <span className="text-base font-semibold text-[#e4e4ed] flex-1">{title}</span>
+        <span className="text-base font-semibold text-[var(--color-text-primary)] flex-1">{title}</span>
         {expanded ? (
-          <ChevronDown className="h-4 w-4 text-[#5a5a70] transition-transform" />
+          <ChevronDown className="h-4 w-4 text-[var(--color-text-muted)] transition-transform" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-[#5a5a70] transition-transform" />
+          <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)] transition-transform" />
         )}
       </button>
       <div
@@ -398,10 +398,10 @@ export function OnboardView() {
               <Rocket className="h-7 w-7 text-archlens-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold tracking-tight text-[#e4e4ed]">
+              <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
                 Welcome to {model.project.name}
               </h1>
-              <p className="text-[#8888a0] text-sm mt-1 leading-relaxed">
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1 leading-relaxed">
                 {summary}
               </p>
             </div>
@@ -427,8 +427,8 @@ export function OnboardView() {
                 style={{ borderColor: `${stat.color}25`, backgroundColor: `${stat.color}06` }}
               >
                 <stat.icon className="h-4 w-4 mx-auto mb-1.5" style={{ color: stat.color }} />
-                <div className="text-2xl font-bold text-[#e4e4ed]">{stat.value}</div>
-                <div className="text-[10px] text-[#5a5a70] uppercase tracking-wider">{stat.label}</div>
+                <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stat.value}</div>
+                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">{stat.label}</div>
                 {"sub" in stat && stat.sub && (
                   <div className="text-[9px] font-mono mt-0.5" style={{ color: stat.color }}>
                     {stat.sub}
@@ -454,13 +454,13 @@ export function OnboardView() {
                     className="h-2 rounded-full transition-all duration-500"
                     style={{
                       width: visited ? "28px" : "10px",
-                      backgroundColor: visited ? "#34d399" : "#2a2a3a",
+                      backgroundColor: visited ? "#34d399" : "var(--color-border-default)",
                     }}
                   />
                 </button>
               );
             })}
-            <span className="text-[10px] text-[#5a5a70] ml-2">
+            <span className="text-[10px] text-[var(--color-text-muted)] ml-2">
               {visitedCount}/{totalSectionsCount} explored
             </span>
           </div>
@@ -476,7 +476,7 @@ export function OnboardView() {
         onToggle={() => toggleSection(1)}
         visited={visitedSections.has(1)}
       >
-        <p className="text-sm text-[#8888a0] mb-5">
+        <p className="text-sm text-[var(--color-text-secondary)] mb-5">
           Architecture overview — modules arranged by layer from presentation down to infrastructure.
         </p>
 
@@ -520,7 +520,7 @@ export function OnboardView() {
                       </div>
                     </div>
                     <div className="text-right hidden sm:block">
-                      <div className="text-xs text-[#5a5a70] tabular-nums">
+                      <div className="text-xs text-[var(--color-text-muted)] tabular-nums">
                         {mods.reduce((a, m) => a + m.fileCount, 0)} files
                       </div>
                       <div className="text-[10px] text-[#3a3a4a] tabular-nums">
@@ -540,8 +540,8 @@ export function OnboardView() {
                         <span className="font-mono text-xs font-semibold" style={{ color }}>
                           {mod.name}/
                         </span>
-                        <div className="flex gap-2 text-[9px] text-[#5a5a70] mt-0.5">
-                          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 bg-[#1e1e2a]">
+                        <div className="flex gap-2 text-[9px] text-[var(--color-text-muted)] mt-0.5">
+                          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 bg-[var(--color-border-subtle)]">
                             {mod.language}
                           </span>
                           <span>{mod.fileCount} files</span>
@@ -554,13 +554,13 @@ export function OnboardView() {
                 {/* Arrow between layers */}
                 {nextLayer && (
                   <div className="flex flex-col items-center py-1">
-                    <div className="w-px h-2 bg-[#2a2a3a]" />
+                    <div className="w-px h-2 bg-[var(--color-border-default)]" />
                     {importCount > 0 && (
-                      <span className="text-[9px] text-[#5a5a70] bg-[#1e1e2a] border border-[#2a2a3a] rounded-full px-2 py-0.5 my-0.5">
+                      <span className="text-[9px] text-[var(--color-text-muted)] bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] rounded-full px-2 py-0.5 my-0.5">
                         {importCount} imports
                       </span>
                     )}
-                    <div className="w-px h-2 bg-[#2a2a3a]" />
+                    <div className="w-px h-2 bg-[var(--color-border-default)]" />
                   </div>
                 )}
               </div>
@@ -578,7 +578,7 @@ export function OnboardView() {
         onToggle={() => toggleSection(2)}
         visited={visitedSections.has(2)}
       >
-        <p className="text-sm text-[#8888a0] mb-5">
+        <p className="text-sm text-[var(--color-text-secondary)] mb-5">
           Architecture layers as a horizontal swimlane — see where the code lives.
         </p>
 
@@ -604,11 +604,11 @@ export function OnboardView() {
                   <span className="font-semibold capitalize text-xs" style={{ color }}>
                     {layer}
                   </span>
-                  <span className="text-[9px] text-[#5a5a70] mt-0.5">
+                  <span className="text-[9px] text-[var(--color-text-muted)] mt-0.5">
                     {totalFiles} files / {totalLines.toLocaleString()} lines
                   </span>
                   {/* Percentage bar */}
-                  <div className="w-full h-1 rounded-full bg-[#1e1e2a] mt-2 overflow-hidden">
+                  <div className="w-full h-1 rounded-full bg-[var(--color-border-subtle)] mt-2 overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{ width: `${pct}%`, backgroundColor: color }}
@@ -631,7 +631,7 @@ export function OnboardView() {
                       <span className="font-mono text-[11px] font-semibold block" style={{ color }}>
                         {mod.name}/
                       </span>
-                      <span className="text-[9px] text-[#5a5a70]">
+                      <span className="text-[9px] text-[var(--color-text-muted)]">
                         {mod.fileCount} files
                       </span>
                     </button>
@@ -655,10 +655,10 @@ export function OnboardView() {
         visited={visitedSections.has(3)}
       >
         {topProcesses.length === 0 ? (
-          <p className="text-sm text-[#5a5a70]">No business processes detected in this codebase.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">No business processes detected in this codebase.</p>
         ) : (
           <>
-            <p className="text-sm text-[#8888a0] mb-5">
+            <p className="text-sm text-[var(--color-text-secondary)] mb-5">
               Top {topProcesses.length} most complex business flows — click any step to explore.
             </p>
 
@@ -681,18 +681,18 @@ export function OnboardView() {
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-1">
                       <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                      <h4 className="font-semibold text-sm text-[#e4e4ed]">{proc.name}</h4>
+                      <h4 className="font-semibold text-sm text-[var(--color-text-primary)]">{proc.name}</h4>
                       <span
                         className="text-[9px] rounded-full px-2 py-0.5 font-medium"
                         style={{ backgroundColor: `${color}15`, color }}
                       >
                         {proc.category}
                       </span>
-                      <span className="text-[9px] text-[#5a5a70] ml-auto">
+                      <span className="text-[9px] text-[var(--color-text-muted)] ml-auto">
                         {proc.steps.length} steps
                       </span>
                     </div>
-                    <p className="text-xs text-[#5a5a70] mb-4 ml-5">{proc.description}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mb-4 ml-5">{proc.description}</p>
 
                     {/* Pipeline */}
                     <div
@@ -724,7 +724,7 @@ export function OnboardView() {
 
                         return (
                           <div key={i} className="flex items-center gap-1.5 flex-shrink-0">
-                            {i > 0 && <ArrowRight className="h-3 w-3 text-[#2a2a3a]" />}
+                            {i > 0 && <ArrowRight className="h-3 w-3 text-[var(--color-border-default)]" />}
                             <div
                               className="rounded-md border px-2.5 py-1 text-[10px] font-medium whitespace-nowrap transition-all hover:scale-105"
                               style={{ borderColor: `${stepColor}30`, color: stepColor, backgroundColor: `${stepColor}08` }}
@@ -735,7 +735,7 @@ export function OnboardView() {
                         );
                       })}
                       {proc.steps.length > 6 && (
-                        <span className="text-[9px] text-[#5a5a70] flex-shrink-0 ml-1">
+                        <span className="text-[9px] text-[var(--color-text-muted)] flex-shrink-0 ml-1">
                           +{proc.steps.length - 6} more
                         </span>
                       )}
@@ -772,23 +772,23 @@ export function OnboardView() {
         {healthLoading ? (
           <div className="flex flex-col items-center justify-center h-36 gap-3">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-archlens-400 border-t-transparent" />
-            <p className="text-sm text-[#5a5a70]">Loading health data...</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Loading health data...</p>
           </div>
         ) : healthError ? (
           <div className="flex flex-col items-center justify-center h-36 gap-2">
             <AlertTriangle className="h-6 w-6 text-amber-500" />
-            <p className="text-sm text-[#5a5a70]">{healthError}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{healthError}</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Quality Score */}
               <div
-                className="rounded-xl border border-[#2a2a3a] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={qualityScore} size={72} />
-                <span className="text-[10px] text-[#5a5a70] uppercase font-semibold mt-2">Quality</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mt-2">Quality</span>
                 <span className="text-[9px] mt-0.5" style={{ color: scoreColor(qualityScore) }}>
                   {quality?.totalIssues ?? 0} issues
                 </span>
@@ -796,11 +796,11 @@ export function OnboardView() {
 
               {/* Coupling */}
               <div
-                className="rounded-xl border border-[#2a2a3a] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={couplingHealth} size={72} />
-                <span className="text-[10px] text-[#5a5a70] uppercase font-semibold mt-2">Coupling</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mt-2">Coupling</span>
                 <span className="text-[9px] mt-0.5" style={{ color: scoreColor(couplingHealth) }}>
                   {coupling?.overallHealth?.avgInstability
                     ? `${(coupling.overallHealth.avgInstability * 100).toFixed(0)}% instability`
@@ -810,11 +810,11 @@ export function OnboardView() {
 
               {/* Security */}
               <div
-                className="rounded-xl border border-[#2a2a3a] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={securityScore} size={72} />
-                <span className="text-[10px] text-[#5a5a70] uppercase font-semibold mt-2">Security</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mt-2">Security</span>
                 <span className="text-[9px] mt-0.5" style={{ color: scoreColor(securityScore) }}>
                   {security?.totalIssues
                     ? `${security.totalIssues} vulnerabilit${security.totalIssues === 1 ? "y" : "ies"}`
@@ -824,11 +824,11 @@ export function OnboardView() {
 
               {/* Architecture Patterns */}
               <div
-                className="rounded-xl border border-[#2a2a3a] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={patternCompliance} size={72} />
-                <span className="text-[10px] text-[#5a5a70] uppercase font-semibold mt-2">Architecture</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold mt-2">Architecture</span>
                 <span className="text-[9px] mt-0.5" style={{ color: scoreColor(patternCompliance) }}>
                   {quality?.architecturePatterns
                     ? `${quality.architecturePatterns.filter((p) => p.detected).length} patterns`
@@ -852,7 +852,7 @@ export function OnboardView() {
             5
           </div>
           <Compass className="h-5 w-5 text-archlens-500" />
-          <h2 className="text-base font-semibold text-[#e4e4ed]">Where to Go Next</h2>
+          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Where to Go Next</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -899,13 +899,13 @@ export function OnboardView() {
                 <card.icon className="h-5 w-5" style={{ color: card.color }} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm text-[#e4e4ed] group-hover:text-white transition-colors">
+                <h3 className="font-semibold text-sm text-[var(--color-text-primary)] group-hover:text-white transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-xs text-[#5a5a70] mt-0.5 truncate">{card.description}</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">{card.description}</p>
               </div>
               <ArrowRight
-                className="h-4 w-4 text-[#3a3a4a] group-hover:text-[#8888a0] transition-all group-hover:translate-x-1 flex-shrink-0"
+                className="h-4 w-4 text-[#3a3a4a] group-hover:text-[var(--color-text-secondary)] transition-all group-hover:translate-x-1 flex-shrink-0"
               />
             </button>
           ))}

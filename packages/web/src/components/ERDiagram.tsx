@@ -38,7 +38,7 @@ function getTypeColor(type: string): string {
   if (t.includes("date") || t.includes("time")) return "#f472b6";
   if (t.includes("guid") || t.includes("uuid")) return "#06b6d4";
   if (t.includes("collection") || t.includes("list") || t.includes("enumerable") || t.includes("readonly")) return "#f97316";
-  return "#8888a0";
+  return "var(--color-text-secondary)";
 }
 
 function detectRelationships(entities: Entity[]): Relationship[] {
@@ -120,13 +120,13 @@ export function ERDiagram({ entities, className = "" }: ERDiagramProps) {
       const fy = fp.y + HEADER_H + Math.max(ci, 0) * ROW_H + ROW_H / 2;
       const fx = fp.x + fp.width, tx = tp.x, ty = tp.y + HEADER_H / 2;
 
-      ctx.strokeStyle = hi ? "#7c3aed" : "#2a2a3a"; ctx.lineWidth = hi ? 2.5 : 1.5;
+      ctx.strokeStyle = hi ? "#7c3aed" : "var(--color-border-default)"; ctx.lineWidth = hi ? 2.5 : 1.5;
       ctx.beginPath(); ctx.moveTo(fx, fy);
       const cx = (fx + tx) / 2;
       ctx.bezierCurveTo(cx + 40, fy, cx - 40, ty, tx, ty); ctx.stroke();
 
       // Arrow
-      ctx.fillStyle = hi ? "#7c3aed" : "#2a2a3a";
+      ctx.fillStyle = hi ? "#7c3aed" : "var(--color-border-default)";
       ctx.beginPath();
       const a = Math.atan2(ty - fy, tx - fx);
       ctx.moveTo(tx, ty); ctx.lineTo(tx - 8 * Math.cos(a - 0.4), ty - 8 * Math.sin(a - 0.4));
@@ -163,12 +163,12 @@ export function ERDiagram({ entities, className = "" }: ERDiagramProps) {
       ctx.beginPath(); ctx.moveTo(p.x, p.y + HEADER_H); ctx.lineTo(p.x + p.width, p.y + HEADER_H); ctx.stroke();
 
       // Name
-      ctx.fillStyle = "#e4e4ed"; ctx.font = "bold 14px 'Outfit', sans-serif";
+      ctx.fillStyle = "var(--color-text-primary)"; ctx.font = "bold 14px 'Outfit', sans-serif";
       ctx.fillText(entity.name, p.x + 14, p.y + HEADER_H / 2 + 5);
 
       // Badge
       if (entity.tableName) {
-        ctx.font = "10px 'JetBrains Mono'"; ctx.fillStyle = "#5a5a70";
+        ctx.font = "10px 'JetBrains Mono'"; ctx.fillStyle = "var(--color-text-muted)";
         const tw = ctx.measureText(entity.tableName).width;
         ctx.fillText(entity.tableName, p.x + p.width - tw - 12, p.y + HEADER_H / 2 + 4);
       }
@@ -193,7 +193,7 @@ export function ERDiagram({ entities, className = "" }: ERDiagramProps) {
 
         // Name
         ctx.font = `${col.primary ? "600" : "400"} 12px 'JetBrains Mono'`;
-        ctx.fillStyle = col.primary ? "#fbbf24" : "#e4e4ed";
+        ctx.fillStyle = col.primary ? "#fbbf24" : "var(--color-text-primary)";
         ctx.fillText(col.name, col.primary ? p.x + 28 : p.x + 16, ty);
 
         // Type pill
@@ -206,7 +206,7 @@ export function ERDiagram({ entities, className = "" }: ERDiagramProps) {
         ctx.fillStyle = tc; ctx.fillText(tt, p.x + p.width - ttw - 16, ty);
       });
 
-      if (!entity.columns.length) { ctx.fillStyle = "#5a5a70"; ctx.font = "italic 11px 'Outfit'"; ctx.fillText("No columns", p.x + 16, p.y + HEADER_H + 20); }
+      if (!entity.columns.length) { ctx.fillStyle = "var(--color-text-muted)"; ctx.font = "italic 11px 'Outfit'"; ctx.fillText("No columns", p.x + 16, p.y + HEADER_H + 20); }
     }
 
     ctx.restore();
@@ -218,7 +218,7 @@ export function ERDiagram({ entities, className = "" }: ERDiagramProps) {
   const cp = (e: React.MouseEvent) => { const r = canvasRef.current!.getBoundingClientRect(); return { x: (e.clientX - r.left) / zoom - pan.x, y: (e.clientY - r.top) / zoom - pan.y }; };
   const findAt = (cx: number, cy: number) => { for (const e of entities) { const p = positions.get(e.name); if (p && cx >= p.x && cx <= p.x + p.width && cy >= p.y && cy <= p.y + p.height) return e.name; } return null; };
 
-  if (!entities.length) return <div className={`flex items-center justify-center h-full text-[#5a5a70] ${className}`}>No database entities detected</div>;
+  if (!entities.length) return <div className={`flex items-center justify-center h-full text-[var(--color-text-muted)] ${className}`}>No database entities detected</div>;
 
   return (
     <div ref={containerRef} className={`relative overflow-hidden ${className}`}>

@@ -65,7 +65,7 @@ export function TechRadar({ entries, className = "" }: TechRadarProps) {
       g.append("text")
         .attr("x", 4)
         .attr("y", -ring.radius + 16)
-        .attr("fill", "#3f3f46")
+        .attr("fill", "var(--color-dim)")
         .attr("font-size", "11px")
         .attr("font-weight", "600")
         .attr("font-family", "'Inter', sans-serif")
@@ -166,20 +166,20 @@ export function TechRadar({ entries, className = "" }: TechRadarProps) {
         >
           <div className="font-mono text-sm text-white font-semibold">{tooltipData.name}</div>
           {tooltipData.version && (
-            <div className="text-xs text-[#8888a0]">v{tooltipData.version}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">v{tooltipData.version}</div>
           )}
-          <div className="text-xs text-[#5a5a70] mt-1">
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">
             {tooltipData.category} / {tooltipData.source}
           </div>
         </div>
       )}
 
       {/* Category Legend */}
-      <div className="absolute bottom-4 left-4 bg-surface/90 backdrop-blur-sm border border-[#2a2a3a] rounded-lg p-3 flex flex-wrap gap-3">
+      <div className="absolute bottom-4 left-4 bg-surface/90 backdrop-blur-sm border border-[var(--color-border-default)] rounded-lg p-3 flex flex-wrap gap-3">
         {Object.entries(categoryConfig).map(([cat, config]) => (
           <div key={cat} className="flex items-center gap-1.5 text-xs">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: config.color }} />
-            <span className="text-[#8888a0] capitalize">{cat}</span>
+            <span className="text-[var(--color-text-secondary)] capitalize">{cat}</span>
           </div>
         ))}
       </div>

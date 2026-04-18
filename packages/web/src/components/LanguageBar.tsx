@@ -48,7 +48,7 @@ export function LanguageBar({ languages, totalSymbols }: LanguageBarProps) {
               {hoveredLang === lang && (
                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-elevated px-2 py-1 text-xs shadow-lg border border-zinc-700 z-50">
                   <span className="font-semibold" style={{ color: config.color }}>{config.label}</span>
-                  <span className="text-[#8888a0] ml-1.5">{count} symbols ({pct.toFixed(1)}%)</span>
+                  <span className="text-[var(--color-text-secondary)] ml-1.5">{count} symbols ({pct.toFixed(1)}%)</span>
                 </div>
               )}
             </div>
@@ -70,8 +70,8 @@ export function LanguageBar({ languages, totalSymbols }: LanguageBarProps) {
               onMouseLeave={() => setHoveredLang(null)}
             >
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} />
-              <span className="text-[#8888a0] font-medium">{config.label}</span>
-              <span className="text-[#5a5a70] text-xs">{pct}%</span>
+              <span className="text-[var(--color-text-secondary)] font-medium">{config.label}</span>
+              <span className="text-[var(--color-text-muted)] text-xs">{pct}%</span>
             </div>
           );
         })}

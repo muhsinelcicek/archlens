@@ -179,7 +179,7 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
     return (
       <div className="h-full flex flex-col">
         {/* Module Header */}
-        <div className="p-4 border-b border-[#1e1e2a]">
+        <div className="p-4 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}60` }} />
             <h3 className="font-mono font-bold text-lg" style={{ color }}>{mod.name}/</h3>
@@ -195,28 +195,28 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
               { v: instability, l: "instab.", c: Number(instability) > 0.7 ? "#f87171" : Number(instability) > 0.4 ? "#fbbf24" : "#34d399" },
             ].map((m) => (
               <div key={m.l} className="bg-elevated rounded-lg p-2 text-center">
-                <div className="text-sm font-bold" style={{ color: m.c || "#e4e4ed" }}>{m.v}</div>
-                <div className="text-[8px] text-[#5a5a70] uppercase">{m.l}</div>
+                <div className="text-sm font-bold" style={{ color: m.c || "var(--color-text-primary)" }}>{m.v}</div>
+                <div className="text-[8px] text-[var(--color-text-muted)] uppercase">{m.l}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Dependencies */}
-        <div className="px-4 py-3 border-b border-[#1e1e2a]">
+        <div className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
           <div className="flex gap-4">
             <div className="flex-1">
-              <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" /> Depends On ({dependsOn.size})</div>
-              {dependsOn.size === 0 ? <span className="text-[10px] text-[#5a5a70]">none</span> :
+              <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] mb-1 flex items-center gap-1"><ArrowUpRight className="h-3 w-3" /> Depends On ({dependsOn.size})</div>
+              {dependsOn.size === 0 ? <span className="text-[10px] text-[var(--color-text-muted)]">none</span> :
                 [...dependsOn.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => (
-                  <div key={n} className="text-[10px] font-mono text-[#8888a0]">→ {n} <span className="text-[#5a5a70]">×{c}</span></div>
+                  <div key={n} className="text-[10px] font-mono text-[var(--color-text-secondary)]">→ {n} <span className="text-[var(--color-text-muted)]">×{c}</span></div>
                 ))}
             </div>
             <div className="flex-1">
-              <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1">Depended By ({dependedBy.size})</div>
-              {dependedBy.size === 0 ? <span className="text-[10px] text-[#5a5a70]">none</span> :
+              <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] mb-1">Depended By ({dependedBy.size})</div>
+              {dependedBy.size === 0 ? <span className="text-[10px] text-[var(--color-text-muted)]">none</span> :
                 [...dependedBy.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => (
-                  <div key={n} className="text-[10px] font-mono text-[#8888a0]">← {n} <span className="text-[#5a5a70]">×{c}</span></div>
+                  <div key={n} className="text-[10px] font-mono text-[var(--color-text-secondary)]">← {n} <span className="text-[var(--color-text-muted)]">×{c}</span></div>
                 ))}
             </div>
           </div>
@@ -224,24 +224,24 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
 
         {/* API Endpoints */}
         {endpoints.length > 0 && (
-          <div className="px-4 py-2 border-b border-[#1e1e2a]">
-            <div className="text-[9px] uppercase font-semibold text-[#5a5a70] mb-1">API Endpoints ({endpoints.length})</div>
+          <div className="px-4 py-2 border-b border-[var(--color-border-subtle)]">
+            <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] mb-1">API Endpoints ({endpoints.length})</div>
             {endpoints.slice(0, 8).map((ep, i) => {
               const mc: Record<string, string> = { GET: "#60a5fa", POST: "#34d399", PUT: "#fbbf24", DELETE: "#f87171" };
-              return <div key={i} className="text-[10px] font-mono"><span style={{ color: mc[ep.method] || "#8888a0" }}>{ep.method}</span> <span className="text-[#8888a0]">{ep.path}</span></div>;
+              return <div key={i} className="text-[10px] font-mono"><span style={{ color: mc[ep.method] || "var(--color-text-secondary)" }}>{ep.method}</span> <span className="text-[var(--color-text-secondary)]">{ep.path}</span></div>;
             })}
           </div>
         )}
 
         {/* Files & Code Structure */}
         <div className="flex-1 overflow-y-auto px-2 py-2">
-          <div className="text-[9px] uppercase font-semibold text-[#5a5a70] px-2 mb-2">Code Structure ({fileSymbols.size} files)</div>
+          <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] px-2 mb-2">Code Structure ({fileSymbols.size} files)</div>
           {[...fileSymbols.entries()].slice(0, 20).map(([fp, symbols]) => (
             <div key={fp} className="mb-2">
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-elevated/50">
-                <File className="h-3 w-3 text-[#5a5a70]" />
-                <span className="text-[10px] font-mono text-[#8888a0] truncate">{fp.split("/").pop()}</span>
-                <span className="ml-auto text-[9px] text-[#5a5a70]">{symbols.length}</span>
+                <File className="h-3 w-3 text-[var(--color-text-muted)]" />
+                <span className="text-[10px] font-mono text-[var(--color-text-secondary)] truncate">{fp.split("/").pop()}</span>
+                <span className="ml-auto text-[9px] text-[var(--color-text-muted)]">{symbols.length}</span>
               </div>
               <div className="ml-4 mt-0.5 space-y-0">
                 {symbols.sort((a, b) => a.line - b.line).slice(0, 15).map((sym) => {
@@ -256,9 +256,9 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
                   };
                   return (
                     <div key={sym.uid} className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-hover text-[10px] font-mono group">
-                      <span style={{ color: kindColors[sym.kind] || "#5a5a70" }}>{kindIcons[sym.kind] || <Code2 className="h-2.5 w-2.5" />}</span>
-                      <span className="text-[#8888a0] group-hover:text-[#e4e4ed] truncate">{sym.name}</span>
-                      <span className="ml-auto text-[8px] text-[#5a5a70]">L{sym.line}</span>
+                      <span style={{ color: kindColors[sym.kind] || "var(--color-text-muted)" }}>{kindIcons[sym.kind] || <Code2 className="h-2.5 w-2.5" />}</span>
+                      <span className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] truncate">{sym.name}</span>
+                      <span className="ml-auto text-[8px] text-[var(--color-text-muted)]">L{sym.line}</span>
                     </div>
                   );
                 })}
@@ -276,8 +276,8 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
   }
 
   return (
-    <div className="p-4 text-[#5a5a70] text-xs">
-      <h3 className="font-mono font-bold text-sm text-[#e4e4ed] mb-2">{selectedId.split("/").pop()}</h3>
+    <div className="p-4 text-[var(--color-text-muted)] text-xs">
+      <h3 className="font-mono font-bold text-sm text-[var(--color-text-primary)] mb-2">{selectedId.split("/").pop()}</h3>
       <p className="font-mono text-[10px]">{selectedId}</p>
     </div>
   );
@@ -318,7 +318,7 @@ function FileCodeViewer({ filePath, model }: { filePath: string; model: ArchMode
           // Convert tokens to HTML lines
           const lines = tokens.map((lineTokens) => {
             return lineTokens.map((token) => {
-              const color = token.color || "#8888a0";
+              const color = token.color || "var(--color-text-secondary)";
               const escaped = token.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
               return `<span style="color:${color}">${escaped}</span>`;
             }).join("");
@@ -359,41 +359,41 @@ function FileCodeViewer({ filePath, model }: { filePath: string; model: ArchMode
   return (
     <div className="h-full flex flex-col">
       {/* File Header */}
-      <div className="px-4 py-3 border-b border-[#1e1e2a] flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <FileCode className="h-4 w-4 flex-shrink-0" style={{ color: langColors[ext] || "#5a5a70" }} />
-            <h3 className="font-mono font-bold text-sm text-[#e4e4ed] truncate">{filePath.split("/").pop()}</h3>
+            <FileCode className="h-4 w-4 flex-shrink-0" style={{ color: langColors[ext] || "var(--color-text-muted)" }} />
+            <h3 className="font-mono font-bold text-sm text-[var(--color-text-primary)] truncate">{filePath.split("/").pop()}</h3>
           </div>
-          <p className="font-mono text-[9px] text-[#5a5a70] mt-0.5 truncate">{filePath}</p>
+          <p className="font-mono text-[9px] text-[var(--color-text-muted)] mt-0.5 truncate">{filePath}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${langColors[ext] || "#5a5a70"}20`, color: langColors[ext] || "#5a5a70" }}>
+          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${langColors[ext] || "var(--color-text-muted)"}20`, color: langColors[ext] || "var(--color-text-muted)" }}>
             {langNames[ext] || ext}
           </span>
-          {code && <span className="text-[9px] text-[#5a5a70]">{code.split("\n").length}L</span>}
+          {code && <span className="text-[9px] text-[var(--color-text-muted)]">{code.split("\n").length}L</span>}
         </div>
       </div>
 
       {/* Symbols bar */}
       {fileSymbols.length > 0 && (
-        <div className="px-3 py-2 border-b border-[#1e1e2a] flex flex-wrap gap-1">
+        <div className="px-3 py-2 border-b border-[var(--color-border-subtle)] flex flex-wrap gap-1">
           {fileSymbols.slice(0, 12).map((sym) => (
-            <span key={sym.uid} className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: `${kindColors[sym.kind] || "#5a5a70"}15`, color: kindColors[sym.kind] || "#5a5a70" }}>
+            <span key={sym.uid} className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: `${kindColors[sym.kind] || "var(--color-text-muted)"}15`, color: kindColors[sym.kind] || "var(--color-text-muted)" }}>
               {sym.name.split(".").pop()}
             </span>
           ))}
-          {fileSymbols.length > 12 && <span className="text-[9px] text-[#5a5a70]">+{fileSymbols.length - 12}</span>}
+          {fileSymbols.length > 12 && <span className="text-[9px] text-[var(--color-text-muted)]">+{fileSymbols.length - 12}</span>}
         </div>
       )}
 
       {/* Code */}
       <div className="flex-1 overflow-auto">
         {loading && (
-          <div className="flex items-center justify-center h-32 text-[#5a5a70] text-xs">Loading...</div>
+          <div className="flex items-center justify-center h-32 text-[var(--color-text-muted)] text-xs">Loading...</div>
         )}
         {error && (
-          <div className="p-4 text-[#5a5a70] text-xs">
+          <div className="p-4 text-[var(--color-text-muted)] text-xs">
             <p>Could not load file content</p>
             <p className="text-[9px] mt-1">Make sure the server has access to the source files</p>
           </div>
@@ -411,20 +411,20 @@ function FileCodeViewer({ filePath, model }: { filePath: string; model: ArchMode
                   className={`flex hover:bg-hover/30 ${hasSymbol ? "bg-archlens-500/5" : ""}`}
                 >
                   {/* Line number */}
-                  <div className="w-10 flex-shrink-0 text-right pr-3 select-none text-[#5a5a70] text-[10px]" style={{ lineHeight: "18px" }}>
+                  <div className="w-10 flex-shrink-0 text-right pr-3 select-none text-[var(--color-text-muted)] text-[10px]" style={{ lineHeight: "18px" }}>
                     {lineNum}
                   </div>
                   {/* Symbol marker */}
                   <div className="w-2 flex-shrink-0 flex items-center">
                     {hasSymbol && (
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: kindColors[sym!.kind] || "#5a5a70" }} title={`${sym!.kind}: ${sym!.name}`} />
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: kindColors[sym!.kind] || "var(--color-text-muted)" }} title={`${sym!.kind}: ${sym!.name}`} />
                     )}
                   </div>
                   {/* Code line */}
                   {highlightedHtml && highlightedHtml[i] ? (
                     <pre className="flex-1 overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }} dangerouslySetInnerHTML={{ __html: highlightedHtml[i] || " " }} />
                   ) : (
-                    <pre className="flex-1 text-[#8888a0] overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }}>
+                    <pre className="flex-1 text-[var(--color-text-secondary)] overflow-x-auto whitespace-pre" style={{ lineHeight: "18px", tabSize: 4 }}>
                       {line || " "}
                     </pre>
                   )}
@@ -576,12 +576,12 @@ export function ArchitectureView() {
           <div key={dirKey}>
             <button
               onClick={() => toggleDir(dirKey)}
-              className="w-full flex items-center gap-1 py-0.5 text-[10px] text-[#5a5a70] hover:text-[#8888a0] hover:bg-hover/50 rounded"
+              className="w-full flex items-center gap-1 py-0.5 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-hover/50 rounded"
               style={{ paddingLeft: `${depth * 14 + 4}px` }}
             >
               {isDirExpanded ? <ChevronDown className="h-2.5 w-2.5 flex-shrink-0" /> : <ChevronRight className="h-2.5 w-2.5 flex-shrink-0" />}
               <span className="font-mono truncate">{name}</span>
-              <span className="ml-auto text-[8px] text-[#5a5a70] pr-1">{fileCount}</span>
+              <span className="ml-auto text-[8px] text-[var(--color-text-muted)] pr-1">{fileCount}</span>
             </button>
             {isDirExpanded && renderFileTree(paths, dirKey, depth + 1)}
           </div>
@@ -595,10 +595,10 @@ export function ArchitectureView() {
           <button
             key={info.fullPath}
             onClick={() => setSelectedNode(info.fullPath)}
-            className={`w-full flex items-center gap-1 py-0.5 text-[10px] rounded ${isFileSelected ? "bg-amber-500/10 text-amber-300" : "text-[#5a5a70] hover:text-[#8888a0] hover:bg-hover/50"}`}
+            className={`w-full flex items-center gap-1 py-0.5 text-[10px] rounded ${isFileSelected ? "bg-amber-500/10 text-amber-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-hover/50"}`}
             style={{ paddingLeft: `${depth * 14 + 4}px` }}
           >
-            <FileCode className="h-2.5 w-2.5 flex-shrink-0" style={{ color: extColors[ext] || "#5a5a70" }} />
+            <FileCode className="h-2.5 w-2.5 flex-shrink-0" style={{ color: extColors[ext] || "var(--color-text-muted)" }} />
             <span className="font-mono truncate">{name}</span>
           </button>
         );
@@ -613,13 +613,13 @@ export function ArchitectureView() {
 
       <div className="flex flex-1 min-h-0">
       {/* ── LEFT: Smart Insights + File Tree ── */}
-      <aside className="w-64 border-r border-[#1e1e2a] bg-surface flex flex-col overflow-hidden">
+      <aside className="w-64 border-r border-[var(--color-border-subtle)] bg-surface flex flex-col overflow-hidden">
         {/* Tab switcher */}
-        <div className="flex border-b border-[#1e1e2a]">
-          <button onClick={() => setLeftTab("insights")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+        <div className="flex border-b border-[var(--color-border-subtle)]">
+          <button onClick={() => setLeftTab("insights")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
             <Zap className="h-3 w-3 inline mr-1" />Insights
           </button>
-          <button onClick={() => setLeftTab("files")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "files" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+          <button onClick={() => setLeftTab("files")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "files" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
             <FileCode className="h-3 w-3 inline mr-1" />Files
           </button>
         </div>
@@ -628,13 +628,13 @@ export function ArchitectureView() {
           <SmartInsights model={model} onModuleSelect={(name) => { setSelectedNode(name); graphRef.current?.selectNode(name); }} />
         ) : (
         <>
-        <div className="p-2 border-b border-[#1e1e2a]">
+        <div className="p-2 border-b border-[var(--color-border-subtle)]">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#5a5a70]" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[var(--color-text-muted)]" />
             <input
               type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search files..."
-              className="w-full rounded-md border border-[#2a2a3a] bg-deep py-1.5 pl-7 pr-2 text-[11px] text-[#8888a0] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/30"
+              className="w-full rounded-md border border-[var(--color-border-default)] bg-deep py-1.5 pl-7 pr-2 text-[11px] text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-muted)] outline-none focus:border-archlens-500/30"
             />
           </div>
         </div>
@@ -672,15 +672,15 @@ export function ArchitectureView() {
                     });
                   }}
                   onDoubleClick={() => drillDown(mod.name, mod.name, "module")}
-                  className={`w-full flex items-center gap-1 px-2 py-1 text-[11px] transition-all ${isModSelected ? "bg-amber-500/10 text-amber-300" : "text-[#8888a0] hover:bg-hover"}`}
+                  className={`w-full flex items-center gap-1 px-2 py-1 text-[11px] transition-all ${isModSelected ? "bg-amber-500/10 text-amber-300" : "text-[var(--color-text-secondary)] hover:bg-hover"}`}
                   style={isModSelected ? { borderLeft: `2px solid ${color}` } : { paddingLeft: "10px" }}
                 >
                   {isModExpanded
-                    ? <ChevronDown className="h-3 w-3 flex-shrink-0 text-[#5a5a70]" />
-                    : <ChevronRight className="h-3 w-3 flex-shrink-0 text-[#5a5a70]" />}
+                    ? <ChevronDown className="h-3 w-3 flex-shrink-0 text-[var(--color-text-muted)]" />
+                    : <ChevronRight className="h-3 w-3 flex-shrink-0 text-[var(--color-text-muted)]" />}
                   <Box className="h-3 w-3 flex-shrink-0" style={{ color }} />
                   <span className="font-mono font-medium truncate">{mod.name}</span>
-                  <span className="ml-auto text-[9px] text-[#5a5a70]">{mod.fileCount}</span>
+                  <span className="ml-auto text-[9px] text-[var(--color-text-muted)]">{mod.fileCount}</span>
                 </button>
 
                 {/* Expanded file tree — recursive */}
@@ -695,7 +695,7 @@ export function ArchitectureView() {
         </div>
 
         {/* Stats footer */}
-        <div className="px-3 py-2 border-t border-[#1e1e2a] text-[9px] text-[#5a5a70]">
+        <div className="px-3 py-2 border-t border-[var(--color-border-subtle)] text-[9px] text-[var(--color-text-muted)]">
           {model.modules.length} modules · {model.stats.files} files
         </div>
         </>
@@ -705,32 +705,32 @@ export function ArchitectureView() {
       {/* ── CENTER ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="px-4 py-2 border-b border-[#1e1e2a] flex items-center justify-between bg-surface/50">
+        <div className="px-4 py-2 border-b border-[var(--color-border-subtle)] flex items-center justify-between bg-surface/50">
           <div className="flex items-center gap-2">
             {breadcrumbs.length > 1 && (
-              <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-elevated text-[#5a5a70]"><ArrowLeft className="h-3.5 w-3.5" /></button>
+              <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-elevated text-[var(--color-text-muted)]"><ArrowLeft className="h-3.5 w-3.5" /></button>
             )}
             {breadcrumbs.map((c, i) => (
               <div key={i} className="flex items-center gap-1">
-                {i > 0 && <ChevronRight className="h-3 w-3 text-[#5a5a70]" />}
-                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/12 text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+                {i > 0 && <ChevronRight className="h-3 w-3 text-[var(--color-text-muted)]" />}
+                <button onClick={() => navigateTo(i)} className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${i === breadcrumbs.length - 1 ? "bg-archlens-500/12 text-archlens-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
                   {c.label}
                 </button>
               </div>
             ))}
-            <span className="text-[10px] text-[#5a5a70] ml-2">{graphData.nodes.length}n · {graphData.edges.length}e</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] ml-2">{graphData.nodes.length}n · {graphData.edges.length}e</span>
           </div>
 
           <button
             onClick={() => { setImpactMode(!impactMode); if (impactMode) { graphRef.current?.clearHighlight(); setImpactResult(null); } }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-glow-pulse" : "bg-elevated text-[#5a5a70] hover:text-[#8888a0] border border-[#2a2a3a]"}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-glow-pulse" : "bg-elevated text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"}`}
           >
             <Target className="h-3.5 w-3.5" />
             Impact
           </button>
           <button
             onClick={() => setShowQualityAlerts(!showQualityAlerts)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${showQualityAlerts ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-elevated text-[#5a5a70] hover:text-[#8888a0] border border-[#2a2a3a]"}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${showQualityAlerts ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-elevated text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"}`}
           >
             <AlertTriangle className="h-3.5 w-3.5" />
             Quality
@@ -754,12 +754,12 @@ export function ArchitectureView() {
 
         {/* Bottom Panel */}
         {currentLevel.level === "system" && (
-          <div className="border-t border-[#1e1e2a] bg-surface">
+          <div className="border-t border-[var(--color-border-subtle)] bg-surface">
             <div className="flex items-center gap-0.5 px-4 pt-1">
-              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-elevated text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+              <button onClick={() => setBottomTab("trace")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "trace" ? "bg-elevated text-archlens-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
                 <Zap className="h-3 w-3 inline mr-1" />Feature Tracing
               </button>
-              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-elevated text-archlens-300" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+              <button onClick={() => setBottomTab("matrix")} className={`px-3 py-1 rounded-t text-[10px] font-medium ${bottomTab === "matrix" ? "bg-elevated text-archlens-300" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
                 <Grid3x3 className="h-3 w-3 inline mr-1" />Dependency Matrix
               </button>
             </div>
@@ -771,22 +771,22 @@ export function ArchitectureView() {
       </div>
 
       {/* ── RIGHT: Code Panel ── */}
-      <aside className="w-80 border-l border-[#1e1e2a] bg-surface overflow-hidden flex flex-col">
+      <aside className="w-80 border-l border-[var(--color-border-subtle)] bg-surface overflow-hidden flex flex-col">
         {selectedNode ? (
           <CodePanel model={model} selectedId={selectedNode} level={currentLevel.level} />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
             <div className="w-16 h-16 rounded-2xl bg-elevated flex items-center justify-center mb-4">
-              <Layers className="h-8 w-8 text-[#2a2a3a]" />
+              <Layers className="h-8 w-8 text-[var(--color-border-default)]" />
             </div>
-            <p className="text-sm font-medium text-[#5a5a70]">Select a module</p>
-            <p className="text-[11px] text-[#5a5a70] mt-1">Click to inspect · Double-click to drill down</p>
+            <p className="text-sm font-medium text-[var(--color-text-muted)]">Select a module</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Click to inspect · Double-click to drill down</p>
             {impactMode && <p className="text-[11px] text-red-400 mt-2">Impact mode active</p>}
 
             {/* Impact Result */}
             {impactResult && impactResult.total > 0 && (
               <div className="mt-4 w-full text-left bg-elevated rounded-xl p-3 space-y-1.5">
-                <div className="text-[10px] uppercase font-semibold text-[#5a5a70]">Blast Radius</div>
+                <div className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)]">Blast Radius</div>
                 <div className="flex items-center gap-2 text-xs"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> <span className="text-red-400">WILL BREAK: {impactResult.d1.length}</span></div>
                 <div className="flex items-center gap-2 text-xs"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /> <span className="text-orange-400">LIKELY AFFECTED: {impactResult.d2.length}</span></div>
                 <div className="flex items-center gap-2 text-xs"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> <span className="text-yellow-400">MAY NEED TEST: {impactResult.d3.length}</span></div>

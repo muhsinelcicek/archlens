@@ -66,7 +66,7 @@ const layerColors: Record<string, { bg: string; border: string; text: string; gl
   infrastructure:{ bg: "#3b0d0d", border: "#f87171", text: "#fecaca", glow: "rgba(248,113,113,0.4)" },
   config:        { bg: "#1a1a2e", border: "#94a3b8", text: "#cbd5e1", glow: "rgba(148,163,184,0.3)" },
   test:          { bg: "#2a1a00", border: "#f59e0b", text: "#fde68a", glow: "rgba(245,158,11,0.4)" },
-  default:       { bg: "#1e1e2a", border: "#6b7280", text: "#d1d5db", glow: "rgba(107,114,128,0.3)" },
+  default:       { bg: "var(--color-border-subtle)", border: "#6b7280", text: "#d1d5db", glow: "rgba(107,114,128,0.3)" },
 };
 
 const edgeColors: Record<string, string> = {
@@ -92,7 +92,7 @@ function buildStylesheet(useForceLayout: boolean): any[] {
         "font-size": useForceLayout ? "10px" : "13px",
         "font-weight": "500",
         color: "#e2e8f0",
-        "background-color": "#1e1e2a",
+        "background-color": "var(--color-border-subtle)",
         "border-width": 2.5,
         "border-color": "#4a5568",
         "text-wrap": "wrap",
@@ -128,7 +128,7 @@ function buildStylesheet(useForceLayout: boolean): any[] {
         "text-transform": "uppercase",
         padding: "30px",
         "background-color": "#0f0f1a",
-        "border-color": "#2a2a3a",
+        "border-color": "var(--color-border-default)",
         color: "#4a5568",
         "shadow-blur": 0,
         "shadow-opacity": 0,
@@ -180,7 +180,7 @@ function buildStylesheet(useForceLayout: boolean): any[] {
         color: "#475569",
         "text-rotation": "autorotate",
         "text-margin-y": -10,
-        "text-background-color": "#0a0a10",
+        "text-background-color": "var(--color-deep)",
         "text-background-opacity": 0.85,
         "text-background-padding": "3px",
       },

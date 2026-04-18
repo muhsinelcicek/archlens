@@ -70,7 +70,7 @@ const layerNodeColors: Record<string, { fill: string; border: string }> = {
   infrastructure:{ fill: "#3b0d0d", border: "#f87171" },
   config:        { fill: "#1a1a2e", border: "#94a3b8" },
   test:          { fill: "#2a1a00", border: "#f59e0b" },
-  default:       { fill: "#1e1e2a", border: "#6b7280" },
+  default:       { fill: "var(--color-border-subtle)", border: "#6b7280" },
 };
 
 const edgeTypeColors: Record<string, string> = {
@@ -390,7 +390,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
       labelFont: "JetBrains Mono, Fira Code, monospace",
       labelSize: 12,
       labelWeight: "500",
-      labelColor: { color: "#e4e4ed" },
+      labelColor: { color: "var(--color-text-primary)" },
       zIndex: true,
       hideEdgesOnMove: true,
       defaultNodeColor: "#6b7280",

@@ -45,7 +45,7 @@ export function EventFlowView() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">{t("event.title")}</h2>
-        <p className="text-sm text-[#5a5a70] mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           {report.events.length} events · {activeContexts.length} bounded contexts · {report.communicationPatterns.length} communication patterns
         </p>
       </div>
@@ -53,32 +53,32 @@ export function EventFlowView() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-          <div className="flex items-center gap-2 mb-1"><Zap className="h-4 w-4 text-amber-400" /><span className="text-[10px] text-[#5a5a70] uppercase">Integration Events</span></div>
+          <div className="flex items-center gap-2 mb-1"><Zap className="h-4 w-4 text-amber-400" /><span className="text-[10px] text-[var(--color-text-muted)] uppercase">Integration Events</span></div>
           <div className="text-2xl font-bold text-amber-400">{integrationEvents.length}</div>
         </div>
         <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
-          <div className="flex items-center gap-2 mb-1"><MessageSquare className="h-4 w-4 text-purple-400" /><span className="text-[10px] text-[#5a5a70] uppercase">Domain Events</span></div>
+          <div className="flex items-center gap-2 mb-1"><MessageSquare className="h-4 w-4 text-purple-400" /><span className="text-[10px] text-[var(--color-text-muted)] uppercase">Domain Events</span></div>
           <div className="text-2xl font-bold text-purple-400">{domainEvents.length}</div>
         </div>
         <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-          <div className="flex items-center gap-2 mb-1"><Box className="h-4 w-4 text-blue-400" /><span className="text-[10px] text-[#5a5a70] uppercase">Bounded Contexts</span></div>
+          <div className="flex items-center gap-2 mb-1"><Box className="h-4 w-4 text-blue-400" /><span className="text-[10px] text-[var(--color-text-muted)] uppercase">Bounded Contexts</span></div>
           <div className="text-2xl font-bold text-blue-400">{activeContexts.length}</div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <div className="flex items-center gap-2 mb-1"><Radio className="h-4 w-4 text-emerald-400" /><span className="text-[10px] text-[#5a5a70] uppercase">Comm Patterns</span></div>
+          <div className="flex items-center gap-2 mb-1"><Radio className="h-4 w-4 text-emerald-400" /><span className="text-[10px] text-[var(--color-text-muted)] uppercase">Comm Patterns</span></div>
           <div className="text-2xl font-bold text-emerald-400">{report.communicationPatterns.length}</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#2a2a3a]">
+      <div className="flex border-b border-[var(--color-border-default)]">
         {[
           { id: "overview" as const, label: "Communication Overview" },
           { id: "events" as const, label: `Event Flows (${report.events.length})` },
           { id: "contexts" as const, label: `Bounded Contexts (${activeContexts.length})` },
         ].map((tb) => (
           <button key={tb.id} onClick={() => setActiveTab(tb.id)}
-            className={`px-4 py-2.5 text-xs font-semibold transition-colors ${activeTab === tb.id ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[#5a5a70] hover:text-[#8888a0]"}`}>
+            className={`px-4 py-2.5 text-xs font-semibold transition-colors ${activeTab === tb.id ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
             {tb.label}
           </button>
         ))}
@@ -101,8 +101,8 @@ export function EventFlowView() {
                         {patternIcons[pat.type] || <Globe className="h-5 w-5" />}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-[#e4e4ed]">{pat.type}</h4>
-                        <p className="text-[10px] text-[#5a5a70]">{pat.description}</p>
+                        <h4 className="font-semibold text-[var(--color-text-primary)]">{pat.type}</h4>
+                        <p className="text-[10px] text-[var(--color-text-muted)]">{pat.description}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -119,10 +119,10 @@ export function EventFlowView() {
           {/* Visual Flow: How services communicate */}
           <section>
             <h3 className="text-lg font-semibold mb-4">Service Communication Flow</h3>
-            <div className="rounded-xl border border-[#2a2a3a] bg-deep p-6">
+            <div className="rounded-xl border border-[var(--color-border-default)] bg-deep p-6">
               <div className="flex flex-col items-center gap-4">
                 {/* Sync layer */}
-                <div className="text-[9px] uppercase font-semibold text-[#5a5a70] self-start">Synchronous</div>
+                <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] self-start">Synchronous</div>
                 <div className="flex items-center gap-3 flex-wrap justify-center">
                   {report.communicationPatterns.filter((p) => p.type === "REST API" || p.type === "gRPC").map((pat, i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -139,10 +139,10 @@ export function EventFlowView() {
                   ))}
                 </div>
 
-                <ArrowDown className="h-4 w-4 text-[#2a2a3a]" />
+                <ArrowDown className="h-4 w-4 text-[var(--color-border-default)]" />
 
                 {/* Async layer */}
-                <div className="text-[9px] uppercase font-semibold text-[#5a5a70] self-start">Asynchronous</div>
+                <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] self-start">Asynchronous</div>
                 <div className="w-full rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <Radio className="h-4 w-4 text-amber-400" />
@@ -152,14 +152,14 @@ export function EventFlowView() {
                   {/* Top events */}
                   <div className="flex flex-wrap justify-center gap-2">
                     {integrationEvents.slice(0, 8).map((evt) => (
-                      <div key={evt.eventName} className="flex items-center gap-1.5 rounded-lg bg-[#1e1e2a] px-2.5 py-1.5">
+                      <div key={evt.eventName} className="flex items-center gap-1.5 rounded-lg bg-[var(--color-border-subtle)] px-2.5 py-1.5">
                         <Send className="h-2.5 w-2.5 text-amber-500" />
                         <span className="text-[9px] font-mono text-amber-300">{evt.publisher.module}</span>
-                        <ArrowRight className="h-2 w-2 text-[#5a5a70]" />
+                        <ArrowRight className="h-2 w-2 text-[var(--color-text-muted)]" />
                         {evt.subscribers.length > 0 ? (
                           <span className="text-[9px] font-mono text-emerald-300">{evt.subscribers.map((s) => s.module).join(", ")}</span>
                         ) : (
-                          <span className="text-[9px] text-[#5a5a70]">no subscribers</span>
+                          <span className="text-[9px] text-[var(--color-text-muted)]">no subscribers</span>
                         )}
                       </div>
                     ))}
@@ -168,8 +168,8 @@ export function EventFlowView() {
 
                 {report.communicationPatterns.some((p) => p.type === "Background Processing") && (
                   <>
-                    <ArrowDown className="h-4 w-4 text-[#2a2a3a]" />
-                    <div className="text-[9px] uppercase font-semibold text-[#5a5a70] self-start">Background</div>
+                    <ArrowDown className="h-4 w-4 text-[var(--color-border-default)]" />
+                    <div className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)] self-start">Background</div>
                     <div className="flex gap-3">
                       {report.communicationPatterns.filter((p) => p.type === "Background Processing").flatMap((p) => p.modules).map((m) => (
                         <div key={m} className="rounded-lg border border-purple-500/30 bg-purple-500/8 px-3 py-2 text-center">
@@ -190,7 +190,7 @@ export function EventFlowView() {
       {activeTab === "events" && (
         <div className="space-y-3">
           {report.events.length === 0 ? (
-            <div className="text-center py-12 text-[#5a5a70]">No events detected</div>
+            <div className="text-center py-12 text-[var(--color-text-muted)]">No events detected</div>
           ) : (
             report.events.map((evt, i) => {
               const isExpanded = expandedEvent === evt.eventName;
@@ -198,15 +198,15 @@ export function EventFlowView() {
               const color = isIntegration ? "#fbbf24" : "#a78bfa";
 
               return (
-                <div key={i} className="rounded-xl border overflow-hidden" style={{ borderColor: isExpanded ? `${color}40` : "#2a2a3a" }}>
+                <div key={i} className="rounded-xl border overflow-hidden" style={{ borderColor: isExpanded ? `${color}40` : "var(--color-border-default)" }}>
                   <button onClick={() => setExpandedEvent(isExpanded ? null : evt.eventName)} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-hover transition-colors text-left">
-                    {isExpanded ? <ChevronDown className="h-4 w-4 text-[#5a5a70]" /> : <ChevronRight className="h-4 w-4 text-[#5a5a70]" />}
+                    {isExpanded ? <ChevronDown className="h-4 w-4 text-[var(--color-text-muted)]" /> : <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" />}
                     <Zap className="h-4 w-4" style={{ color }} />
                     <div className="flex-1 min-w-0">
-                      <span className="font-mono font-semibold text-[#e4e4ed]">{evt.eventName}</span>
+                      <span className="font-mono font-semibold text-[var(--color-text-primary)]">{evt.eventName}</span>
                     </div>
                     <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${color}15`, color }}>{evt.eventType}</span>
-                    <div className="flex items-center gap-2 text-[10px] text-[#5a5a70]">
+                    <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
                       <Send className="h-3 w-3" /> {evt.publisher.module}
                       <ArrowRight className="h-3 w-3" />
                       <Inbox className="h-3 w-3" /> {evt.subscribers.length}
@@ -214,7 +214,7 @@ export function EventFlowView() {
                   </button>
 
                   {isExpanded && (
-                    <div className="px-5 py-4 border-t border-[#1e1e2a] bg-deep">
+                    <div className="px-5 py-4 border-t border-[var(--color-border-subtle)] bg-deep">
                       {/* Visual flow */}
                       <div className="flex items-center gap-4 mb-4">
                         {/* Publisher */}
@@ -222,7 +222,7 @@ export function EventFlowView() {
                           <Send className="h-4 w-4 text-blue-400 mx-auto mb-1" />
                           <div className="text-[10px] uppercase text-blue-500 mb-0.5">{t("event.publisher")}</div>
                           <div className="font-mono text-xs text-blue-300">{evt.publisher.module}</div>
-                          <div className="text-[9px] text-[#5a5a70] mt-1 truncate">{evt.publisher.filePath.split("/").pop()}</div>
+                          <div className="text-[9px] text-[var(--color-text-muted)] mt-1 truncate">{evt.publisher.filePath.split("/").pop()}</div>
                         </div>
 
                         {/* Arrow with event name */}
@@ -241,13 +241,13 @@ export function EventFlowView() {
                               <Inbox className="h-4 w-4 text-emerald-400 mx-auto mb-1" />
                               <div className="text-[10px] uppercase text-emerald-500 mb-0.5">{t("event.subscriber")}</div>
                               <div className="font-mono text-xs text-emerald-300">{sub.module}</div>
-                              <div className="text-[9px] text-[#5a5a70] mt-1 truncate">{sub.filePath.split("/").pop()}</div>
+                              <div className="text-[9px] text-[var(--color-text-muted)] mt-1 truncate">{sub.filePath.split("/").pop()}</div>
                             </div>
                           )) : (
-                            <div className="rounded-xl border border-[#2a2a3a] bg-[#1e1e2a] p-3 text-center min-w-[120px]">
+                            <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-border-subtle)] p-3 text-center min-w-[120px]">
                               <AlertTriangle className="h-4 w-4 text-amber-500 mx-auto mb-1" />
                               <div className="text-[10px] text-amber-500">No subscribers</div>
-                              <div className="text-[9px] text-[#5a5a70]">Event published but unused</div>
+                              <div className="text-[9px] text-[var(--color-text-muted)]">Event published but unused</div>
                             </div>
                           )}
                         </div>
@@ -272,7 +272,7 @@ export function EventFlowView() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
-                      <h4 className="font-semibold text-lg text-[#e4e4ed]">{ctx.name}</h4>
+                      <h4 className="font-semibold text-lg text-[var(--color-text-primary)]">{ctx.name}</h4>
                     </div>
                     {ctx.isClean
                       ? <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> {t("event.clean")}</span>
@@ -282,23 +282,23 @@ export function EventFlowView() {
 
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-3 text-center mb-4">
-                    <div className="rounded-lg bg-[#1e1e2a] p-2">
-                      <div className="text-lg font-bold text-[#e4e4ed]">{ctx.modules.length}</div>
-                      <div className="text-[8px] text-[#5a5a70] uppercase">Modules</div>
+                    <div className="rounded-lg bg-[var(--color-border-subtle)] p-2">
+                      <div className="text-lg font-bold text-[var(--color-text-primary)]">{ctx.modules.length}</div>
+                      <div className="text-[8px] text-[var(--color-text-muted)] uppercase">Modules</div>
                     </div>
-                    <div className="rounded-lg bg-[#1e1e2a] p-2">
-                      <div className="text-lg font-bold text-[#e4e4ed]">{ctx.entities.length}</div>
-                      <div className="text-[8px] text-[#5a5a70] uppercase">Entities</div>
+                    <div className="rounded-lg bg-[var(--color-border-subtle)] p-2">
+                      <div className="text-lg font-bold text-[var(--color-text-primary)]">{ctx.entities.length}</div>
+                      <div className="text-[8px] text-[var(--color-text-muted)] uppercase">Entities</div>
                     </div>
-                    <div className="rounded-lg bg-[#1e1e2a] p-2">
-                      <div className="text-lg font-bold text-[#e4e4ed]">{ctx.events.length}</div>
-                      <div className="text-[8px] text-[#5a5a70] uppercase">Events</div>
+                    <div className="rounded-lg bg-[var(--color-border-subtle)] p-2">
+                      <div className="text-lg font-bold text-[var(--color-text-primary)]">{ctx.events.length}</div>
+                      <div className="text-[8px] text-[var(--color-text-muted)] uppercase">Events</div>
                     </div>
                   </div>
 
                   {/* Modules */}
                   <div className="mb-3">
-                    <div className="text-[9px] uppercase text-[#5a5a70] font-semibold mb-1.5">Modules</div>
+                    <div className="text-[9px] uppercase text-[var(--color-text-muted)] font-semibold mb-1.5">Modules</div>
                     <div className="flex flex-wrap gap-1.5">
                       {ctx.modules.map((m) => <span key={m} className="text-[10px] font-mono px-2 py-0.5 rounded-md" style={{ backgroundColor: `${color}10`, color }}>{m}</span>)}
                     </div>
@@ -307,20 +307,20 @@ export function EventFlowView() {
                   {/* Entities */}
                   {ctx.entities.length > 0 && (
                     <div className="mb-3">
-                      <div className="text-[9px] uppercase text-[#5a5a70] font-semibold mb-1.5">Entities</div>
-                      <div className="text-[10px] font-mono text-[#8888a0]">{ctx.entities.join(", ")}</div>
+                      <div className="text-[9px] uppercase text-[var(--color-text-muted)] font-semibold mb-1.5">Entities</div>
+                      <div className="text-[10px] font-mono text-[var(--color-text-secondary)]">{ctx.entities.join(", ")}</div>
                     </div>
                   )}
 
                   {/* Events */}
                   {ctx.events.length > 0 && (
                     <div>
-                      <div className="text-[9px] uppercase text-[#5a5a70] font-semibold mb-1.5">Events</div>
+                      <div className="text-[9px] uppercase text-[var(--color-text-muted)] font-semibold mb-1.5">Events</div>
                       <div className="flex flex-wrap gap-1">
                         {ctx.events.slice(0, 5).map((e) => (
                           <span key={e} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">{e.replace("IntegrationEvent", "").replace("DomainEvent", "")}</span>
                         ))}
-                        {ctx.events.length > 5 && <span className="text-[9px] text-[#5a5a70]">+{ctx.events.length - 5}</span>}
+                        {ctx.events.length > 5 && <span className="text-[9px] text-[var(--color-text-muted)]">+{ctx.events.length - 5}</span>}
                       </div>
                     </div>
                   )}

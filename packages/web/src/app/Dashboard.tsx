@@ -208,7 +208,7 @@ function ScoreRing({ score, size = 96 }: { score: number; size?: number }) {
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1e1e2a" strokeWidth="6" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-border-subtle)" strokeWidth="6" />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="6"
           strokeDasharray={`${dashLen} ${circumference}`} strokeLinecap="round"
@@ -217,7 +217,7 @@ function ScoreRing({ score, size = 96 }: { score: number; size?: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-bold" style={{ color }}>{score}</span>
-        <span className="text-[10px] text-[#5a5a70] uppercase font-semibold">/100</span>
+        <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">/100</span>
       </div>
     </div>
   );
@@ -236,12 +236,12 @@ function HealthBar({ label, value, max, color, suffix, icon }: {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-[#e4e4ed]">{label}</span>
+          <span className="text-xs font-medium text-[var(--color-text-primary)]">{label}</span>
           <span className="text-xs font-bold tabular-nums" style={{ color }}>
             {suffix || `${value}/${max}`}
           </span>
         </div>
-        <div className="h-2 rounded-full bg-[#1e1e2a] overflow-hidden">
+        <div className="h-2 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{ width: `${pct}%`, backgroundColor: color }}
@@ -316,11 +316,11 @@ export function Dashboard() {
           <div className="flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">{model.project.name}</h2>
-              <p className="text-[#5a5a70] text-sm mt-1">
+              <p className="text-[var(--color-text-muted)] text-sm mt-1">
                 {t("dashboard.title")} / {new Date(model.project.analyzedAt).toLocaleDateString("tr-TR")}
               </p>
             </div>
-            <div className="text-right text-xs text-[#5a5a70]">
+            <div className="text-right text-xs text-[var(--color-text-muted)]">
               <div>ArchLens v{model.project.version}</div>
               <div className="font-mono">{model.project.rootPath}</div>
             </div>
@@ -333,11 +333,11 @@ export function Dashboard() {
         {/* Circular health score */}
         {!healthLoading && quality && (
           <div
-            className="rounded-xl border border-[#2a2a3a] bg-elevated p-5 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer hover:border-[#3a3a4a] transition-colors"
+            className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-5 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer hover:border-[#3a3a4a] transition-colors"
             onClick={() => navigate("/quality")}
           >
             <ScoreRing score={qualityScore} size={100} />
-            <div className="mt-2 text-xs font-semibold uppercase text-[#5a5a70]">Health Score</div>
+            <div className="mt-2 text-xs font-semibold uppercase text-[var(--color-text-muted)]">Health Score</div>
             <div className="text-xs font-medium mt-0.5" style={{ color: scoreColor(qualityScore) }}>
               {scoreLabel(qualityScore)}
             </div>
@@ -394,10 +394,10 @@ export function Dashboard() {
       </div>
 
       {/* ── Section 2: Health Pulse ───────────────────────────── */}
-      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-6 backdrop-blur-sm">
         <div className="flex items-center gap-2 mb-5">
-          <Activity className="h-4 w-4 text-[#5a5a70]" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0]">Health Pulse</h3>
+          <Activity className="h-4 w-4 text-[var(--color-text-muted)]" />
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">Health Pulse</h3>
         </div>
 
         {healthLoading ? (
@@ -405,7 +405,7 @@ export function Dashboard() {
         ) : healthError ? (
           <div className="flex flex-col items-center justify-center h-32 gap-2">
             <AlertTriangle className="h-6 w-6 text-amber-500" />
-            <p className="text-sm text-[#5a5a70]">{healthError}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{healthError}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -455,13 +455,13 @@ export function Dashboard() {
 
       {/* ── Section 3: Top Issues / Action Items ──────────────── */}
       {!healthLoading && actionItems.length > 0 && (
-        <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-6 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-[#5a5a70]" />
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0]">What to Focus On</h3>
+              <AlertTriangle className="h-4 w-4 text-[var(--color-text-muted)]" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">What to Focus On</h3>
             </div>
-            <span className="text-xs text-[#5a5a70]">{actionItems.length} items</span>
+            <span className="text-xs text-[var(--color-text-muted)]">{actionItems.length} items</span>
           </div>
 
           <div className="space-y-2">
@@ -470,7 +470,7 @@ export function Dashboard() {
               return (
                 <div
                   key={idx}
-                  className="group flex items-center gap-3 rounded-lg border border-[#2a2a3a] p-3 cursor-pointer transition-all hover:border-[#3a3a4a] hover:bg-hover"
+                  className="group flex items-center gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer transition-all hover:border-[#3a3a4a] hover:bg-hover"
                   onClick={() => navigate(item.link)}
                 >
                   {/* Severity badge */}
@@ -482,17 +482,17 @@ export function Dashboard() {
                   </span>
 
                   {/* Message */}
-                  <span className="flex-1 text-sm text-[#e4e4ed] truncate">{item.message}</span>
+                  <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">{item.message}</span>
 
                   {/* Module badge */}
                   {item.module && (
-                    <span className="text-[10px] text-[#5a5a70] font-mono bg-[#1e1e2a] rounded px-2 py-0.5">
+                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono bg-[var(--color-border-subtle)] rounded px-2 py-0.5">
                       {item.module}
                     </span>
                   )}
 
                   {/* Navigate arrow */}
-                  <ChevronRight className="h-4 w-4 text-[#5a5a70] group-hover:text-[#8888a0] transition-colors flex-shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-secondary)] transition-colors flex-shrink-0" />
                 </div>
               );
             })}
@@ -501,14 +501,14 @@ export function Dashboard() {
       )}
 
       {/* ── Section 4: Architecture Overview (compact, clickable) ─ */}
-      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-6 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-[#5a5a70]" />
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0]">{t("dashboard.arch_layers")}</h3>
+            <Layers className="h-4 w-4 text-[var(--color-text-muted)]" />
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">{t("dashboard.arch_layers")}</h3>
           </div>
           <button
-            className="flex items-center gap-1 text-xs text-[#5a5a70] hover:text-[#8888a0] transition-colors"
+            className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
             onClick={() => navigate("/architecture")}
           >
             View full architecture <ExternalLink className="h-3 w-3" />
@@ -544,7 +544,7 @@ export function Dashboard() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium capitalize text-sm text-[#e4e4ed]">{layer}</span>
+                      <span className="font-medium capitalize text-sm text-[var(--color-text-primary)]">{layer}</span>
                       <span
                         className="text-[10px] font-bold rounded-full px-2 py-0.5"
                         style={{ backgroundColor: `${config.color}20`, color: config.color }}
@@ -564,25 +564,25 @@ export function Dashboard() {
                         </span>
                       ))}
                       {mods.length > 6 && (
-                        <span className="text-[10px] text-[#5a5a70]">+{mods.length - 6} more</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)]">+{mods.length - 6} more</span>
                       )}
                     </div>
                   </div>
 
                   {/* Bar + line count */}
                   <div className="hidden sm:flex items-center gap-3 w-36">
-                    <div className="flex-1 h-1.5 rounded-full bg-[#1e1e2a] overflow-hidden">
+                    <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{ width: `${pct}%`, backgroundColor: config.color }}
                       />
                     </div>
-                    <span className="text-xs text-[#5a5a70] w-12 text-right tabular-nums">
+                    <span className="text-xs text-[var(--color-text-muted)] w-12 text-right tabular-nums">
                       {totalLines.toLocaleString()}
                     </span>
                   </div>
 
-                  <ArrowRight className="h-4 w-4 text-[#5a5a70] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowRight className="h-4 w-4 text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             );
@@ -591,8 +591,8 @@ export function Dashboard() {
       </section>
 
       {/* ── Section 5: Language Distribution ───────────────────── */}
-      <section className="rounded-xl border border-[#2a2a3a] bg-elevated p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8888a0] mb-4">{t("dashboard.languages")}</h3>
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-6 backdrop-blur-sm">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-4">{t("dashboard.languages")}</h3>
         <LanguageBar languages={stats.languages} totalSymbols={stats.symbols} />
       </section>
     </div>

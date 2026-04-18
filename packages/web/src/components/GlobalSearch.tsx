@@ -22,7 +22,7 @@ const kindIcons: Record<string, { icon: React.ReactNode; color: string }> = {
   module: { icon: <Box className="h-3.5 w-3.5" />, color: "#60a5fa" },
   endpoint: { icon: <Globe className="h-3.5 w-3.5" />, color: "#34d399" },
   entity: { icon: <Database className="h-3.5 w-3.5" />, color: "#f87171" },
-  file: { icon: <FileCode className="h-3.5 w-3.5" />, color: "#8888a0" },
+  file: { icon: <FileCode className="h-3.5 w-3.5" />, color: "var(--color-text-secondary)" },
 };
 
 export function GlobalSearch() {
@@ -112,11 +112,11 @@ export function GlobalSearch() {
     return (
       <button
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-elevated border border-[#2a2a3a] text-[11px] text-[#5a5a70] hover:text-[#8888a0] hover:border-archlens-500/30 transition-all w-full"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-elevated border border-[var(--color-border-default)] text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-archlens-500/30 transition-all w-full"
       >
         <Search className="h-3 w-3" />
         <span className="flex-1 text-left">Search...</span>
-        <kbd className="text-[9px] px-1 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70]">⌘K</kbd>
+        <kbd className="text-[9px] px-1 py-0.5 rounded bg-[var(--color-border-subtle)] text-[var(--color-text-muted)]">⌘K</kbd>
       </button>
     );
   }
@@ -128,9 +128,9 @@ export function GlobalSearch() {
 
       {/* Search Modal */}
       <div className="fixed top-[15%] left-1/2 -translate-x-1/2 w-[560px] z-50 animate-slide-up">
-        <div className="rounded-xl border border-[#2a2a3a] bg-surface shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="rounded-xl border border-[var(--color-border-default)] bg-surface shadow-2xl shadow-black/50 overflow-hidden">
           {/* Input */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1e1e2a]">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border-subtle)]">
             <Search className="h-4 w-4 text-archlens-400" />
             <input
               ref={inputRef}
@@ -138,25 +138,25 @@ export function GlobalSearch() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search modules, symbols, endpoints, entities..."
-              className="flex-1 bg-transparent text-sm text-[#e4e4ed] placeholder:text-[#5a5a70] outline-none"
+              className="flex-1 bg-transparent text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none"
               autoFocus
             />
             {query && (
-              <button onClick={() => setQuery("")} className="text-[#5a5a70] hover:text-[#8888a0]">
+              <button onClick={() => setQuery("")} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]">
                 <X className="h-4 w-4" />
               </button>
             )}
-            <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70]">ESC</kbd>
+            <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-border-subtle)] text-[var(--color-text-muted)]">ESC</kbd>
           </div>
 
           {/* Results */}
           <div className="max-h-[400px] overflow-y-auto">
             {query.length < 2 ? (
-              <div className="px-4 py-8 text-center text-[#5a5a70] text-xs">
+              <div className="px-4 py-8 text-center text-[var(--color-text-muted)] text-xs">
                 Type at least 2 characters to search
               </div>
             ) : results.length === 0 ? (
-              <div className="px-4 py-8 text-center text-[#5a5a70] text-xs">
+              <div className="px-4 py-8 text-center text-[var(--color-text-muted)] text-xs">
                 No results for "{query}"
               </div>
             ) : (
@@ -169,14 +169,14 @@ export function GlobalSearch() {
                   >
                     <span style={{ color: result.color }}>{result.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#e4e4ed] truncate font-mono">{result.name}</div>
-                      <div className="text-[10px] text-[#5a5a70] truncate">{result.detail}</div>
+                      <div className="text-sm text-[var(--color-text-primary)] truncate font-mono">{result.name}</div>
+                      <div className="text-[10px] text-[var(--color-text-muted)] truncate">{result.detail}</div>
                     </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e1e2a] text-[#5a5a70] flex-shrink-0">{result.type}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-border-subtle)] text-[var(--color-text-muted)] flex-shrink-0">{result.type}</span>
                   </button>
                 ))}
                 {results.length > 20 && (
-                  <div className="px-4 py-2 text-center text-[10px] text-[#5a5a70]">+{results.length - 20} more results</div>
+                  <div className="px-4 py-2 text-center text-[10px] text-[var(--color-text-muted)]">+{results.length - 20} more results</div>
                 )}
               </div>
             )}

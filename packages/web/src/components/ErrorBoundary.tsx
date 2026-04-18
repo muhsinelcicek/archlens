@@ -19,8 +19,8 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="h-14 w-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
             <AlertCircle className="h-7 w-7 text-red-500" />
           </div>
-          <h3 className="text-lg font-semibold text-[#e4e4ed]">Something went wrong</h3>
-          <p className="text-sm text-[#5a5a70] max-w-md text-center">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Something went wrong</h3>
+          <p className="text-sm text-[var(--color-text-muted)] max-w-md text-center">
             {this.state.error?.message || "An unexpected error occurred"}
           </p>
           <button

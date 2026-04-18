@@ -53,24 +53,24 @@ export function ImportView() {
             <GitBranch className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold">Add GitHub Repository</h2>
-          <p className="text-[#5a5a70] text-sm mt-2">
+          <p className="text-[var(--color-text-muted)] text-sm mt-2">
             Paste a GitHub URL to clone, analyze, and explore the architecture
           </p>
         </div>
 
         {/* Form */}
-        <div className="rounded-2xl border border-[#2a2a3a] bg-surface p-6 space-y-4">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-surface p-6 space-y-4">
           {/* URL Input */}
           <div>
-            <label className="text-xs font-semibold text-[#5a5a70] uppercase mb-1.5 block">GitHub Repository URL</label>
+            <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase mb-1.5 block">GitHub Repository URL</label>
             <div className="relative">
-              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5a5a70]" />
+              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://github.com/owner/repo"
-                className="w-full rounded-xl border border-[#2a2a3a] bg-deep py-3 pl-10 pr-4 text-sm text-[#e4e4ed] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/50 focus:ring-1 focus:ring-archlens-500/20 transition-all"
+                className="w-full rounded-xl border border-[var(--color-border-default)] bg-deep py-3 pl-10 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:border-archlens-500/50 focus:ring-1 focus:ring-archlens-500/20 transition-all"
                 disabled={loading}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               />
@@ -79,13 +79,13 @@ export function ImportView() {
 
           {/* Branch */}
           <div>
-            <label className="text-xs font-semibold text-[#5a5a70] uppercase mb-1.5 block">Branch (optional)</label>
+            <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase mb-1.5 block">Branch (optional)</label>
             <input
               type="text"
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
               placeholder="main"
-              className="w-full rounded-xl border border-[#2a2a3a] bg-deep py-3 px-4 text-sm text-[#e4e4ed] placeholder:text-[#5a5a70] outline-none focus:border-archlens-500/50 transition-all"
+              className="w-full rounded-xl border border-[var(--color-border-default)] bg-deep py-3 px-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:border-archlens-500/50 transition-all"
               disabled={loading}
             />
           </div>
@@ -99,7 +99,7 @@ export function ImportView() {
                 ? "bg-archlens-500/20 text-archlens-300 cursor-wait"
                 : url.trim()
                   ? "bg-gradient-to-r from-archlens-500 to-archlens-700 text-white hover:shadow-lg hover:shadow-archlens-500/25 hover:scale-[1.01]"
-                  : "bg-[#1e1e2a] text-[#5a5a70] cursor-not-allowed"
+                  : "bg-[var(--color-border-subtle)] text-[var(--color-text-muted)] cursor-not-allowed"
             }`}
           >
             {loading ? (
@@ -159,7 +159,7 @@ export function ImportView() {
 
         {/* Example repos */}
         <div className="mt-6 text-center">
-          <p className="text-[9px] uppercase text-[#5a5a70] font-semibold mb-2">Try with these repos</p>
+          <p className="text-[9px] uppercase text-[var(--color-text-muted)] font-semibold mb-2">Try with these repos</p>
           <div className="flex flex-wrap justify-center gap-2">
             {[
               "https://github.com/dotnet/eShop",
@@ -169,7 +169,7 @@ export function ImportView() {
               <button
                 key={repo}
                 onClick={() => setUrl(repo)}
-                className="text-[10px] font-mono px-2 py-1 rounded-lg bg-[#1e1e2a] text-[#5a5a70] hover:text-archlens-300 hover:bg-archlens-500/10 transition-colors"
+                className="text-[10px] font-mono px-2 py-1 rounded-lg bg-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-archlens-300 hover:bg-archlens-500/10 transition-colors"
               >
                 {repo.split("/").slice(-2).join("/")}
               </button>
