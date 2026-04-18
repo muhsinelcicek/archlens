@@ -1,74 +1,136 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --color-archlens-50: #f0e6ff;
-  --color-archlens-100: #d9c2ff;
-  --color-archlens-200: #b794ff;
-  --color-archlens-300: #9966ff;
-  --color-archlens-400: #7c3aed;
-  --color-archlens-500: #6d28d9;
-  --color-archlens-600: #5b21b6;
-  --color-archlens-700: #4c1d95;
-  --color-archlens-800: #3b0764;
-  --color-archlens-900: #2e1065;
+  /* Brand accent — single violet, used sparingly */
+  --color-archlens-50: #f5f3ff;
+  --color-archlens-100: #ede9fe;
+  --color-archlens-200: #ddd6fe;
+  --color-archlens-300: #c4b5fd;
+  --color-archlens-400: #a78bfa;
+  --color-archlens-500: #8b5cf6;
+  --color-archlens-600: #7c3aed;
+  --color-archlens-700: #6d28d9;
+  --color-archlens-800: #5b21b6;
+  --color-archlens-900: #4c1d95;
 
-  --color-void: #06060a;
-  --color-deep: #0a0a10;
-  --color-surface: #101018;
-  --color-elevated: #16161f;
-  --color-hover: #1c1c28;
+  /* Runtime-driven theme variables (set by theme.ts) */
+  --color-void: #ffffff;
+  --color-deep: #fafafa;
+  --color-surface: #f5f5f7;
+  --color-elevated: #ffffff;
+  --color-hover: #f4f4f5;
+  --color-border-subtle: #f0f0f3;
+  --color-border-default: #e4e4e7;
+  --color-dim: #e4e4e7;
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #71717a;
+  --color-accent: #7c3aed;
+  --color-accent-dim: #6d28d9;
+  --color-accent-glow: rgba(124, 58, 237, 0.15);
+
+  /* Font families */
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "JetBrains Mono", "Fira Code", monospace;
 }
 
-* {
-  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+/* ─── Base typography ─────────────────────────────────────── */
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";  /* Geist stylistic sets */
 }
 
-code, pre, .font-mono {
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace !important;
+body {
+  font-family: var(--font-sans);
+  background: var(--color-void);
+  color: var(--color-text-primary);
+  letter-spacing: -0.011em;
 }
 
-/* Custom scrollbar */
+code, pre, .font-mono, kbd {
+  font-family: var(--font-mono);
+  font-feature-settings: "zero", "ss02";
+}
+
+/* Refined heading rhythm */
+h1 { font-weight: 600; letter-spacing: -0.025em; }
+h2 { font-weight: 600; letter-spacing: -0.02em; }
+h3, h4 { font-weight: 600; letter-spacing: -0.015em; }
+
+/* ─── Scrollbars — minimal, subtle ───────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a10;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
-  border-radius: 3px;
+  background: var(--color-border-default);
+  border-radius: 999px;
+  border: 2px solid var(--color-void);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a4a;
+  background: var(--color-text-muted);
 }
 
-/* Animations */
+/* ─── Selection ──────────────────────────────────────────── */
+::selection {
+  background: var(--color-accent-glow);
+  color: var(--color-text-primary);
+}
+
+/* ─── Focus ring — consistent across app ─────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Animations — minimal, purposeful ──────────────────── */
 @keyframes breathe {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.6); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-accent-glow); }
+  50% { box-shadow: 0 0 0 8px transparent; }
 }
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .animate-breathe { animation: breathe 3s ease-in-out infinite; }
 .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
-.animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.animate-slide-up { animation: slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-fade-in { animation: fade-in 0.15s ease-out; }
 
-/* Selection */
-::selection {
-  background: rgba(124, 58, 237, 0.3);
-  color: #e4e4ed;
+/* ─── Utility: card primitive ────────────────────────────── */
+.card {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
 }
 
-body {
-  background: #06060a;
-  color: #e4e4ed;
+/* ─── Utility: surface primitive ─────────────────────────── */
+.surface {
+  background: var(--color-surface);
 }

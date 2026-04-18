@@ -29,36 +29,62 @@ export interface Theme {
 
 export const themes: Record<string, Theme> = {
   /* ═══════════════════════════════════════════════════════════════
-     PAPER — polished light theme (default)
-     A clean, Notion/Linear-inspired palette with soft grays and a
-     refined purple accent. High contrast for readability.
+     LINEAR LIGHT — shadcn/Vercel/Linear-style light theme (default)
+     Pure zinc grayscale, single violet accent, minimal gradients.
      ═══════════════════════════════════════════════════════════════ */
-  paper: {
-    id: "paper",
-    name: "Paper",
+  "linear-light": {
+    id: "linear-light",
+    name: "Linear Light",
     isDark: false,
     colors: {
       void: "#ffffff",             // pure white canvas
-      deep: "#fafafa",             // subtle off-white main area
-      surface: "#f5f5f7",          // sidebar (Apple-ish gray)
-      elevated: "#ffffff",         // cards pop as pure white
-      hover: "#f0f0f3",            // gentle hover
-      borderSubtle: "#ececf0",     // very subtle border
-      borderDefault: "#d4d4d8",    // standard border (zinc-300)
-      dim: "#e4e4e7",              // disabled/dead (zinc-200)
-      textPrimary: "#18181b",      // near-black text (zinc-900)
-      textSecondary: "#52525b",    // body text (zinc-600)
-      textMuted: "#a1a1aa",        // captions (zinc-400)
-      accent: "#7c3aed",           // purple (brand)
+      deep: "#fafafa",             // zinc-50 main area
+      surface: "#fafafa",          // sidebar — very subtle gray
+      elevated: "#ffffff",         // cards pop as pure white with shadow
+      hover: "#f4f4f5",            // zinc-100
+      borderSubtle: "#f4f4f5",     // zinc-100 for hairlines
+      borderDefault: "#e4e4e7",    // zinc-200 standard border
+      dim: "#d4d4d8",              // zinc-300
+      textPrimary: "#09090b",      // zinc-950 — sharp headings
+      textSecondary: "#3f3f46",    // zinc-700 — body text
+      textMuted: "#71717a",        // zinc-500 — captions
+      accent: "#7c3aed",           // violet-600 (brand)
       accentDim: "#6d28d9",
-      accentGlow: "rgba(124,58,237,0.15)",
+      accentGlow: "rgba(124,58,237,0.1)",
     },
-    graphBg: "radial-gradient(circle at 50% 30%, rgba(124,58,237,0.04) 0%, transparent 60%), #fafafa",
-    graphGrid: "radial-gradient(circle, #e4e4e7 0.6px, transparent 0.6px)",
+    graphBg: "radial-gradient(circle at 50% 30%, rgba(124,58,237,0.03) 0%, transparent 70%), #fafafa",
+    graphGrid: "radial-gradient(circle, #e4e4e7 0.5px, transparent 0.5px)",
   },
 
   /* ═══════════════════════════════════════════════════════════════
-     MIDNIGHT PURPLE — original dark theme
+     LINEAR DARK — matching dark theme in same aesthetic
+     ═══════════════════════════════════════════════════════════════ */
+  "linear-dark": {
+    id: "linear-dark",
+    name: "Linear Dark",
+    isDark: true,
+    colors: {
+      void: "#09090b",             // zinc-950
+      deep: "#0c0c0f",
+      surface: "#0c0c0f",          // near-black with slight warmth
+      elevated: "#131318",         // elevated cards
+      hover: "#1a1a1f",
+      borderSubtle: "#1f1f25",
+      borderDefault: "#27272a",    // zinc-800
+      dim: "#3f3f46",
+      textPrimary: "#fafafa",      // zinc-50
+      textSecondary: "#d4d4d8",    // zinc-300
+      textMuted: "#71717a",        // zinc-500
+      accent: "#a78bfa",           // violet-400 (lighter for dark bg)
+      accentDim: "#8b5cf6",
+      accentGlow: "rgba(167,139,250,0.15)",
+    },
+    graphBg: "radial-gradient(circle at 50% 30%, rgba(167,139,250,0.04) 0%, transparent 70%), #09090b",
+    graphGrid: "radial-gradient(circle, #27272a 0.6px, transparent 0.6px)",
+  },
+
+  /* ═══════════════════════════════════════════════════════════════
+     Legacy themes — preserved for users who picked them
      ═══════════════════════════════════════════════════════════════ */
   midnight: {
     id: "midnight",
@@ -115,20 +141,6 @@ export const themes: Record<string, Theme> = {
     graphBg: "radial-gradient(circle at 50% 50%, rgba(244,63,94,0.04) 0%, transparent 60%), linear-gradient(to bottom, #0c0a09, #1c1917)",
     graphGrid: "radial-gradient(circle, #292524 0.8px, transparent 0.8px)",
   },
-
-  light: {
-    id: "light",
-    name: "Light Mode",
-    isDark: false,
-    colors: {
-      void: "#ffffff", deep: "#f8fafc", surface: "#f1f5f9", elevated: "#e2e8f0", hover: "#cbd5e1",
-      borderSubtle: "#e2e8f0", borderDefault: "#cbd5e1", dim: "#cbd5e1",
-      textPrimary: "#0f172a", textSecondary: "#475569", textMuted: "#94a3b8",
-      accent: "#7c3aed", accentDim: "#6d28d9", accentGlow: "rgba(124,58,237,0.15)",
-    },
-    graphBg: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.03) 0%, transparent 60%), #f8fafc",
-    graphGrid: "radial-gradient(circle, #e2e8f0 0.8px, transparent 0.8px)",
-  },
 };
 
 interface ThemeState {
@@ -138,9 +150,7 @@ interface ThemeState {
 }
 
 /**
- * Apply a theme by writing all color values to CSS custom properties on
- * document.documentElement. Components reference these via `var(--color-*)`
- * strings, so theme changes propagate without re-rendering React state.
+ * Apply a theme by writing all color values to CSS custom properties.
  */
 function applyThemeToRoot(t: Theme): void {
   const root = document.documentElement;
@@ -148,6 +158,7 @@ function applyThemeToRoot(t: Theme): void {
 
   root.setAttribute("data-theme", t.id);
   root.setAttribute("data-theme-mode", t.isDark ? "dark" : "light");
+  root.classList.toggle("dark", t.isDark);
 
   root.style.setProperty("--color-void", c.void);
   root.style.setProperty("--color-deep", c.deep);
@@ -168,7 +179,7 @@ function applyThemeToRoot(t: Theme): void {
   document.body.style.color = c.textPrimary;
 }
 
-const DEFAULT_THEME_ID = "paper";
+const DEFAULT_THEME_ID = "linear-light";
 
 export const useTheme = create<ThemeState>()(
   persist(
@@ -185,10 +196,6 @@ export const useTheme = create<ThemeState>()(
   ),
 );
 
-/**
- * Apply the persisted theme (or the default) on page load, BEFORE React renders.
- * Call this once from main.tsx.
- */
 export function initTheme(): void {
   let id = DEFAULT_THEME_ID;
   try {
