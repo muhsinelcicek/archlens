@@ -15,8 +15,9 @@ import { useUndoRedo } from "../lib/use-undo-redo.js";
 import {
   type SimNode, type SimEdge, type NodeType, type TrafficPattern, type SimulatorConfig,
   type GlobalStats, type EventLogEntry, type RootCauseInsight, type ChaosConfig,
+  type NodeIncident,
   simulateTick, getGlobalStats, createNodeMetrics, createCircuitBreaker,
-  makeDefaultNode, analyzeRootCause,
+  makeDefaultNode, analyzeRootCause, detectIncidents,
 } from "../lib/simulator-engine.js";
 import { SCENARIO_TEMPLATES, LOAD_TEST_PRESETS } from "../lib/simulator-scenarios.js";
 
@@ -78,6 +79,7 @@ export function SimulatorView() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [clipboard, setClipboard] = useState<SimNode | null>(null);
   const [showMinimap, setShowMinimap] = useState(true);
+  const [nodeIncidents, setNodeIncidents] = useState<Map<string, NodeIncident[]>>(new Map());
   const [tracing, setTracing] = useState(false);
   const [tracePath, setTracePath] = useState<string[]>([]);
   const [traceStep, setTraceStep] = useState(-1);
@@ -272,13 +274,16 @@ export function SimulatorView() {
     };
   }, [running, speed, edges, trafficPattern, chaosEnabled, chaosConfig, uptime]);
 
-  // Update global stats
+  // Update global stats + detect incidents
   useEffect(() => {
     if (running) {
       const stats = getGlobalStats(nodes, uptime);
       setGlobalStats(stats);
+      // Detect per-node incidents (Paperdraw-style)
+      const incidents = detectIncidents(nodes, edges, stats);
+      setNodeIncidents(incidents);
     }
-  }, [uptime, nodes, running]);
+  }, [uptime, nodes, edges, running]);
 
   // Root cause insights
   const insights = useMemo<RootCauseInsight[]>(() => {
@@ -1035,6 +1040,36 @@ export function SimulatorView() {
                         </div>
                       </div>
                     )}
+                    {/* ── Incident badges (Paperdraw-style) ── */}
+                    {(() => {
+                      const incidents = nodeIncidents.get(n.id);
+                      if (!incidents || incidents.length === 0) return null;
+                      return (
+                        <div className="absolute -right-2 top-0 translate-x-full flex flex-col gap-1 pl-2 z-20 pointer-events-none" style={{ maxWidth: 220 }}>
+                          {incidents.slice(0, 5).map((inc, idx) => {
+                            const bg = inc.type === "TOPOLOGY_PRESSURE" ? "#92400e"
+                              : inc.severity >= 80 ? "#991b1b"
+                              : inc.severity >= 60 ? "#92400e"
+                              : "#1e3a5f";
+                            const border = inc.type === "TOPOLOGY_PRESSURE" ? "#fbbf24"
+                              : inc.severity >= 80 ? "#ef4444"
+                              : inc.severity >= 60 ? "#f97316"
+                              : "#60a5fa";
+                            return (
+                              <div key={idx} className="rounded px-1.5 py-0.5 text-[8px] font-bold uppercase whitespace-nowrap pointer-events-auto"
+                                style={{ backgroundColor: bg, color: "#fff", border: `1px solid ${border}`, fontSize: inc.type === "TOPOLOGY_PRESSURE" ? 9 : 8 }}
+                                title={`${inc.explanation}\n\n💡 ${inc.recommendation}`}
+                              >
+                                {inc.type === "TOPOLOGY_PRESSURE" ? inc.label : inc.label}
+                                {inc.type === "TOPOLOGY_PRESSURE" && (
+                                  <div className="text-[7px] font-medium normal-case mt-0.5 text-amber-200">{inc.explanation}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}

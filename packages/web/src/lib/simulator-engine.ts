@@ -685,7 +685,278 @@ export function getGlobalStats(nodes: SimNode[], uptimeSec: number): GlobalStats
 }
 
 /**
- * Root cause analysis — narrative insights from current state.
+ * Node-level incident — Paperdraw-style per-node issue detection.
+ * Each node accumulates incidents that are shown as badges/cards on the canvas.
+ */
+export interface NodeIncident {
+  type: string;         // SPOF, CASCADE, OVERLOAD, SLOW_NODE, etc.
+  severity: number;     // 0-100 percentage
+  label: string;        // Short badge text: "SPOF", "502 BAD GATEWAY"
+  explanation: string;  // Detailed narrative
+  recommendation: string;
+  category: "topology" | "performance" | "reliability" | "cost";
+}
+
+/**
+ * Detect incidents per node — called each tick.
+ * Returns a map of nodeId → incidents.
+ */
+export function detectIncidents(
+  nodes: SimNode[],
+  edges: SimEdge[],
+  globalStats: GlobalStats,
+): Map<string, NodeIncident[]> {
+  const result = new Map<string, NodeIncident[]>();
+  const getOrCreate = (id: string): NodeIncident[] => {
+    if (!result.has(id)) result.set(id, []);
+    return result.get(id)!;
+  };
+
+  // Build adjacency for cascade detection
+  const outgoing = new Map<string, string[]>();
+  const incoming = new Map<string, string[]>();
+  for (const e of edges) {
+    if (!outgoing.has(e.source)) outgoing.set(e.source, []);
+    outgoing.get(e.source)!.push(e.target);
+    if (!incoming.has(e.target)) incoming.set(e.target, []);
+    incoming.get(e.target)!.push(e.source);
+  }
+
+  const nonClients = nodes.filter((n) => n.type !== "client");
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+  for (const n of nonClients) {
+    const incidents = getOrCreate(n.id);
+    if (!n.alive) continue;
+
+    const p99 = n.metrics.latencyP99[n.metrics.latencyP99.length - 1] || 0;
+    const errRate = n.metrics.errorRate[n.metrics.errorRate.length - 1] || 0;
+    const capacity = n.capacityPerReplica * n.replicas;
+
+    // ── SPOF: Single Point of Failure ──
+    if (n.replicas <= 1 && n.type !== "monitoring" && n.type !== "client") {
+      incidents.push({
+        type: "SPOF",
+        severity: 80,
+        label: "SPOF",
+        explanation: `${n.label} is a single point of failure`,
+        recommendation: `Increase instance count, enable autoscaling, or add a redundant ${n.label} node`,
+        category: "reliability",
+      });
+    }
+
+    // ── Data Loss Risk (DB without replication) ──
+    if ((n.type === "database" || n.type === "storage") && n.replicas <= 1) {
+      incidents.push({
+        type: "DATA_LOSS_RISK",
+        severity: 90,
+        label: "DATA LOSS RISK",
+        explanation: `${n.label} has no replication — risk of data loss`,
+        recommendation: "Enable replication with factor >= 2 or add a redundant database node",
+        category: "reliability",
+      });
+    }
+
+    // ── Overload ──
+    if (n.utilization > 0.9) {
+      const overflow = Math.max(0, Math.round((n.utilization - 1) * 100));
+      incidents.push({
+        type: "OVERLOAD",
+        severity: Math.min(95, 70 + overflow),
+        label: `LOAD: ${Math.round(n.utilization * 100)}%`,
+        explanation: overflow > 0
+          ? `${n.label} receiving ${Math.round(n.incomingRate)} RPS but capacity is ${capacity} RPS (+${overflow}% overflow)`
+          : `${n.label} saturated at ${Math.round(n.incomingRate)} RPS against ${capacity} RPS capacity (${Math.round(n.utilization * 100)}% load)`,
+        recommendation: overflow > 0
+          ? "Scale capacity, implement rate limiting, or optimize processing"
+          : "Add horizontal headroom before the next traffic burst",
+        category: "performance",
+      });
+    }
+
+    // ── Slow Node ──
+    if (p99 > n.baseLatencyMs * 2 && n.baseLatencyMs > 0) {
+      const slowFactor = (p99 / n.baseLatencyMs).toFixed(1);
+      incidents.push({
+        type: "SLOW_NODE",
+        severity: 70,
+        label: `${slowFactor}× SLOWER`,
+        explanation: `${n.label} responding ${slowFactor}× slower than normal (p99: ${Math.round(p99)}ms vs base: ${n.baseLatencyMs}ms)`,
+        recommendation: "Investigate node health, restart or replace slow instance",
+        category: "performance",
+      });
+    }
+
+    // ── HTTP Error: 502 Bad Gateway ──
+    if (errRate > 0.05 && n.utilization > 0.8) {
+      const degraded = Math.round(errRate * 100);
+      incidents.push({
+        type: "HTTP_ERROR",
+        severity: 75,
+        label: "502 BAD GATEWAY",
+        explanation: `${n.label} returning errors at ${degraded}% rate`,
+        recommendation: "Scale backend capacity or enable circuit breakers",
+        category: "reliability",
+      });
+    }
+
+    // ── Traffic Overflow ──
+    if (n.incomingRate > capacity && capacity > 0) {
+      const overflowPct = Math.round(((n.incomingRate - capacity) / capacity) * 100);
+      incidents.push({
+        type: "TRAFFIC_OVERFLOW",
+        severity: 72 + Math.min(20, overflowPct / 5),
+        label: `+${overflowPct}% OVERFLOW`,
+        explanation: `${n.label} receiving ${Math.round(n.incomingRate)} RPS but runtime capacity is ${capacity} RPS (+${overflowPct}% overflow)`,
+        recommendation: "Stabilize the failing path, reduce blast radius, and add observability",
+        category: "performance",
+      });
+    }
+
+    // ── Health Check Failure ──
+    if (errRate > 0.1 && n.incomingRate > 0) {
+      incidents.push({
+        type: "HEALTH_CHECK_FAILURE",
+        severity: 72,
+        label: "UNHEALTHY",
+        explanation: `${n.label} is unhealthy but traffic is still being routed to it`,
+        recommendation: "Implement /health endpoint, verify thresholds, drain unhealthy instances",
+        category: "reliability",
+      });
+    }
+
+    // ── Consumer Lag (queues) ──
+    if ((n.type === "queue" || n.type === "messagebroker") && n.queueDepth > 50) {
+      incidents.push({
+        type: "CONSUMER_LAG",
+        severity: 76,
+        label: `LAG: ${Math.round(n.queueDepth)}`,
+        explanation: `${n.label} processing rate slower than ingestion rate (queue depth: ${Math.round(n.queueDepth)})`,
+        recommendation: "Scale workers, split noisy queues, keep backlog bounded",
+        category: "performance",
+      });
+    }
+
+    // ── Cascading Failure ──
+    const upstreams = incoming.get(n.id) || [];
+    for (const upId of upstreams) {
+      const upstream = nodeMap.get(upId);
+      if (upstream && (!upstream.alive || upstream.utilization > 1 || upstream.circuitBreaker.state === "open")) {
+        incidents.push({
+          type: "CASCADE",
+          severity: 72,
+          label: `CASCADE: from ${upstream.label}`,
+          explanation: `${n.label} is reacting to dependency pressure from ${upstream.label}`,
+          recommendation: `Review dependencies, retries, and failover behavior for ${n.label}`,
+          category: "reliability",
+        });
+        break; // one cascade badge per node
+      }
+    }
+
+    // ── Dependency Unavailable ──
+    const downstreams = outgoing.get(n.id) || [];
+    for (const downId of downstreams) {
+      const downstream = nodeMap.get(downId);
+      if (downstream && !downstream.alive) {
+        incidents.push({
+          type: "DEPENDENCY_UNAVAILABLE",
+          severity: 85,
+          label: "DEP UNAVAILABLE",
+          explanation: `Critical downstream dependency ${downstream.label} is unreachable`,
+          recommendation: `Check health and logs of ${downstream.label}, review deployment status`,
+          category: "reliability",
+        });
+        break;
+      }
+    }
+
+    // ── Error Budget Burn ──
+    if (n.metrics.totalRequests > 100) {
+      const nodeErrRate = n.metrics.totalErrors / n.metrics.totalRequests;
+      if (nodeErrRate > 0.01) {
+        const burnRate = nodeErrRate / 0.001; // relative to 99.9% SLO
+        if (burnRate > 5) {
+          incidents.push({
+            type: "ERROR_BUDGET_BURN",
+            severity: 75,
+            label: `${burnRate.toFixed(0)}× BURN`,
+            explanation: `${n.label} is burning its SLO budget at ${burnRate.toFixed(1)}× normal pace`,
+            recommendation: "Slow rollout, lower retry pressure, stabilize latency",
+            category: "reliability",
+          });
+        }
+      }
+    }
+
+    // ── Autoscale Thrash ──
+    if (n.autoScaleEnabled) {
+      const replicaHistory = n.metrics.replicas;
+      if (replicaHistory.length >= 10) {
+        const recent = replicaHistory.slice(-10);
+        let changes = 0;
+        for (let i = 1; i < recent.length; i++) {
+          if (recent[i] !== recent[i - 1]) changes++;
+        }
+        if (changes >= 4) {
+          incidents.push({
+            type: "AUTOSCALE_THRASH",
+            severity: 45,
+            label: "THRASHING",
+            explanation: `${n.label} autoscaling is oscillating (${changes} changes in 10 ticks)`,
+            recommendation: "Widen autoscaling cooldowns, raise min capacity, scale on smoothed demand",
+            category: "performance",
+          });
+        }
+      }
+    }
+
+    // ── Cold Start Penalty ──
+    if (n.type === "lambda" && n.processedRate === 0 && n.incomingRate > 0) {
+      incidents.push({
+        type: "COLD_START",
+        severity: 30,
+        label: "COLD START",
+        explanation: `Cold start penalty: new instances at reduced capacity`,
+        recommendation: "Pre-warm capacity or reduce startup cost",
+        category: "performance",
+      });
+    }
+
+    // ── Retry Amplification ──
+    if (n.retryingRate > n.incomingRate * 0.1) {
+      incidents.push({
+        type: "RETRY_AMPLIFICATION",
+        severity: 63,
+        label: "RETRY STORM",
+        explanation: `Retries spiked while downstream remained unstable`,
+        recommendation: "Reduce retry pressure, add backoff/circuit breaking",
+        category: "reliability",
+      });
+    }
+
+    // ── Topology Pressure (summary card) ──
+    if (incidents.length >= 2) {
+      const degradedPct = Math.round(errRate * 100);
+      const droppedPct = Math.round((n.droppedRate / Math.max(1, n.incomingRate)) * 100);
+      if (degradedPct > 0 || droppedPct > 0) {
+        incidents.unshift({
+          type: "TOPOLOGY_PRESSURE",
+          severity: Math.max(...incidents.map((i) => i.severity)),
+          label: `${n.type.toUpperCase()} TOPOLOGY PRESSURE`,
+          explanation: `IMPACT: ${degradedPct}% DEGRADED${droppedPct > 0 ? ` + ${droppedPct}% DROPPED` : ""}`,
+          recommendation: "Review the topology issues listed below",
+          category: "topology",
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Root cause analysis — narrative insights from current state (kept for insights panel).
  */
 export interface RootCauseInsight {
   severity: "info" | "warning" | "critical";
@@ -695,88 +966,41 @@ export interface RootCauseInsight {
 }
 
 export function analyzeRootCause(nodes: SimNode[], globalStats: GlobalStats): RootCauseInsight[] {
+  const incidents = detectIncidents(nodes, [], globalStats);
   const insights: RootCauseInsight[] = [];
-  const nonClients = nodes.filter((n) => n.type !== "client" && n.alive);
 
-  // Find overloaded nodes
-  const overloaded = nonClients.filter((n) => n.utilization > 1);
-  if (overloaded.length > 0) {
-    const worst = overloaded.reduce((a, b) => a.utilization > b.utilization ? a : b);
-    insights.push({
-      severity: "critical",
-      title: `${worst.label} is the primary bottleneck`,
-      explanation: `Running at ${Math.round(worst.utilization * 100)}% utilization with queue depth of ${Math.round(worst.queueDepth)}. This causes cascading latency spikes for all downstream services.`,
-      recommendation: `Scale ${worst.label} from ${worst.replicas} to ${Math.ceil(worst.replicas * worst.utilization * 1.2)} replicas. Or increase capacity per replica (currently ${worst.capacityPerReplica} req/s).`,
-    });
-  }
-
-  // Latency explosion detection
-  const highLatency = nonClients.filter((n) => {
-    const p99 = n.metrics.latencyP99[n.metrics.latencyP99.length - 1] || 0;
-    return p99 > n.baseLatencyMs * 5;
-  });
-  if (highLatency.length > 0 && overloaded.length === 0) {
-    insights.push({
-      severity: "warning",
-      title: "Latency amplification detected",
-      explanation: `${highLatency.length} nodes have p99 latency >5x their base. This is likely due to queue buildup at utilization >80%.`,
-      recommendation: "Consider scaling before saturation hits 80%. Use auto-scaling with scale-up threshold of 0.7.",
-    });
-  }
-
-  // Circuit breakers tripped
-  const tripped = nonClients.filter((n) => n.circuitBreaker.state === "open");
-  if (tripped.length > 0) {
-    insights.push({
-      severity: "critical",
-      title: `${tripped.length} circuit breaker(s) open`,
-      explanation: `${tripped.map((n) => n.label).join(", ")} stopped accepting traffic after repeated failures. Traffic is being shed to prevent cascade.`,
-      recommendation: "Investigate the failing dependency. Circuit will attempt recovery after cooldown.",
-    });
-  }
-
-  // Error rate alerts
-  if (globalStats.successRate < 0.95 && globalStats.totalRequests > 100) {
-    insights.push({
-      severity: globalStats.successRate < 0.9 ? "critical" : "warning",
-      title: `Success rate dropped to ${(globalStats.successRate * 100).toFixed(1)}%`,
-      explanation: `${globalStats.totalErrors} errors out of ${globalStats.totalRequests} requests. Failures likely concentrated on overloaded or dead nodes.`,
-      recommendation: "Enable circuit breakers on affected nodes. Add retry logic with exponential backoff.",
-    });
-  }
-
-  // Cache opportunity
-  const databases = nonClients.filter((n) => n.type === "database");
-  const caches = nonClients.filter((n) => n.type === "cache");
-  if (databases.length > 0 && caches.length === 0) {
-    const dbOverload = databases.some((d) => d.utilization > 0.7);
-    if (dbOverload) {
-      insights.push({
-        severity: "info",
-        title: "Consider adding a cache layer",
-        explanation: "Database utilization is high. A cache in front could dramatically reduce DB load.",
-        recommendation: "Add a Cache node before your databases. Start with 85% hit rate — this reduces DB load to 15% of current.",
-      });
+  // Convert top incidents to insights
+  const allIncidents: Array<NodeIncident & { nodeId: string }> = [];
+  for (const [nodeId, nodeInc] of incidents) {
+    for (const inc of nodeInc) {
+      if (inc.type !== "TOPOLOGY_PRESSURE") {
+        allIncidents.push({ ...inc, nodeId });
+      }
     }
   }
+  allIncidents.sort((a, b) => b.severity - a.severity);
 
-  // Cost alerts
-  if (globalStats.monthlyCostEstimate > 10000) {
+  // Dedupe by type and take top 8
+  const seenTypes = new Set<string>();
+  for (const inc of allIncidents) {
+    if (seenTypes.has(inc.type)) continue;
+    seenTypes.add(inc.type);
     insights.push({
-      severity: "warning",
-      title: "High infrastructure cost",
-      explanation: `Projected monthly cost: $${Math.round(globalStats.monthlyCostEstimate).toLocaleString()}. Most expensive nodes carry significant replica counts.`,
-      recommendation: "Review replicas on low-utilization nodes. Consider auto-scaling to reduce waste during off-peak hours.",
+      severity: inc.severity >= 75 ? "critical" : inc.severity >= 50 ? "warning" : "info",
+      title: inc.label,
+      explanation: inc.explanation,
+      recommendation: inc.recommendation,
     });
+    if (insights.length >= 8) break;
   }
 
-  // SLO met — positive insight
-  if (globalStats.sloMet && globalStats.totalRequests > 1000) {
+  // SLO positive
+  if (globalStats.sloMet && globalStats.totalRequests > 1000 && insights.length === 0) {
     insights.push({
       severity: "info",
       title: "SLO is being met",
-      explanation: `Success rate ${(globalStats.successRate * 100).toFixed(2)}% and p99 latency ${Math.round(globalStats.p99LatencyMs)}ms meet the 99.9/500ms SLO.`,
-      recommendation: "Current capacity is well-sized. Monitor during traffic spikes.",
+      explanation: `Success rate ${(globalStats.successRate * 100).toFixed(2)}% and p99 ${Math.round(globalStats.p99LatencyMs)}ms meet the 99.9/500ms SLO.`,
+      recommendation: "Current capacity is well-sized.",
     });
   }
 

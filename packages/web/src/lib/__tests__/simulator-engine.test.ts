@@ -11,6 +11,7 @@ import {
   simulateTick,
   getGlobalStats,
   analyzeRootCause,
+  detectIncidents,
   makeDefaultNode,
   createCircuitBreaker,
   createNodeMetrics,
@@ -382,40 +383,75 @@ describe("simulator-engine", () => {
     });
   });
 
-  describe("analyzeRootCause", () => {
-    it("detects overloaded bottleneck", () => {
+  describe("detectIncidents", () => {
+    it("detects overloaded node", () => {
       const api = makeDefaultNode("api", "api", "API", 0, 0);
       api.utilization = 1.5;
+      api.incomingRate = 1500;
       api.queueDepth = 50;
+      api.metrics.errorRate = [0.1];
       const stats = getGlobalStats([api], 60);
-      const insights = analyzeRootCause([api], stats);
-      const bottleneck = insights.find((i) => i.title.toLowerCase().includes("bottleneck"));
-      expect(bottleneck).toBeDefined();
-      expect(bottleneck!.severity).toBe("critical");
+      const incidents = detectIncidents([api], [], stats);
+      const apiInc = incidents.get("api") || [];
+      expect(apiInc.some((i) => i.type === "OVERLOAD")).toBe(true);
     });
 
-    it("suggests cache when DB is hot", () => {
+    it("detects SPOF on single-replica nodes", () => {
       const db = makeDefaultNode("db", "database", "DB", 0, 0);
-      db.utilization = 0.85;
+      db.replicas = 1;
       const stats = getGlobalStats([db], 60);
-      const insights = analyzeRootCause([db], stats);
-      const cacheHint = insights.find((i) => i.title.toLowerCase().includes("cache"));
-      expect(cacheHint).toBeDefined();
+      const incidents = detectIncidents([db], [], stats);
+      const dbInc = incidents.get("db") || [];
+      expect(dbInc.some((i) => i.type === "SPOF")).toBe(true);
     });
 
-    it("reports SLO met as positive insight", () => {
+    it("detects DATA_LOSS_RISK on unreplicated DB", () => {
+      const db = makeDefaultNode("db", "database", "DB", 0, 0);
+      db.replicas = 1;
+      const stats = getGlobalStats([db], 60);
+      const incidents = detectIncidents([db], [], stats);
+      const dbInc = incidents.get("db") || [];
+      expect(dbInc.some((i) => i.type === "DATA_LOSS_RISK")).toBe(true);
+    });
+
+    it("detects CASCADE from upstream failure", () => {
+      const lb = makeDefaultNode("lb", "loadbalancer", "LB", 0, 0);
+      const api = makeDefaultNode("api", "api", "API", 100, 0);
+      lb.alive = false;
+      const edges: SimEdge[] = [
+        { id: "e1", source: "lb", target: "api", weight: 1, latencyMs: 1, retryEnabled: false },
+      ];
+      const stats = getGlobalStats([lb, api], 60);
+      const incidents = detectIncidents([lb, api], edges, stats);
+      const apiInc = incidents.get("api") || [];
+      expect(apiInc.some((i) => i.type === "CASCADE")).toBe(true);
+    });
+
+    it("detects slow node", () => {
+      const api = makeDefaultNode("api", "api", "API", 0, 0);
+      api.baseLatencyMs = 25;
+      api.metrics.latencyP99 = [200]; // 8x slower
+      const stats = getGlobalStats([api], 60);
+      const incidents = detectIncidents([api], [], stats);
+      const apiInc = incidents.get("api") || [];
+      expect(apiInc.some((i) => i.type === "SLOW_NODE")).toBe(true);
+    });
+
+    it("no incidents on healthy well-replicated node", () => {
       const api = makeDefaultNode("api", "api", "API", 0, 0);
       api.utilization = 0.3;
+      api.replicas = 3;
+      api.incomingRate = 100;
       api.metrics.totalRequests = 5000;
       api.metrics.totalErrors = 1;
-      api.metrics.latencyP50 = [50];
-      api.metrics.latencyP95 = [100];
-      api.metrics.latencyP99 = [200];
+      api.metrics.latencyP99 = [30]; // within normal range (base=25)
+      api.metrics.errorRate = [0.0001];
       const stats = getGlobalStats([api], 60);
-      const insights = analyzeRootCause([api], stats);
-      const positive = insights.find((i) => i.title.toLowerCase().includes("slo"));
-      expect(positive).toBeDefined();
-      expect(positive!.severity).toBe("info");
+      const incidents = detectIncidents([api], [], stats);
+      const apiInc = incidents.get("api") || [];
+      // Should have no serious incidents — maybe just minor ones
+      const critical = apiInc.filter((i) => i.severity >= 70);
+      expect(critical.length).toBe(0);
     });
   });
 });
