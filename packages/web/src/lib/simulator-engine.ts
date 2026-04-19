@@ -13,7 +13,8 @@
  * - Root cause analysis
  */
 
-export type NodeType = "client" | "loadbalancer" | "api" | "service" | "database" | "cache" | "queue";
+export type NodeType = "client" | "loadbalancer" | "api" | "service" | "database" | "cache" | "queue"
+  | "cdn" | "messagebroker" | "storage" | "dns" | "auth" | "monitoring" | "lambda" | "container" | "gateway";
 
 export type TrafficPatternType = "constant" | "burst" | "ramp" | "spike" | "periodic" | "noise";
 
@@ -75,6 +76,22 @@ export interface SimNode {
   cacheStampedeEnabled?: boolean;
   dbConnectionPoolSize?: number;     // limit for DB
   queueMaxLag?: number;              // for queue
+
+  // Lambda-specific
+  lambdaColdStartMs?: number;      // extra latency on first request
+  lambdaConcurrencyLimit?: number; // max concurrent executions
+
+  // Gateway-specific
+  gatewayRateLimitPerSec?: number; // max req/s before rejection
+  gatewayBurstAllowance?: number;  // burst above limit
+
+  // MessageBroker-specific
+  brokerConsumerGroups?: number;
+  brokerDlqThreshold?: number;     // messages before DLQ
+
+  // Container-specific
+  containerCpuLimit?: number;      // 0-100 percentage
+  containerMemoryMb?: number;
 
   // Cost
   costPerReplicaHour: number;        // USD per replica per hour
@@ -391,7 +408,7 @@ export function simulateTick(
   // Process nodes in BFS order
   for (const id of order) {
     const node = nodeMap.get(id)!;
-    const λ = incomingMap.get(id) || 0;
+    let λ = incomingMap.get(id) || 0;
     const capacity = node.capacityPerReplica * node.replicas;
 
     // Circuit breaker check
@@ -421,7 +438,27 @@ export function simulateTick(
 
     // Chaos: latency injection
     const extraLatency = config.chaosConfig?.enabled ? (config.chaosConfig.latencyInjectionMs || 0) : 0;
-    const effectiveBaseLatency = node.baseLatencyMs + extraLatency + (node.chaosMode === "slow" ? 200 : 0);
+    let effectiveBaseLatency = node.baseLatencyMs + extraLatency + (node.chaosMode === "slow" ? 200 : 0);
+
+    // Lambda: auto-scale and cold start
+    if (node.type === "lambda") {
+      // Lambda always auto-scales
+      node.replicas = Math.max(1, Math.ceil(λ / node.capacityPerReplica));
+      // Cold start: if node was idle, add extra latency
+      if (node.processedRate === 0 && λ > 0) {
+        effectiveBaseLatency += (node.lambdaColdStartMs || 200);
+      }
+    }
+
+    // Gateway: rate limiting
+    if (node.type === "gateway" && node.gatewayRateLimitPerSec) {
+      const limit = node.gatewayRateLimitPerSec + (node.gatewayBurstAllowance || 0);
+      if (λ > limit) {
+        const rejected = λ - limit;
+        node.droppedRate += rejected;
+        λ = limit;
+      }
+    }
 
     // DB connection pool limit
     let effectiveCapacity = capacity;
@@ -521,10 +558,18 @@ export function simulateTick(
       }
     }
 
+    // MessageBroker: DLQ overflow
+    if (node.type === "messagebroker" && node.brokerDlqThreshold && node.queueDepth > node.brokerDlqThreshold) {
+      const dlqOverflow = (node.queueDepth - node.brokerDlqThreshold) * 0.01;
+      node.droppedRate += dlqOverflow;
+    }
+
     // Route traffic
-    if (node.type === "cache" && node.cacheHitRate) {
+    if ((node.type === "cache" || node.type === "cdn") && node.cacheHitRate) {
       const missedRate = actuallyDelivered * (1 - node.cacheHitRate);
       routeTraffic(id, missedRate, outgoing, incomingMap, nodeMap);
+    } else if (node.type === "monitoring") {
+      // Monitoring is passive — receives data but doesn't forward it
     } else {
       routeTraffic(id, actuallyDelivered, outgoing, incomingMap, nodeMap);
     }
@@ -777,6 +822,55 @@ export const NODE_DEFAULTS: Record<NodeType, Partial<SimNode>> = {
     costPerReplicaHour: 0.20, costPerMillionRequests: 0.03,
     queueMaxLag: 1000,
   },
+  cdn: {
+    capacityPerReplica: 100000, baseLatencyMs: 1, latencyVarianceMs: 0.5,
+    replicas: 1, timeoutMs: 1000, errorRateAtOverload: 0.001,
+    costPerReplicaHour: 0.30, costPerMillionRequests: 0.01,
+    cacheHitRate: 0.95, // CDN edge cache hit rate
+  },
+  messagebroker: {
+    capacityPerReplica: 50000, baseLatencyMs: 3, latencyVarianceMs: 1,
+    replicas: 3, timeoutMs: 30000, errorRateAtOverload: 0.01,
+    costPerReplicaHour: 0.25, costPerMillionRequests: 0.02,
+    brokerConsumerGroups: 3, brokerDlqThreshold: 1000,
+  },
+  storage: {
+    capacityPerReplica: 5000, baseLatencyMs: 50, latencyVarianceMs: 30,
+    replicas: 1, timeoutMs: 60000, errorRateAtOverload: 0.005,
+    costPerReplicaHour: 0.10, costPerMillionRequests: 0.004,
+  },
+  dns: {
+    capacityPerReplica: 1000000, baseLatencyMs: 1, latencyVarianceMs: 0.2,
+    replicas: 2, timeoutMs: 500, errorRateAtOverload: 0.0001,
+    costPerReplicaHour: 0.01, costPerMillionRequests: 0.001,
+  },
+  auth: {
+    capacityPerReplica: 2000, baseLatencyMs: 10, latencyVarianceMs: 5,
+    replicas: 2, timeoutMs: 2000, errorRateAtOverload: 0.02,
+    costPerReplicaHour: 0.08, costPerMillionRequests: 0.05,
+  },
+  monitoring: {
+    capacityPerReplica: 100000, baseLatencyMs: 1, latencyVarianceMs: 0.5,
+    replicas: 1, timeoutMs: 5000, errorRateAtOverload: 0.001,
+    costPerReplicaHour: 0.20, costPerMillionRequests: 0.001,
+  },
+  lambda: {
+    capacityPerReplica: 1000, baseLatencyMs: 15, latencyVarianceMs: 10,
+    replicas: 1, timeoutMs: 30000, errorRateAtOverload: 0.05,
+    costPerReplicaHour: 0.00, costPerMillionRequests: 0.20, // pay per invocation
+    lambdaColdStartMs: 200, lambdaConcurrencyLimit: 1000,
+  },
+  container: {
+    capacityPerReplica: 500, baseLatencyMs: 20, latencyVarianceMs: 10,
+    replicas: 2, timeoutMs: 5000, errorRateAtOverload: 0.05,
+    costPerReplicaHour: 0.06, costPerMillionRequests: 0.05,
+  },
+  gateway: {
+    capacityPerReplica: 10000, baseLatencyMs: 3, latencyVarianceMs: 1,
+    replicas: 2, timeoutMs: 5000, errorRateAtOverload: 0.01,
+    costPerReplicaHour: 0.12, costPerMillionRequests: 0.03,
+    gatewayRateLimitPerSec: 5000, gatewayBurstAllowance: 500,
+  },
 };
 
 export function makeDefaultNode(id: string, type: NodeType, label: string, x: number, y: number): SimNode {
@@ -805,6 +899,14 @@ export function makeDefaultNode(id: string, type: NodeType, label: string, x: nu
     cacheStampedeEnabled: d.cacheStampedeEnabled,
     dbConnectionPoolSize: d.dbConnectionPoolSize,
     queueMaxLag: d.queueMaxLag,
+    lambdaColdStartMs: d.lambdaColdStartMs,
+    lambdaConcurrencyLimit: d.lambdaConcurrencyLimit,
+    gatewayRateLimitPerSec: d.gatewayRateLimitPerSec,
+    gatewayBurstAllowance: d.gatewayBurstAllowance,
+    brokerConsumerGroups: d.brokerConsumerGroups,
+    brokerDlqThreshold: d.brokerDlqThreshold,
+    containerCpuLimit: d.containerCpuLimit,
+    containerMemoryMb: d.containerMemoryMb,
     costPerReplicaHour: d.costPerReplicaHour!,
     costPerMillionRequests: d.costPerMillionRequests!,
     alive: true,

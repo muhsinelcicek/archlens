@@ -5,7 +5,8 @@ import {
   Users, RotateCcw, AlertTriangle, Activity, Skull, TrendingUp,
   Settings, Zap, CheckCircle2, XCircle, Gauge, Clock, DollarSign,
   Save, Upload, Sparkles, Shuffle, Scissors, FileText, ChevronDown,
-  BookOpen, Lightbulb, BarChart3,
+  BookOpen, Lightbulb, BarChart3, Globe, MessageSquare, HardDrive,
+  Wifi, Shield, Eye, Code, Container, Network,
 } from "lucide-react";
 import {
   type SimNode, type SimEdge, type NodeType, type TrafficPattern, type SimulatorConfig,
@@ -27,6 +28,15 @@ const TYPE_CONFIG: Record<NodeType, { icon: React.ElementType; color: string; la
   database:     { icon: Database, color: "#f87171", label: "Database" },
   cache:        { icon: Zap,      color: "#f472b6", label: "Cache" },
   queue:        { icon: Activity, color: "#06b6d4", label: "Queue" },
+  cdn:          { icon: Globe,    color: "#10b981", label: "CDN" },
+  messagebroker:{ icon: MessageSquare, color: "#8b5cf6", label: "Message Broker" },
+  storage:      { icon: HardDrive, color: "#ef4444", label: "Storage" },
+  dns:          { icon: Wifi,     color: "#6366f1", label: "DNS" },
+  auth:         { icon: Shield,   color: "#f59e0b", label: "Auth" },
+  monitoring:   { icon: Eye,      color: "#14b8a6", label: "Monitoring" },
+  lambda:       { icon: Code,     color: "#ec4899", label: "Lambda" },
+  container:    { icon: Container, color: "#0ea5e9", label: "Container" },
+  gateway:      { icon: Network,  color: "#84cc16", label: "Gateway" },
 };
 
 const LAYER_TO_TYPE: Record<string, NodeType> = {
