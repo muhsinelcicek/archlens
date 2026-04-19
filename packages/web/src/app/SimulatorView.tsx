@@ -8,7 +8,7 @@ import {
   BookOpen, Lightbulb, BarChart3, Globe, MessageSquare, HardDrive,
   Wifi, Shield, Eye, Code, Container, Network,
   ZoomIn, ZoomOut, Maximize2, Undo2, Redo2, Grid3x3, Crosshair,
-  Copy, Clipboard, Map,
+  Copy, Clipboard, Map as MapIcon,
 } from "lucide-react";
 import { useCanvasTransform } from "../lib/use-canvas-transform.js";
 import { useUndoRedo } from "../lib/use-undo-redo.js";
@@ -78,6 +78,10 @@ export function SimulatorView() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [clipboard, setClipboard] = useState<SimNode | null>(null);
   const [showMinimap, setShowMinimap] = useState(true);
+  const [tracing, setTracing] = useState(false);
+  const [tracePath, setTracePath] = useState<string[]>([]);
+  const [traceStep, setTraceStep] = useState(-1);
+  const traceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Compat: single selection helper
   const selectedId = selectedIds.size === 1 ? [...selectedIds][0] : null;
@@ -373,9 +377,9 @@ export function SimulatorView() {
   };
 
   const deleteSelected = () => {
-    if (!selectedId) return;
-    setNodes((prev) => prev.filter((n) => n.id !== selectedId));
-    setEdges((prev) => prev.filter((e) => e.source !== selectedId && e.target !== selectedId));
+    if (selectedIds.size === 0) return;
+    setNodes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
+    setEdges((prev) => prev.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target)));
     setSelectedIds(new Set());
   };
 
@@ -383,6 +387,47 @@ export function SimulatorView() {
     if (!selectedId) return;
     setNodes((prev) => prev.map((n) => n.id === selectedId ? { ...n, alive: !n.alive } : n));
   };
+
+  // Request trace: animate a single request through the graph
+  const startTrace = useCallback(() => {
+    // Build path via BFS from first client
+    const outgoing: Map<string, string[]> = new Map();
+    for (const ed of edges) {
+      if (!outgoing.has(ed.source)) outgoing.set(ed.source, []);
+      outgoing.get(ed.source)!.push(ed.target);
+    }
+    const client = nodes.find((n) => n.type === "client" && n.alive);
+    if (!client) return;
+    const path: string[] = [];
+    const visited = new Set<string>();
+    const queue = [client.id];
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const node = nodes.find((n) => n.id === id);
+      if (!node?.alive) continue;
+      path.push(id);
+      const targets = outgoing.get(id) || [];
+      if (targets.length > 0) queue.push(targets[0]); // follow first path
+    }
+    setTracePath(path);
+    setTraceStep(0);
+    setTracing(true);
+  }, [nodes, edges]);
+
+  // Animate trace steps
+  useEffect(() => {
+    if (!tracing || traceStep < 0) return;
+    if (traceStep >= tracePath.length) {
+      // Trace complete
+      const timer = setTimeout(() => { setTracing(false); setTraceStep(-1); setTracePath([]); }, 1500);
+      return () => clearTimeout(timer);
+    }
+    const timer = setTimeout(() => setTraceStep((s) => s + 1), 600);
+    traceTimerRef.current = timer;
+    return () => clearTimeout(timer);
+  }, [tracing, traceStep, tracePath.length]);
 
   const updateSelected = (patch: Partial<SimNode>) => {
     if (!selectedId) return;
@@ -516,15 +561,25 @@ export function SimulatorView() {
 
   // ─── Render helpers ────────────────────────────────────────
 
+  // Port-aware edge routing: exits from nearest edge of source, enters nearest edge of target
   const getEdgePath = (edge: SimEdge) => {
     const s = nodes.find((n) => n.id === edge.source);
     const t = nodes.find((n) => n.id === edge.target);
     if (!s || !t) return null;
-    const x1 = s.x + 70, y1 = s.y + 35;
-    const x2 = t.x + 70, y2 = t.y + 35;
-    const dx = x2 - x1;
-    const midX = x1 + dx / 2;
-    return { x1, y1, x2, y2, path: `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}` };
+    const W = 140, H = 70;
+    const sc = { x: s.x + W / 2, y: s.y + H / 2 };
+    const tc = { x: t.x + W / 2, y: t.y + H / 2 };
+    const dx = tc.x - sc.x, dy = tc.y - sc.y;
+    // Pick port on source (exit side)
+    const { px: x1, py: y1 } = pickPort(s.x, s.y, W, H, dx, dy);
+    // Pick port on target (entry side — opposite direction)
+    const { px: x2, py: y2 } = pickPort(t.x, t.y, W, H, -dx, -dy);
+    const mx = (x1 + x2) / 2;
+    // Bezier with midpoint
+    const path = Math.abs(dy) > Math.abs(dx)
+      ? `M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2}, ${x2} ${(y1 + y2) / 2}, ${x2} ${y2}`
+      : `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+    return { x1, y1, x2, y2, path };
   };
 
   const nodeColor = (n: SimNode) => {
@@ -679,6 +734,17 @@ export function SimulatorView() {
         </label>
 
         <div className="h-6 w-px bg-[var(--color-border-default)]" />
+
+        {/* Trace */}
+        <button
+          onClick={startTrace}
+          disabled={tracing}
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold ${
+            tracing ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-400" : "bg-[var(--color-border-subtle)] border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          }`}
+        >
+          <Crosshair className="h-3 w-3" /> {tracing ? `Tracing ${traceStep}/${tracePath.length}` : "Trace"}
+        </button>
 
         {/* Chaos */}
         <button
@@ -844,7 +910,7 @@ export function SimulatorView() {
               <button onClick={canvas.resetZoom} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]" title="Reset zoom"><Crosshair className="h-3.5 w-3.5" /></button>
               <div className="w-px h-4 bg-[#2a2a3a]" />
               <button onClick={() => canvas.setSnapEnabled(!canvas.snapEnabled)} className={`p-1.5 rounded ${canvas.snapEnabled ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Snap to grid"><Grid3x3 className="h-3.5 w-3.5" /></button>
-              <button onClick={() => setShowMinimap(!showMinimap)} className={`p-1.5 rounded ${showMinimap ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Mini-map"><Map className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setShowMinimap(!showMinimap)} className={`p-1.5 rounded ${showMinimap ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Mini-map"><MapIcon className="h-3.5 w-3.5" /></button>
             </div>
 
             {/* Mini-map (bottom-right) */}
@@ -912,6 +978,8 @@ export function SimulatorView() {
                 const Icon = cfg.icon;
                 const color = nodeColor(n);
                 const isSelected = selectedIds.has(n.id);
+                const isTraced = tracing && tracePath.includes(n.id);
+                const isTraceActive = tracing && tracePath[traceStep] === n.id;
                 const isConnectSource = connectFrom === n.id;
                 const lastP95 = n.metrics.latencyP95[n.metrics.latencyP95.length - 1] || 0;
                 const cbState = n.circuitBreaker.state;
@@ -920,7 +988,7 @@ export function SimulatorView() {
                     key={n.id}
                     onMouseDown={(e) => onNodeMouseDown(e, n.id)}
                     onClick={(e) => onNodeClick(e, n.id)}
-                    className={`absolute select-none ${isSelected ? "ring-2 ring-archlens-400" : ""} ${isConnectSource ? "ring-2 ring-emerald-400" : ""}`}
+                    className={`absolute select-none transition-all duration-200 ${isSelected ? "ring-2 ring-archlens-400" : ""} ${isConnectSource ? "ring-2 ring-emerald-400" : ""} ${isTraceActive ? "ring-2 ring-cyan-400 z-10" : ""}`}
                     style={{
                       left: n.x,
                       top: n.y,
@@ -928,9 +996,9 @@ export function SimulatorView() {
                       cursor: draggingId === n.id ? "grabbing" : "grab",
                       borderRadius: 10,
                       backgroundColor: n.alive ? "var(--color-elevated)" : "#0f0f16",
-                      border: `2px solid ${color}`,
-                      boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none",
-                      opacity: n.alive ? 1 : 0.5,
+                      border: `2px solid ${isTraceActive ? "#22d3ee" : color}`,
+                      boxShadow: isTraceActive ? "0 0 24px rgba(34,211,238,0.5)" : (running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none"),
+                      opacity: tracing && !isTraced ? 0.3 : (n.alive ? 1 : 0.5),
                     }}
                   >
                     <div className="flex items-center gap-2 p-2">
@@ -1067,14 +1135,113 @@ export function SimulatorView() {
                   <CI label="Base latency (ms)" value={selected.baseLatencyMs} type="number" onChange={(v) => updateSelected({ baseLatencyMs: Number(v) || 0 })} />
                   <CI label="Timeout (ms)" value={selected.timeoutMs} type="number" onChange={(v) => updateSelected({ timeoutMs: Number(v) || 0 })} />
                   <Slider label="Replicas" value={selected.replicas} min={1} max={50} onChange={(v) => updateSelected({ replicas: v })} />
-                  {selected.type === "cache" && (
-                    <Slider label="Hit Rate %" value={Math.round((selected.cacheHitRate || 0) * 100)} min={0} max={100} onChange={(v) => updateSelected({ cacheHitRate: v / 100 })} />
-                  )}
-                  {selected.type === "database" && (
-                    <CI label="Connection Pool" value={selected.dbConnectionPoolSize || 50} type="number" onChange={(v) => updateSelected({ dbConnectionPoolSize: Number(v) || 50 })} />
-                  )}
                 </div>
               </details>
+
+              {/* Component-specific inspector */}
+              {(selected.type === "cache" || selected.type === "cdn") && (
+                <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                  <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">
+                    {selected.type === "cdn" ? "CDN" : "Cache"} Settings
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    <Slider label="Hit Rate %" value={Math.round((selected.cacheHitRate || 0) * 100)} min={0} max={100} onChange={(v) => updateSelected({ cacheHitRate: v / 100 })} />
+                    <Toggle label="Stampede Protection" value={selected.cacheStampedeEnabled || false} onChange={(v) => updateSelected({ cacheStampedeEnabled: v })} />
+                    <div className="text-[9px] text-[var(--color-text-muted)]">
+                      Miss traffic: {Math.round((1 - (selected.cacheHitRate || 0)) * selected.incomingRate)} req/s downstream
+                    </div>
+                  </div>
+                </details>
+              )}
+
+              {selected.type === "database" && (
+                <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                  <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Database Settings</summary>
+                  <div className="mt-2 space-y-2">
+                    <Slider label="Connection Pool" value={selected.dbConnectionPoolSize || 50} min={5} max={500} onChange={(v) => updateSelected({ dbConnectionPoolSize: v })} />
+                    <div className="text-[9px] text-[var(--color-text-muted)]">
+                      Effective capacity: {Math.min(selected.capacityPerReplica * selected.replicas, (selected.dbConnectionPoolSize || 50) * 10)} req/s
+                    </div>
+                    {running && (
+                      <div className="mt-1">
+                        <div className="text-[9px] text-[var(--color-text-muted)] mb-0.5">Pool Usage</div>
+                        <div className="h-2 rounded-full bg-deep overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{
+                            width: `${Math.min(100, selected.utilization * 100)}%`,
+                            backgroundColor: selected.utilization > 0.8 ? "#f97316" : "#34d399",
+                          }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              )}
+
+              {selected.type === "lambda" && (
+                <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                  <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Lambda Settings</summary>
+                  <div className="mt-2 space-y-2">
+                    <Slider label="Cold Start (ms)" value={selected.lambdaColdStartMs || 200} min={0} max={2000} onChange={(v) => updateSelected({ lambdaColdStartMs: v })} />
+                    <Slider label="Concurrency Limit" value={selected.lambdaConcurrencyLimit || 1000} min={1} max={10000} onChange={(v) => updateSelected({ lambdaConcurrencyLimit: v })} />
+                    <div className="text-[9px] text-[var(--color-text-muted)]">
+                      Auto-scaling: replicas = {selected.replicas} (auto)
+                    </div>
+                  </div>
+                </details>
+              )}
+
+              {selected.type === "gateway" && (
+                <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                  <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Gateway Settings</summary>
+                  <div className="mt-2 space-y-2">
+                    <CI label="Rate Limit (req/s)" value={selected.gatewayRateLimitPerSec || 5000} type="number" onChange={(v) => updateSelected({ gatewayRateLimitPerSec: Number(v) || 5000 })} />
+                    <CI label="Burst Allowance" value={selected.gatewayBurstAllowance || 500} type="number" onChange={(v) => updateSelected({ gatewayBurstAllowance: Number(v) || 500 })} />
+                    {running && selected.incomingRate > (selected.gatewayRateLimitPerSec || 5000) && (
+                      <div className="text-[9px] text-red-400 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> Rate limited: {Math.round(selected.incomingRate - (selected.gatewayRateLimitPerSec || 5000))} req/s rejected
+                      </div>
+                    )}
+                  </div>
+                </details>
+              )}
+
+              {(selected.type === "messagebroker" || selected.type === "queue") && (
+                <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                  <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Queue Settings</summary>
+                  <div className="mt-2 space-y-2">
+                    {selected.type === "messagebroker" && (
+                      <>
+                        <Slider label="Consumer Groups" value={selected.brokerConsumerGroups || 3} min={1} max={20} onChange={(v) => updateSelected({ brokerConsumerGroups: v })} />
+                        <CI label="DLQ Threshold" value={selected.brokerDlqThreshold || 1000} type="number" onChange={(v) => updateSelected({ brokerDlqThreshold: Number(v) || 1000 })} />
+                      </>
+                    )}
+                    {running && (
+                      <>
+                        <Stat label="Queue Depth" value={`${Math.round(selected.queueDepth)}`} warn={selected.queueDepth > 100} danger={selected.queueDepth > (selected.brokerDlqThreshold || 1000)} />
+                        <div className="mt-1">
+                          <div className="text-[9px] text-[var(--color-text-muted)] mb-0.5">Consumer Lag</div>
+                          <div className="h-2 rounded-full bg-deep overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{
+                              width: `${Math.min(100, (selected.queueDepth / Math.max(1, selected.brokerDlqThreshold || 1000)) * 100)}%`,
+                              backgroundColor: selected.queueDepth > (selected.brokerDlqThreshold || 1000) ? "#ef4444" : "#06b6d4",
+                            }} />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </details>
+              )}
+
+              {selected.type === "container" && (
+                <details open className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
+                  <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Container Settings</summary>
+                  <div className="mt-2 space-y-2">
+                    <Slider label="CPU Limit %" value={selected.containerCpuLimit || 100} min={10} max={100} onChange={(v) => updateSelected({ containerCpuLimit: v })} />
+                    <CI label="Memory (MB)" value={selected.containerMemoryMb || 512} type="number" onChange={(v) => updateSelected({ containerMemoryMb: Number(v) || 512 })} />
+                  </div>
+                </details>
+              )}
 
               <details className="rounded-lg bg-[var(--color-border-subtle)] p-2.5">
                 <summary className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] cursor-pointer">Resilience</summary>
@@ -1146,6 +1313,15 @@ export function SimulatorView() {
 }
 
 /* ─── Helper components ──────────────────────────────────── */
+
+// Pick the nearest port (edge midpoint) on a node given direction vector
+function pickPort(nx: number, ny: number, w: number, h: number, dx: number, dy: number): { px: number; py: number } {
+  const cx = nx + w / 2, cy = ny + h / 2;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? { px: nx + w, py: cy } : { px: nx, py: cy }; // right or left
+  }
+  return dy > 0 ? { px: cx, py: ny + h } : { px: cx, py: ny }; // bottom or top
+}
 
 function mkEdge(id: string, source: string, target: string, weight: number, latencyMs: number): SimEdge {
   return { id, source, target, weight, latencyMs, retryEnabled: false };
