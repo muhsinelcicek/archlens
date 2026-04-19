@@ -20,12 +20,14 @@ export function useCanvasTransform(options?: { minScale?: number; maxScale?: num
   const onWheel = useCallback((e: WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    // Capture values BEFORE async state update (currentTarget may be null inside setState)
+    const target = e.currentTarget as HTMLDivElement | null;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
     setTransform(prev => {
       const newScale = Math.min(maxScale, Math.max(minScale, prev.scale * delta));
-      // Zoom toward mouse position
-      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
       const scaleRatio = newScale / prev.scale;
       return {
         scale: newScale,
