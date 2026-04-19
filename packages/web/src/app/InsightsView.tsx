@@ -276,6 +276,24 @@ export function InsightsView() {
       });
     }
 
+    // Simulator incidents (if simulation was run)
+    const simSnap = useStore.getState().simulatorSnapshot;
+    if (simSnap && simSnap.topIncidents.length > 0) {
+      out.push({
+        id: "sim-summary",
+        type: simSnap.sloMet ? "info" : "critical",
+        category: "Simulator",
+        title: simSnap.sloMet
+          ? `Simulator: SLO met (${(simSnap.successRate * 100).toFixed(1)}% success, P99 ${Math.round(simSnap.p99LatencyMs)}ms)`
+          : `Simulator: SLO BREACHED — ${simSnap.incidentCount} incidents detected`,
+        narrative: simSnap.bottleneck
+          ? `Bottleneck: ${simSnap.bottleneck}. Monthly cost estimate: $${Math.round(simSnap.monthlyCost).toLocaleString()}/mo. ${simSnap.totalErrors} errors out of ${simSnap.totalRequests} requests.`
+          : `Monthly cost: $${Math.round(simSnap.monthlyCost).toLocaleString()}/mo. Simulation ran for ${simSnap.uptime}s.`,
+        evidence: simSnap.topIncidents.map((inc) => `${inc.nodeLabel}: ${inc.label} (${inc.severity}%)`),
+        action: { label: "Open Simulator", link: "/simulator" },
+      });
+    }
+
     // Sort: critical → warning → opportunity → info → strength
     const order = { critical: 0, warning: 1, opportunity: 2, info: 3, strength: 4 };
     return out.sort((a, b) => (order[a.type] ?? 5) - (order[b.type] ?? 5));

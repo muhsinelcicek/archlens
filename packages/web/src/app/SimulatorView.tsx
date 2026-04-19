@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { useStore } from "../lib/store.js";
+import { useStore, type SimulatorSnapshot } from "../lib/store.js";
 import {
   Play, Pause, Server, Database, Cloud, Layers,
   Users, RotateCcw, AlertTriangle, Activity, Skull, TrendingUp,
@@ -275,16 +275,43 @@ export function SimulatorView() {
     };
   }, [running, speed, edges, trafficPattern, chaosEnabled, chaosConfig, uptime]);
 
-  // Update global stats + detect incidents
+  // Update global stats + detect incidents + publish to store
+  const { setSimulatorSnapshot } = useStore();
   useEffect(() => {
     if (running) {
       const stats = getGlobalStats(nodes, uptime);
       setGlobalStats(stats);
-      // Detect per-node incidents (Paperdraw-style)
       const incidents = detectIncidents(nodes, edges, stats);
       setNodeIncidents(incidents);
+      // Publish snapshot to global store for cross-page access
+      const topInc: SimulatorSnapshot["topIncidents"] = [];
+      for (const [nodeId, nodeInc] of incidents) {
+        const node = nodes.find((nd) => nd.id === nodeId);
+        for (const inc of nodeInc) {
+          if (inc.type !== "TOPOLOGY_PRESSURE" && topInc.length < 5) {
+            topInc.push({ nodeLabel: node?.label || nodeId, type: inc.type, severity: inc.severity, label: inc.label });
+          }
+        }
+      }
+      topInc.sort((a, b) => b.severity - a.severity);
+      setSimulatorSnapshot({
+        timestamp: new Date().toISOString(),
+        uptime,
+        successRate: stats.successRate,
+        p95LatencyMs: stats.p95LatencyMs,
+        p99LatencyMs: stats.p99LatencyMs,
+        totalRequests: stats.totalRequests,
+        totalErrors: stats.totalErrors,
+        monthlyCost: stats.monthlyCostEstimate,
+        sloMet: stats.sloMet,
+        bottleneck: stats.bottleneckNode || null,
+        incidentCount: topInc.length,
+        topIncidents: topInc,
+      });
+    } else {
+      setSimulatorSnapshot(null);
     }
-  }, [uptime, nodes, edges, running]);
+  }, [uptime, nodes, edges, running, setSimulatorSnapshot]);
 
   // Root cause insights
   const insights = useMemo<RootCauseInsight[]>(() => {
@@ -532,6 +559,62 @@ export function SimulatorView() {
     URL.revokeObjectURL(url);
   };
 
+  // Auto-layout: BFS-based layered positioning
+  const autoLayout = useCallback(() => {
+    if (nodes.length === 0) return;
+    // Find source nodes (clients or nodes with no incoming edges)
+    const hasIncoming = new Set(edges.map((e) => e.target));
+    const sources = nodes.filter((n) => !hasIncoming.has(n.id) || n.type === "client");
+    if (sources.length === 0) return;
+
+    // BFS to assign layers
+    const layers = new Map<string, number>();
+    const queue = sources.map((s) => s.id);
+    for (const id of queue) layers.set(id, 0);
+    const outgoing = new Map<string, string[]>();
+    for (const ed of edges) {
+      if (!outgoing.has(ed.source)) outgoing.set(ed.source, []);
+      outgoing.get(ed.source)!.push(ed.target);
+    }
+    const visited = new Set<string>();
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const layer = layers.get(id) || 0;
+      for (const tgt of outgoing.get(id) || []) {
+        if (!layers.has(tgt) || layers.get(tgt)! < layer + 1) {
+          layers.set(tgt, layer + 1);
+        }
+        if (!visited.has(tgt)) queue.push(tgt);
+      }
+    }
+    // Unvisited nodes get layer 0
+    for (const n of nodes) if (!layers.has(n.id)) layers.set(n.id, 0);
+
+    // Group by layer
+    const byLayer = new Map<number, string[]>();
+    for (const [id, layer] of layers) {
+      if (!byLayer.has(layer)) byLayer.set(layer, []);
+      byLayer.get(layer)!.push(id);
+    }
+
+    // Position: each layer is a column, nodes spread vertically
+    const colSpacing = 220;
+    const rowSpacing = 120;
+    const startX = 80;
+
+    setNodes((prev) => prev.map((n) => {
+      const layer = layers.get(n.id) || 0;
+      const group = byLayer.get(layer) || [n.id];
+      const idx = group.indexOf(n.id);
+      const totalInLayer = group.length;
+      const startY = 100 - ((totalInLayer - 1) * rowSpacing) / 2 + 200;
+      const snapped = canvas.snapToGrid(startX + layer * colSpacing, startY + idx * rowSpacing);
+      return { ...n, x: snapped.x, y: snapped.y };
+    }));
+  }, [nodes, edges, canvas]);
+
   const exportReport = () => {
     if (!globalStats) return;
     const incidents = detectIncidents(nodes, edges, globalStats);
@@ -693,6 +776,9 @@ export function SimulatorView() {
         </button>
         <button onClick={reset} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]">
           <RotateCcw className="h-3 w-3" /> Reset
+        </button>
+        <button onClick={autoLayout} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]" title="Auto-arrange nodes">
+          <Grid3x3 className="h-3 w-3" /> Layout
         </button>
 
         <div className="h-6 w-px bg-[var(--color-border-default)]" />

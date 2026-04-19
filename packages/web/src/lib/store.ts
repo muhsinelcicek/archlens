@@ -79,6 +79,21 @@ export interface ProjectInfo {
   stats: { files: number; symbols: number; modules: number; lines: number };
 }
 
+export interface SimulatorSnapshot {
+  timestamp: string;
+  uptime: number;
+  successRate: number;
+  p95LatencyMs: number;
+  p99LatencyMs: number;
+  totalRequests: number;
+  totalErrors: number;
+  monthlyCost: number;
+  sloMet: boolean;
+  bottleneck: string | null;
+  incidentCount: number;
+  topIncidents: Array<{ nodeLabel: string; type: string; severity: number; label: string }>;
+}
+
 interface AppState {
   model: ArchModel | null;
   diagrams: Record<string, string>;
@@ -87,7 +102,9 @@ interface AppState {
   loading: boolean;
   error: string | null;
   activeView: string;
+  simulatorSnapshot: SimulatorSnapshot | null;
   setActiveView: (view: string) => void;
+  setSimulatorSnapshot: (snap: SimulatorSnapshot | null) => void;
   fetchProjects: () => Promise<void>;
   switchProject: (name: string) => Promise<void>;
   fetchModel: () => Promise<void>;
@@ -102,6 +119,9 @@ export const useStore = create<AppState>((set, get) => ({
   loading: false,
   error: null,
   activeView: "dashboard",
+  simulatorSnapshot: null,
+
+  setSimulatorSnapshot: (snap) => set({ simulatorSnapshot: snap }),
 
   setActiveView: (view) => set({ activeView: view }),
 

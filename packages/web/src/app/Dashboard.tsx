@@ -257,7 +257,7 @@ function HealthBar({ label, value, max, color, suffix, icon }: {
    ═══════════════════════════════════════════════════════════════ */
 
 export function Dashboard() {
-  const { model } = useStore();
+  const { model, simulatorSnapshot: simulatorSnap } = useStore();
   const { t } = useI18n();
   const navigate = useNavigate();
 
@@ -595,6 +595,51 @@ export function Dashboard() {
         <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-4">{t("dashboard.languages")}</h3>
         <LanguageBar languages={stats.languages} totalSymbols={stats.symbols} />
       </section>
+
+      {/* ── Simulator Health (if simulation was run) ──────────── */}
+      {simulatorSnap && (
+        <section className="rounded-xl border border-archlens-500/20 bg-gradient-to-r from-archlens-500/5 to-transparent p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-archlens-300 flex items-center gap-2">
+              <Activity className="h-4 w-4" /> Simulator Results
+            </h3>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${simulatorSnap.sloMet ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+              SLO {simulatorSnap.sloMet ? "MET" : "BREACH"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg bg-deep p-3">
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase">Success Rate</div>
+              <div className="text-xl font-bold" style={{ color: simulatorSnap.successRate >= 0.99 ? "#34d399" : "#f97316" }}>{(simulatorSnap.successRate * 100).toFixed(1)}%</div>
+            </div>
+            <div className="rounded-lg bg-deep p-3">
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase">P99 Latency</div>
+              <div className="text-xl font-bold" style={{ color: simulatorSnap.p99LatencyMs < 500 ? "#34d399" : "#ef4444" }}>{Math.round(simulatorSnap.p99LatencyMs)}ms</div>
+            </div>
+            <div className="rounded-lg bg-deep p-3">
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase">Monthly Cost</div>
+              <div className="text-xl font-bold text-amber-400">${Math.round(simulatorSnap.monthlyCost).toLocaleString()}</div>
+            </div>
+            <div className="rounded-lg bg-deep p-3">
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase">Incidents</div>
+              <div className="text-xl font-bold" style={{ color: simulatorSnap.incidentCount > 0 ? "#f97316" : "#34d399" }}>{simulatorSnap.incidentCount}</div>
+            </div>
+          </div>
+          {simulatorSnap.bottleneck && (
+            <div className="mt-3 text-xs text-[var(--color-text-muted)]">Bottleneck: <span className="text-red-400 font-semibold">{simulatorSnap.bottleneck}</span></div>
+          )}
+          {simulatorSnap.topIncidents.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {simulatorSnap.topIncidents.slice(0, 3).map((inc, i) => (
+                <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-mono">{inc.nodeLabel}: {inc.label}</span>
+              ))}
+            </div>
+          )}
+          <button onClick={() => navigate("/simulator")} className="mt-3 text-xs text-archlens-400 hover:text-archlens-300 flex items-center gap-1">
+            Open Simulator →
+          </button>
+        </section>
+      )}
     </div>
   );
 }
