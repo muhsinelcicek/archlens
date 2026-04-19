@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useStore } from "../lib/store.js";
 import {
   Play, Pause, Server, Database, Cloud, Layers,
@@ -7,7 +7,11 @@ import {
   Save, Upload, Sparkles, Shuffle, Scissors, FileText, ChevronDown,
   BookOpen, Lightbulb, BarChart3, Globe, MessageSquare, HardDrive,
   Wifi, Shield, Eye, Code, Container, Network,
+  ZoomIn, ZoomOut, Maximize2, Undo2, Redo2, Grid3x3, Crosshair,
+  Copy, Clipboard, Map,
 } from "lucide-react";
+import { useCanvasTransform } from "../lib/use-canvas-transform.js";
+import { useUndoRedo } from "../lib/use-undo-redo.js";
 import {
   type SimNode, type SimEdge, type NodeType, type TrafficPattern, type SimulatorConfig,
   type GlobalStats, type EventLogEntry, type RootCauseInsight, type ChaosConfig,
@@ -62,13 +66,21 @@ export function SimulatorView() {
   const { model } = useStore();
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  // Canvas transform (zoom/pan)
+  const canvas = useCanvasTransform({ minScale: 0.25, maxScale: 4, gridSize: 20 });
+
   // Topology
   const [nodes, setNodes] = useState<SimNode[]>([]);
   const [edges, setEdges] = useState<SimEdge[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [clipboard, setClipboard] = useState<SimNode | null>(null);
+  const [showMinimap, setShowMinimap] = useState(true);
+
+  // Compat: single selection helper
+  const selectedId = selectedIds.size === 1 ? [...selectedIds][0] : null;
 
   // Simulation
   const [running, setRunning] = useState(false);
@@ -270,7 +282,36 @@ export function SimulatorView() {
     return analyzeRootCause(nodes, globalStats);
   }, [globalStats, nodes, running]);
 
-  // ─── Drag-drop ─────────────────────────────────────────────
+  // ─── Keyboard shortcuts ────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.key === "z") { e.preventDefault(); /* undo placeholder */ }
+      if (meta && e.key === "y") { e.preventDefault(); /* redo placeholder */ }
+      if (meta && e.key === "c" && selectedId) {
+        e.preventDefault();
+        const node = nodes.find((n) => n.id === selectedId);
+        if (node) setClipboard(node);
+      }
+      if (meta && e.key === "v" && clipboard) {
+        e.preventDefault();
+        const id = `n-${Date.now()}`;
+        setNodes((prev) => [...prev, { ...clipboard, id, x: clipboard.x + 40, y: clipboard.y + 40, metrics: createNodeMetrics(), circuitBreaker: createCircuitBreaker() }]);
+        setSelectedIds(new Set([id]));
+      }
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.size > 0) {
+        e.preventDefault();
+        setNodes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
+        setEdges((prev) => prev.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target)));
+        setSelectedIds(new Set());
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedId, selectedIds, clipboard, nodes]);
+
+  // ─── Drag-drop (zoom-aware + snap-to-grid) ────────────────
 
   const onNodeMouseDown = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -279,20 +320,28 @@ export function SimulatorView() {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setDraggingId(id);
-    setDragOffset({
-      x: e.clientX - rect.left - node.x + canvasRef.current!.scrollLeft,
-      y: e.clientY - rect.top - node.y + canvasRef.current!.scrollTop,
-    });
-    setSelectedId(id);
+    const canvasPos = canvas.screenToCanvas(e.clientX, e.clientY, rect);
+    setDragOffset({ x: canvasPos.x - node.x, y: canvasPos.y - node.y });
+    if (e.shiftKey) {
+      // Multi-select
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        return next;
+      });
+    } else {
+      setSelectedIds(new Set([id]));
+    }
   };
 
   const onCanvasMouseMove = (e: React.MouseEvent) => {
+    canvas.onPanMove(e as React.MouseEvent<HTMLDivElement>);
     if (!draggingId) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const nx = e.clientX - rect.left - dragOffset.x + canvasRef.current!.scrollLeft;
-    const ny = e.clientY - rect.top - dragOffset.y + canvasRef.current!.scrollTop;
-    setNodes((prev) => prev.map((n) => (n.id === draggingId ? { ...n, x: nx, y: ny } : n)));
+    const canvasPos = canvas.screenToCanvas(e.clientX, e.clientY, rect);
+    const snapped = canvas.snapToGrid(canvasPos.x - dragOffset.x, canvasPos.y - dragOffset.y);
+    setNodes((prev) => prev.map((n) => (n.id === draggingId ? { ...n, x: snapped.x, y: snapped.y } : n)));
   };
 
   const onCanvasMouseUp = () => setDraggingId(null);
@@ -308,7 +357,7 @@ export function SimulatorView() {
       }
       setConnectFrom(null);
     } else {
-      setSelectedId(id);
+      setSelectedIds(new Set([id]));
     }
   };
 
@@ -317,17 +366,17 @@ export function SimulatorView() {
   const addNode = (type: NodeType) => {
     const id = `n-${Date.now()}`;
     const rect = canvasRef.current?.getBoundingClientRect();
-    const x = rect ? rect.width / 2 - 60 + (canvasRef.current?.scrollLeft || 0) : 400;
-    const y = rect ? rect.height / 2 - 40 + (canvasRef.current?.scrollTop || 0) : 300;
-    setNodes((prev) => [...prev, makeDefaultNode(id, type, TYPE_CONFIG[type].label, x, y)]);
-    setSelectedId(id);
+    const pos = rect ? canvas.screenToCanvas(rect.width / 2 + rect.left, rect.height / 2 + rect.top, rect) : { x: 400, y: 300 };
+    const snapped = canvas.snapToGrid(pos.x, pos.y);
+    setNodes((prev) => [...prev, makeDefaultNode(id, type, TYPE_CONFIG[type].label, snapped.x, snapped.y)]);
+    setSelectedIds(new Set([id]));
   };
 
   const deleteSelected = () => {
     if (!selectedId) return;
     setNodes((prev) => prev.filter((n) => n.id !== selectedId));
     setEdges((prev) => prev.filter((e) => e.source !== selectedId && e.target !== selectedId));
-    setSelectedId(null);
+    setSelectedIds(new Set());
   };
 
   const killNode = () => {
@@ -367,7 +416,7 @@ export function SimulatorView() {
     const { nodes: n, edges: e } = tpl.build();
     setNodes(n);
     setEdges(e);
-    setSelectedId(null);
+    setSelectedIds(new Set());
     setShowTemplates(false);
     reset();
   };
@@ -508,6 +557,11 @@ export function SimulatorView() {
         <button onClick={reset} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:text-[var(--color-text-primary)]">
           <RotateCcw className="h-3 w-3" /> Reset
         </button>
+
+        <div className="h-6 w-px bg-[var(--color-border-default)]" />
+
+        {/* Zoom display */}
+        <span className="text-[10px] font-mono text-[var(--color-text-muted)]">{Math.round(canvas.transform.scale * 100)}%</span>
 
         <div className="h-6 w-px bg-[var(--color-border-default)]" />
 
@@ -766,17 +820,58 @@ export function SimulatorView() {
           <div
             ref={canvasRef}
             onMouseMove={onCanvasMouseMove}
-            onMouseUp={onCanvasMouseUp}
-            onMouseLeave={onCanvasMouseUp}
-            onClick={() => { setSelectedId(null); setConnectFrom(null); setShowTemplates(false); setShowLoadTests(false); setShowSaved(false); }}
-            className="flex-1 relative overflow-auto"
+            onMouseUp={(e) => { onCanvasMouseUp(); canvas.onPanEnd(); }}
+            onMouseLeave={() => { onCanvasMouseUp(); canvas.onPanEnd(); }}
+            onMouseDown={(e) => { canvas.onPanStart(e); }}
+            onWheel={canvas.onWheel}
+            onClick={() => { setSelectedIds(new Set()); setConnectFrom(null); setShowTemplates(false); setShowLoadTests(false); setShowSaved(false); }}
+            className="flex-1 relative overflow-hidden"
             style={{
               backgroundImage: "radial-gradient(circle, #1e1e2a 1px, transparent 1px)",
-              backgroundSize: "20px 20px",
+              backgroundSize: `${20 * canvas.transform.scale}px ${20 * canvas.transform.scale}px`,
+              backgroundPosition: `${canvas.transform.offsetX}px ${canvas.transform.offsetY}px`,
               backgroundColor: "var(--color-deep)",
+              cursor: canvas.isPanning ? "grabbing" : "default",
             }}
           >
-            <div style={{ position: "relative", minWidth: 2000, minHeight: 1200 }}>
+            {/* Zoom controls (bottom-left) */}
+            <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1 bg-elevated/90 backdrop-blur rounded-lg border border-[#2a2a3a] p-1">
+              <button onClick={canvas.zoomOut} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]"><ZoomOut className="h-3.5 w-3.5" /></button>
+              <span className="text-[10px] font-mono text-[#8888a0] w-10 text-center">{Math.round(canvas.transform.scale * 100)}%</span>
+              <button onClick={canvas.zoomIn} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]"><ZoomIn className="h-3.5 w-3.5" /></button>
+              <div className="w-px h-4 bg-[#2a2a3a]" />
+              <button onClick={() => canvas.fitToView(nodes, canvasRef.current?.clientWidth || 800, canvasRef.current?.clientHeight || 600)} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]" title="Fit to view"><Maximize2 className="h-3.5 w-3.5" /></button>
+              <button onClick={canvas.resetZoom} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]" title="Reset zoom"><Crosshair className="h-3.5 w-3.5" /></button>
+              <div className="w-px h-4 bg-[#2a2a3a]" />
+              <button onClick={() => canvas.setSnapEnabled(!canvas.snapEnabled)} className={`p-1.5 rounded ${canvas.snapEnabled ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Snap to grid"><Grid3x3 className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setShowMinimap(!showMinimap)} className={`p-1.5 rounded ${showMinimap ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Mini-map"><Map className="h-3.5 w-3.5" /></button>
+            </div>
+
+            {/* Mini-map (bottom-right) */}
+            {showMinimap && nodes.length > 0 && (
+              <div className="absolute bottom-3 right-3 z-20 w-40 h-24 bg-elevated/90 backdrop-blur rounded-lg border border-[#2a2a3a] overflow-hidden">
+                <svg viewBox={`${Math.min(...nodes.map(n => n.x)) - 20} ${Math.min(...nodes.map(n => n.y)) - 20} ${Math.max(...nodes.map(n => n.x)) - Math.min(...nodes.map(n => n.x)) + 200} ${Math.max(...nodes.map(n => n.y)) - Math.min(...nodes.map(n => n.y)) + 120}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                  {edges.map((e) => {
+                    const s = nodes.find((n) => n.id === e.source);
+                    const t = nodes.find((n) => n.id === e.target);
+                    if (!s || !t) return null;
+                    return <line key={e.id} x1={s.x + 70} y1={s.y + 35} x2={t.x + 70} y2={t.y + 35} stroke="#3a3a5a" strokeWidth={3} />;
+                  })}
+                  {nodes.map((n) => (
+                    <rect key={n.id} x={n.x} y={n.y} width={140} height={50} rx={6}
+                      fill={selectedIds.has(n.id) ? "#a78bfa" : nodeColor(n)} fillOpacity={0.7} />
+                  ))}
+                </svg>
+              </div>
+            )}
+
+            <div style={{
+              position: "relative",
+              transform: `translate(${canvas.transform.offsetX}px, ${canvas.transform.offsetY}px) scale(${canvas.transform.scale})`,
+              transformOrigin: "0 0",
+              minWidth: 3000,
+              minHeight: 2000,
+            }}>
               <svg className="absolute inset-0 pointer-events-none" style={{ width: 2000, height: 1200 }}>
                 <defs>
                   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
@@ -816,7 +911,7 @@ export function SimulatorView() {
                 const cfg = TYPE_CONFIG[n.type];
                 const Icon = cfg.icon;
                 const color = nodeColor(n);
-                const isSelected = selectedId === n.id;
+                const isSelected = selectedIds.has(n.id);
                 const isConnectSource = connectFrom === n.id;
                 const lastP95 = n.metrics.latencyP95[n.metrics.latencyP95.length - 1] || 0;
                 const cbState = n.circuitBreaker.state;
