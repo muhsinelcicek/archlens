@@ -15,26 +15,19 @@ interface NavGroup { labelKey: string; items: Array<{ to: string; icon: React.El
 const navGroups: NavGroup[] = [
   { labelKey: "", items: [
     { to: "/", icon: LayoutDashboard, labelKey: "nav.dashboard", end: true },
-    { to: "/architecture", icon: Network, labelKey: "nav.architecture" },
   ]},
   { labelKey: "nav.group.analysis", items: [
+    { to: "/architecture", icon: Network, labelKey: "nav.architecture" },
+    { to: "/flows", icon: Zap, labelKey: "nav.flows" },
     { to: "/insights", icon: Sparkles, labelKey: "nav.insights" },
-    { to: "/simulator", icon: Activity, labelKey: "nav.simulator" },
-    { to: "/processes", icon: Zap, labelKey: "nav.processes" },
-    { to: "/events", icon: MessageSquare, labelKey: "nav.event_flow" },
-    { to: "/structure", icon: Boxes, labelKey: "nav.structure" },
-    { to: "/stack", icon: Globe, labelKey: "nav.api_stack" },
   ]},
   { labelKey: "nav.group.quality", items: [
     { to: "/quality", icon: ShieldAlert, labelKey: "nav.code_quality" },
-    { to: "/hotspots", icon: Flame, labelKey: "nav.hotspots" },
-    { to: "/diff", icon: GitCompare, labelKey: "nav.diff" },
-    { to: "/rules", icon: ScrollText, labelKey: "nav.rules" },
-    { to: "/report", icon: FileText, labelKey: "nav.report" },
   ]},
   { labelKey: "", items: [
-    { to: "/onboard", icon: Rocket, labelKey: "nav.onboarding" },
-    { to: "/import", icon: Plus, labelKey: "nav.import" },
+    { to: "/simulator", icon: Activity, labelKey: "nav.simulator" },
+  ]},
+  { labelKey: "", items: [
     { to: "/settings", icon: Settings, labelKey: "nav.settings" },
   ]},
 ];
