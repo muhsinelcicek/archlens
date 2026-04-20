@@ -188,14 +188,14 @@ export function ConstellationGraph({ nodes, edges, selectedId, onNodeClick, onNo
 
             return (
               <g key={i}>
-                {/* Glow layer */}
+                {/* Glow layer — always glowing, brighter on highlight */}
                 <path
                   d={path}
                   fill="none"
-                  stroke={isHighlighted ? "#a78bfa" : "#4a4a6a"}
+                  stroke={isHighlighted ? "#a78bfa" : "#6366f1"}
                   strokeWidth={isHighlighted ? 3 : 1.5}
-                  opacity={isHighlighted ? 0.8 : 0.25}
-                  filter={isHighlighted ? "url(#glow)" : undefined}
+                  opacity={isHighlighted ? 0.8 : 0.35}
+                  filter="url(#glow)"
                 />
                 {/* Animated dot */}
                 {isHighlighted && (
@@ -217,7 +217,10 @@ export function ConstellationGraph({ nodes, edges, selectedId, onNodeClick, onNo
           const isHovered = hoveredId === node.id;
           const color = LAYER_COLORS[node.layer] || "#6b7280";
           const healthColor = node.score !== undefined ? scoreColor(node.score) : color;
-          const glowIntensity = isSelected ? 20 : isHovered ? 12 : (showRisk && node.score !== undefined && node.score < 60) ? 8 : 0;
+          // Always glow — idle=6, hover=14, selected=22, risk-low=10
+          const baseGlow = 6;
+          const riskGlow = (showRisk && node.score !== undefined && node.score < 60) ? 10 : baseGlow;
+          const glowIntensity = isSelected ? 22 : isHovered ? 14 : riskGlow;
 
           return (
             <motion.div
@@ -241,19 +244,17 @@ export function ConstellationGraph({ nodes, edges, selectedId, onNodeClick, onNo
                 style={{
                   backgroundColor: "var(--color-surface)",
                   border: `1px solid ${isSelected ? color : "rgba(255,255,255,0.06)"}`,
-                  boxShadow: glowIntensity > 0
-                    ? `0 0 ${glowIntensity}px ${isSelected ? color : healthColor}40, inset 0 1px 0 rgba(255,255,255,0.04)`
-                    : "inset 0 1px 0 rgba(255,255,255,0.04)",
+                  boxShadow: `0 0 ${glowIntensity}px ${isSelected ? color : healthColor}40, inset 0 1px 0 rgba(255,255,255,0.04)`,
                   transform: isHovered ? "translateY(-2px)" : "none",
                 }}
               >
                 {/* Header: dot + name */}
                 <div className="flex items-center gap-2 mb-1.5">
                   <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                     style={{
                       backgroundColor: showRisk ? healthColor : color,
-                      boxShadow: `0 0 6px ${showRisk ? healthColor : color}60`,
+                      boxShadow: `0 0 8px ${showRisk ? healthColor : color}80, 0 0 16px ${showRisk ? healthColor : color}30`,
                     }}
                   />
                   <span className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">
