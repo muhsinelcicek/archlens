@@ -29,117 +29,57 @@ export interface Theme {
 
 export const themes: Record<string, Theme> = {
   /* ═══════════════════════════════════════════════════════════════
-     LINEAR LIGHT — shadcn/Vercel/Linear-style light theme (default)
-     Pure zinc grayscale, single violet accent, minimal gradients.
+     DARK — Railway-inspired deep dark with violet accent (DEFAULT)
      ═══════════════════════════════════════════════════════════════ */
-  "linear-light": {
-    id: "linear-light",
-    name: "Linear Light",
-    isDark: false,
-    colors: {
-      void: "#ffffff",             // pure white canvas
-      deep: "#fafafa",             // zinc-50 main area
-      surface: "#fafafa",          // sidebar — very subtle gray
-      elevated: "#ffffff",         // cards pop as pure white with shadow
-      hover: "#f4f4f5",            // zinc-100
-      borderSubtle: "#f4f4f5",     // zinc-100 for hairlines
-      borderDefault: "#e4e4e7",    // zinc-200 standard border
-      dim: "#d4d4d8",              // zinc-300
-      textPrimary: "#09090b",      // zinc-950 — sharp headings
-      textSecondary: "#3f3f46",    // zinc-700 — body text
-      textMuted: "#71717a",        // zinc-500 — captions
-      accent: "#7c3aed",           // violet-600 (brand)
-      accentDim: "#6d28d9",
-      accentGlow: "rgba(124,58,237,0.1)",
-    },
-    graphBg: "radial-gradient(circle at 50% 30%, rgba(124,58,237,0.03) 0%, transparent 70%), #fafafa",
-    graphGrid: "radial-gradient(circle, #e4e4e7 0.5px, transparent 0.5px)",
-  },
-
-  /* ═══════════════════════════════════════════════════════════════
-     LINEAR DARK — matching dark theme in same aesthetic
-     ═══════════════════════════════════════════════════════════════ */
-  "linear-dark": {
-    id: "linear-dark",
-    name: "Linear Dark",
+  dark: {
+    id: "dark",
+    name: "Dark",
     isDark: true,
     colors: {
-      void: "#09090b",             // zinc-950
-      deep: "#0c0c0f",
-      surface: "#0c0c0f",          // near-black with slight warmth
-      elevated: "#131318",         // elevated cards
-      hover: "#1a1a1f",
-      borderSubtle: "#1f1f25",
-      borderDefault: "#27272a",    // zinc-800
+      void: "#0a0a0f",
+      deep: "#0f0f17",
+      surface: "#16161f",
+      elevated: "#1e1e2a",
+      hover: "#262636",
+      borderSubtle: "rgba(255,255,255,0.04)",
+      borderDefault: "rgba(255,255,255,0.08)",
       dim: "#3f3f46",
-      textPrimary: "#fafafa",      // zinc-50
-      textSecondary: "#d4d4d8",    // zinc-300
-      textMuted: "#71717a",        // zinc-500
-      accent: "#a78bfa",           // violet-400 (lighter for dark bg)
-      accentDim: "#8b5cf6",
-      accentGlow: "rgba(167,139,250,0.15)",
-    },
-    graphBg: "radial-gradient(circle at 50% 30%, rgba(167,139,250,0.04) 0%, transparent 70%), #09090b",
-    graphGrid: "radial-gradient(circle, #27272a 0.6px, transparent 0.6px)",
-  },
-
-  /* ═══════════════════════════════════════════════════════════════
-     Legacy themes — preserved for users who picked them
-     ═══════════════════════════════════════════════════════════════ */
-  midnight: {
-    id: "midnight",
-    name: "Railway Dark",
-    isDark: true,
-    colors: {
-      void: "#0a0a0f", deep: "#0f0f17", surface: "#16161f", elevated: "#1e1e2a", hover: "#262636",
-      borderSubtle: "rgba(255,255,255,0.04)", borderDefault: "rgba(255,255,255,0.08)", dim: "#3f3f46",
-      textPrimary: "#ededef", textSecondary: "#a1a1aa", textMuted: "#63636e",
-      accent: "#8b5cf6", accentDim: "#6d28d9", accentGlow: "rgba(139,92,246,0.3)",
+      textPrimary: "#ededef",
+      textSecondary: "#a1a1aa",
+      textMuted: "#63636e",
+      accent: "#8b5cf6",
+      accentDim: "#6d28d9",
+      accentGlow: "rgba(139,92,246,0.3)",
     },
     graphBg: "radial-gradient(circle at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 60%), linear-gradient(135deg, #0a0a0f, #0f0f17)",
     graphGrid: "radial-gradient(circle, rgba(255,255,255,0.04) 0.8px, transparent 0.8px)",
   },
 
-  ocean: {
-    id: "ocean",
-    name: "Deep Ocean",
-    isDark: true,
+  /* ═══════════════════════════════════════════════════════════════
+     LIGHT — Clean white with violet accent
+     ═══════════════════════════════════════════════════════════════ */
+  light: {
+    id: "light",
+    name: "Light",
+    isDark: false,
     colors: {
-      void: "#020617", deep: "#0f172a", surface: "#1e293b", elevated: "#334155", hover: "#475569",
-      borderSubtle: "#1e293b", borderDefault: "#334155", dim: "#475569",
-      textPrimary: "#f1f5f9", textSecondary: "#94a3b8", textMuted: "#64748b",
-      accent: "#0ea5e9", accentDim: "#0284c7", accentGlow: "rgba(14,165,233,0.3)",
+      void: "#ffffff",
+      deep: "#fafafa",
+      surface: "#fafafa",
+      elevated: "#ffffff",
+      hover: "#f4f4f5",
+      borderSubtle: "#f4f4f5",
+      borderDefault: "#e4e4e7",
+      dim: "#d4d4d8",
+      textPrimary: "#09090b",
+      textSecondary: "#3f3f46",
+      textMuted: "#71717a",
+      accent: "#7c3aed",
+      accentDim: "#6d28d9",
+      accentGlow: "rgba(124,58,237,0.1)",
     },
-    graphBg: "radial-gradient(circle at 50% 50%, rgba(14,165,233,0.04) 0%, transparent 60%), linear-gradient(to bottom, #020617, #0f172a)",
-    graphGrid: "radial-gradient(circle, #1e293b 0.8px, transparent 0.8px)",
-  },
-
-  emerald: {
-    id: "emerald",
-    name: "Emerald Forest",
-    isDark: true,
-    colors: {
-      void: "#022c22", deep: "#064e3b", surface: "#065f46", elevated: "#047857", hover: "#059669",
-      borderSubtle: "#065f46", borderDefault: "#047857", dim: "#059669",
-      textPrimary: "#ecfdf5", textSecondary: "#a7f3d0", textMuted: "#6ee7b7",
-      accent: "#10b981", accentDim: "#059669", accentGlow: "rgba(16,185,129,0.3)",
-    },
-    graphBg: "radial-gradient(circle at 50% 50%, rgba(16,185,129,0.04) 0%, transparent 60%), linear-gradient(to bottom, #022c22, #064e3b)",
-    graphGrid: "radial-gradient(circle, #065f46 0.8px, transparent 0.8px)",
-  },
-
-  rose: {
-    id: "rose",
-    name: "Rose Gold",
-    isDark: true,
-    colors: {
-      void: "#0c0a09", deep: "#1c1917", surface: "#292524", elevated: "#44403c", hover: "#57534e",
-      borderSubtle: "#292524", borderDefault: "#44403c", dim: "#57534e",
-      textPrimary: "#fafaf9", textSecondary: "#a8a29e", textMuted: "#78716c",
-      accent: "#f43f5e", accentDim: "#e11d48", accentGlow: "rgba(244,63,94,0.3)",
-    },
-    graphBg: "radial-gradient(circle at 50% 50%, rgba(244,63,94,0.04) 0%, transparent 60%), linear-gradient(to bottom, #0c0a09, #1c1917)",
-    graphGrid: "radial-gradient(circle, #292524 0.8px, transparent 0.8px)",
+    graphBg: "radial-gradient(circle at 50% 30%, rgba(124,58,237,0.03) 0%, transparent 70%), #fafafa",
+    graphGrid: "radial-gradient(circle, #e4e4e7 0.5px, transparent 0.5px)",
   },
 };
 
@@ -179,7 +119,7 @@ function applyThemeToRoot(t: Theme): void {
   document.body.style.color = c.textPrimary;
 }
 
-const DEFAULT_THEME_ID = "linear-light";
+const DEFAULT_THEME_ID = "dark";
 
 export const useTheme = create<ThemeState>()(
   persist(
