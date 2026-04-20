@@ -5,9 +5,9 @@ import { Card } from "../components/ui/Card.js";
 import { Badge } from "../components/ui/Badge.js";
 import { ProgressBar } from "../components/ui/ProgressBar.js";
 import { PageLoader } from "../components/PageLoader.js";
-import { HotspotsView } from "./HotspotsView.js";
-import { DiffView } from "./DiffView.js";
-import { RulesView } from "./RulesView.js";
+import { HotspotsCleanView } from "./HotspotsCleanView.js";
+import { DiffCleanView } from "./DiffCleanView.js";
+import { RulesCleanView } from "./RulesCleanView.js";
 import { ReportView } from "./ReportView.js";
 
 type Tab = "overview" | "modules" | "coupling" | "hotspots" | "debt" | "diff" | "rules" | "report";
@@ -53,9 +53,9 @@ export function QualityMergedView() {
 
       <div className="flex-1 overflow-auto">
         {/* Existing sub-pages for complex tabs */}
-        {tab === "hotspots" && <HotspotsView />}
-        {tab === "diff" && <DiffView />}
-        {tab === "rules" && <RulesView />}
+        {tab === "hotspots" && <HotspotsCleanView />}
+        {tab === "diff" && <DiffCleanView />}
+        {tab === "rules" && <RulesCleanView />}
         {tab === "report" && <ReportView />}
 
         {/* Overview — clean summary */}
