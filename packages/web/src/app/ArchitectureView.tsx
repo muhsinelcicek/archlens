@@ -530,6 +530,9 @@ export function ArchitectureView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [bottomTab, setBottomTab] = useState<"trace" | "matrix">("trace");
   const [leftTab, setLeftTab] = useState<"insights" | "files">("insights");
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const navigate = useNavigate();
   const [qualityData, setQualityData] = useState<NodeQualityData | null>(null);
 
   // Overlay modes
@@ -644,8 +647,9 @@ export function ArchitectureView() {
   }, []);
 
   const handleNodeClick = useCallback((nodeId: string) => {
-    if (!nodeId) { setSelectedNode(null); setImpactResult(null); return; }
+    if (!nodeId) { setSelectedNode(null); setImpactResult(null); setRightPanelOpen(false); return; }
     setSelectedNode(nodeId);
+    setRightPanelOpen(true); // auto-open detail panel
     if (impactMode && graphRef.current) {
       const result = graphRef.current.highlightImpact(nodeId);
       setImpactResult(result);
@@ -768,9 +772,9 @@ export function ArchitectureView() {
       {/* ── TOP: Health Band ── */}
       <ArchHealthBand model={model} />
 
-      <div className="flex flex-1 min-h-0">
-      {/* ── LEFT: Smart Insights + File Tree ── */}
-      <aside className="w-64 border-r border-[var(--color-border-subtle)] bg-surface flex flex-col overflow-hidden">
+      <div className="flex flex-1 min-h-0 relative">
+      {/* ── LEFT: Smart Insights + File Tree (collapsible) ── */}
+      <aside className={`border-r border-[var(--color-border-subtle)] bg-surface flex flex-col overflow-hidden transition-all duration-200 ${leftPanelOpen ? "w-64" : "w-0"}`}>
         {/* Tab switcher */}
         <div className="flex border-b border-[var(--color-border-subtle)]">
           <button onClick={() => setLeftTab("insights")} className={`flex-1 px-3 py-2 text-[10px] font-semibold uppercase ${leftTab === "insights" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"}`}>
@@ -862,8 +866,13 @@ export function ArchitectureView() {
       {/* ── CENTER ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="px-4 py-2 border-b border-[var(--color-border-subtle)] flex items-center justify-between bg-surface/50">
+        <div className="px-3 py-2 border-b border-[var(--color-border-subtle)] flex items-center justify-between bg-surface/50">
           <div className="flex items-center gap-2">
+            {/* Panel toggle */}
+            <button onClick={() => setLeftPanelOpen(!leftPanelOpen)} className={`p-1.5 rounded-md transition-colors ${leftPanelOpen ? "bg-archlens-500/15 text-archlens-300" : "text-[var(--color-text-muted)] hover:bg-elevated"}`} title="Toggle explorer">
+              <Layers className="h-3.5 w-3.5" />
+            </button>
+            <div className="w-px h-4 bg-[var(--color-border-subtle)]" />
             {breadcrumbs.length > 1 && (
               <button onClick={() => navigateTo(breadcrumbs.length - 2)} className="p-1 rounded hover:bg-elevated text-[var(--color-text-muted)]"><ArrowLeft className="h-3.5 w-3.5" /></button>
             )}
@@ -878,6 +887,7 @@ export function ArchitectureView() {
             <span className="text-[10px] text-[var(--color-text-muted)] ml-2">{graphData.nodes.length}n · {graphData.edges.length}e</span>
           </div>
 
+          <div className="flex items-center gap-2">
           <button
             onClick={() => { setImpactMode(!impactMode); if (impactMode) { graphRef.current?.clearHighlight(); setImpactResult(null); } }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${impactMode ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-glow-pulse" : "bg-elevated text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"}`}
@@ -900,6 +910,7 @@ export function ArchitectureView() {
             <option value="debt">💰 Tech Debt</option>
             <option value="simulator">🎮 Simulator</option>
           </select>
+          </div>
         </div>
 
         {/* Graph — Full height + topology badges */}
@@ -969,7 +980,11 @@ export function ArchitectureView() {
       </div>
 
       {/* ── RIGHT: Code Panel ── */}
-      <aside className="w-80 border-l border-[var(--color-border-subtle)] bg-surface overflow-hidden flex flex-col">
+      <aside className={`border-l border-[var(--color-border-subtle)] bg-surface overflow-hidden flex flex-col transition-all duration-200 absolute right-0 top-0 h-full z-20 shadow-2xl ${rightPanelOpen && selectedNode ? "w-80" : "w-0"}`}>
+        {/* Close button */}
+        {rightPanelOpen && (
+          <button onClick={() => setRightPanelOpen(false)} className="absolute top-2 right-2 z-30 p-1 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-elevated" title="Close">✕</button>
+        )}
         {selectedNode ? (
           <CodePanel model={model} selectedId={selectedNode} level={currentLevel.level} />
         ) : (
