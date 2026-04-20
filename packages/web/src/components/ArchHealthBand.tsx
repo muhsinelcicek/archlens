@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import type { ArchModel } from "../lib/store.js";
 import { ShieldCheck, GitBranch, Skull, ShieldAlert, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { apiFetch } from "../lib/api.js";
+import { useAllAnalysis } from "../services/queries.js";
 
 interface HealthData {
   qualityScore: number;
@@ -14,16 +14,14 @@ interface HealthData {
 }
 
 export function ArchHealthBand({ model }: { model: ArchModel }) {
-  const [health, setHealth] = useState<HealthData | null>(null);
+  const { quality, security, deadcode, coupling } = useAllAnalysis();
 
-  useEffect(() => {
-    // Fetch quality + security + dead code in parallel
-    Promise.all([
-      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/security").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null),
-    ]).then(([quality, security, deadcode, coupling]) => {
+  const health = useMemo((): HealthData | null => {
+    if (!quality) return null;
+    const _deadcode = deadcode as any;
+    const _security = security as any;
+    const _coupling = coupling as any;
+    {
       const risks: string[] = [];
 
       // Find worst module
@@ -33,13 +31,13 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
       }
 
       // Dead code
-      if (deadcode?.deadPercentage > 15) {
-        risks.push(`${deadcode.deadPercentage}% dead code (~${deadcode.estimatedCleanupLines.toLocaleString()} lines)`);
+      if (_deadcode?.deadPercentage > 15) {
+        risks.push(`${_deadcode.deadPercentage}% dead code (~${_deadcode.estimatedCleanupLines.toLocaleString()} lines)`);
       }
 
       // Security
-      if (security?.bySeverity?.critical > 0) {
-        risks.push(`${security.bySeverity.critical} critical security issues`);
+      if (_security?.bySeverity?.critical > 0) {
+        risks.push(`${_security.bySeverity.critical} critical security issues`);
       }
 
       // Pattern violations
@@ -52,11 +50,11 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
       }
 
       // Circular dependencies from coupling analyzer
-      if (coupling?.circularDependencies?.length > 0) {
-        risks.push(`${coupling.circularDependencies.length} circular dependencies detected`);
+      if (_coupling?.circularDependencies?.length > 0) {
+        risks.push(`${_coupling.circularDependencies.length} circular dependencies detected`);
       }
-      if (coupling?.overallHealth?.concreteRatio > 70) {
-        risks.push(`${coupling.overallHealth.concreteRatio}% concrete coupling — use more interfaces`);
+      if (_coupling?.overallHealth?.concreteRatio > 70) {
+        risks.push(`${_coupling.overallHealth.concreteRatio}% concrete coupling — use more interfaces`);
       }
 
       // Calculate coupling
@@ -69,27 +67,27 @@ export function ArchHealthBand({ model }: { model: ArchModel }) {
         if (srcMod && tgtMod && srcMod !== tgtMod) totalCross++;
       }
       const avgCoupling = model.modules.length > 0 ? totalCross / model.modules.length : 0;
-      const couplingLevel = coupling?.overallHealth
-        ? (coupling.overallHealth.avgInstability < 0.4 ? "Low" : coupling.overallHealth.avgInstability < 0.7 ? "Medium" : "High")
+      const couplingLevel = _coupling?.overallHealth
+        ? (_coupling.overallHealth.avgInstability < 0.4 ? "Low" : _coupling.overallHealth.avgInstability < 0.7 ? "Medium" : "High")
         : (avgCoupling < 5 ? "Low" : avgCoupling < 15 ? "Medium" : "High");
-      const couplingScore = coupling?.overallHealth
-        ? Math.max(0, 100 - Math.round(coupling.overallHealth.avgInstability * 60) - coupling.overallHealth.circularCount * 10)
+      const couplingScore = _coupling?.overallHealth
+        ? Math.max(0, 100 - Math.round(_coupling.overallHealth.avgInstability * 60) - _coupling.overallHealth.circularCount * 10)
         : Math.max(0, 100 - avgCoupling * 3);
 
       // Tech debt estimate (rough: $150/hour developer cost)
-      const debtHours = (quality?.totalIssues || 0) * 0.5 + (deadcode?.estimatedCleanupLines || 0) * 0.01 + (security?.totalIssues || 0) * 2;
+      const debtHours = (quality?.totalIssues || 0) * 0.5 + (_deadcode?.estimatedCleanupLines || 0) * 0.01 + (_security?.totalIssues || 0) * 2;
 
-      setHealth({
+      return {
         qualityScore: quality?.projectScore || 0,
         coupling: { level: couplingLevel, score: Math.round(couplingScore) },
         violations: quality?.architecturePatterns?.reduce((a: number, p: any) => a + p.violations.length, 0) || 0,
-        deadCodePct: deadcode?.deadPercentage || 0,
-        securityScore: security?.score || 0,
+        deadCodePct: _deadcode?.deadPercentage || 0,
+        securityScore: _security?.score || 0,
         techDebtHours: Math.round(debtHours),
         topRisks: risks.slice(0, 3),
-      });
-    }).catch(() => {});
-  }, [model]);
+      };
+    }
+  }, [quality, security, deadcode, coupling, model]);
 
   if (!health) return <div className="h-[120px] bg-surface animate-pulse rounded-lg" />;
 

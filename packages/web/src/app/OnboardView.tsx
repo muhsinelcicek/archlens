@@ -9,7 +9,7 @@ import {
   ShieldCheck, AlertTriangle, Activity, Workflow,
   Compass, BarChart3, Radio, Search,
 } from "lucide-react";
-import { apiFetch } from "../lib/api.js";
+import { useAllAnalysis } from "../services/queries.js";
 
 /* ─── Constants ───────────────────────────────────────────── */
 
@@ -287,31 +287,10 @@ export function OnboardView() {
   });
   const [visitedSections, setVisitedSections] = useState<Set<number>>(new Set([1]));
 
-  // Health data
-  const [quality, setQuality] = useState<QualityReport | null>(null);
-  const [coupling, setCoupling] = useState<CouplingReport | null>(null);
-  const [security, setSecurity] = useState<SecurityReport | null>(null);
-  const [healthLoading, setHealthLoading] = useState(true);
-  const [healthError, setHealthError] = useState<string | null>(null);
+  // Health data — React Query (cached)
+  const { quality, coupling, security, isLoading: healthLoading } = useAllAnalysis();
+  const healthError = (!quality && !coupling && !healthLoading) ? "Health data unavailable" : null;
 
-  useEffect(() => {
-    Promise.all([
-      apiFetch("/api/quality").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      apiFetch("/api/coupling").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      apiFetch("/api/security").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-    ])
-      .then(([q, c, s]) => {
-        if (q) setQuality(q);
-        if (c) setCoupling(c);
-        if (s) setSecurity(s);
-        if (!q && !c && !s) setHealthError("Health data unavailable. The API server may not be running.");
-        setHealthLoading(false);
-      })
-      .catch(() => {
-        setHealthError("Failed to load health data.");
-        setHealthLoading(false);
-      });
-  }, []);
 
   const toggleSection = useCallback((num: number) => {
     setExpandedSections((prev) => ({ ...prev, [num]: !prev[num] }));
@@ -838,7 +817,7 @@ export function OnboardView() {
             </div>
 
             <InsightBox
-              text={generateHealthInsight(quality, coupling, security)}
+              text={generateHealthInsight(quality as any, coupling as any, security as any)}
               color={qualityScore >= 70 ? "#34d399" : "#fbbf24"}
             />
           </>

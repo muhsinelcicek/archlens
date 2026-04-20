@@ -6,7 +6,8 @@ import {
   Lightbulb, Target, Zap, ArrowRight, MessageCircle, Send, Trash2,
 } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
-import { apiFetch } from "../lib/api.js";
+import { useAllAnalysis, useHotspots as useHotspotsQuery, useComments as useCommentsQuery } from "../services/queries.js";
+import { api } from "../services/api-client.js";
 
 interface Insight {
   id: string;
@@ -45,31 +46,16 @@ const COLORS: Record<string, string> = {
 export function InsightsView() {
   const { model } = useStore();
   const navigate = useNavigate();
-  const [quality, setQuality] = useState<any>(null);
-  const [coupling, setCoupling] = useState<any>(null);
-  const [security, setSecurity] = useState<any>(null);
-  const [deadcode, setDeadcode] = useState<any>(null);
-  const [techDebt, setTechDebt] = useState<any>(null);
-  const [hotspots, setHotspots] = useState<any>(null);
+  const { quality, coupling, security, deadcode, techdebt: techDebt, isLoading: loading } = useAllAnalysis();
+  const { data: hotspots } = useHotspotsQuery();
+  const { data: commentsData } = useCommentsQuery("insights");
   const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
 
-  useEffect(() => {
-    Promise.all([
-      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/hotspots").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/comments?target=insights").then((r) => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([q, c, s, d, td, h, cm]) => {
-      setQuality(q); setCoupling(c); setSecurity(s); setDeadcode(d);
-      setTechDebt(td); setHotspots(h); setComments(cm || []);
-      setLoading(false);
-    });
-  }, []);
+  // Sync query data to local state (for mutations)
+  if (commentsData && comments.length === 0 && commentsData.length > 0) {
+    setComments(commentsData as Comment[]);
+  }
 
   const insights = useMemo((): Insight[] => {
     if (!model) return [];
@@ -301,20 +287,12 @@ export function InsightsView() {
 
   const addComment = async () => {
     if (!newComment.trim()) return;
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target: "insights", text: newComment.trim(), author: "You" }),
-    });
-    if (res.ok) {
-      const c = await res.json();
-      setComments([...comments, c]);
-      setNewComment("");
-    }
+    const c = await api.addComment("insights", newComment.trim());
+    if (c) { setComments([...comments, c]); setNewComment(""); }
   };
 
   const deleteComment = async (id: string) => {
-    await apiFetch(`/api/comments?id=${id}`, { method: "DELETE" });
+    await api.deleteComment(id);
     setComments(comments.filter((c) => c.id !== id));
   };
 
