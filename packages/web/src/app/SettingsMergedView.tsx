@@ -6,28 +6,36 @@ import { OnboardView } from "./OnboardView.js";
 
 type Tab = "settings" | "import" | "onboard";
 
+const TABS: Array<{ id: Tab; icon: React.ElementType; label: string }> = [
+  { id: "settings", icon: Settings, label: "General" },
+  { id: "import", icon: Plus, label: "Add Project" },
+  { id: "onboard", icon: Rocket, label: "Onboarding" },
+];
+
 export function SettingsMergedView() {
   const [tab, setTab] = useState<Tab>("settings");
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex border-b border-[var(--color-border-default)] px-6 pt-2 bg-surface">
-        {([
-          { id: "settings" as Tab, icon: Settings, label: "General" },
-          { id: "import" as Tab, icon: Plus, label: "Add Project" },
-          { id: "onboard" as Tab, icon: Rocket, label: "Onboarding" },
-        ]).map((t) => (
+      <div className="flex items-center border-b border-[var(--color-border-subtle)] bg-surface/80 backdrop-blur-sm px-4">
+        {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium transition-all relative ${
               tab === t.id
-                ? "text-archlens-300 border-b-2 border-archlens-400"
+                ? "text-[var(--color-text-primary)]"
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
             }`}
           >
             <t.icon className="h-3.5 w-3.5" />
             {t.label}
+            {tab === t.id && (
+              <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full" style={{
+                background: "linear-gradient(90deg, transparent, var(--color-accent), transparent)",
+                boxShadow: "0 0 8px var(--color-accent-glow)",
+              }} />
+            )}
           </button>
         ))}
       </div>
