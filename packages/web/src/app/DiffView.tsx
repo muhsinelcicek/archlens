@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GitCompare, Plus, Minus, ArrowRight, Camera, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
-import { apiFetch } from "../lib/api.js";
+import { api } from "../services/api-client.js";
 
 interface SnapshotInfo {
   name: string;
@@ -34,15 +34,11 @@ export function DiffView() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadSnapshots = () => {
-    apiFetch("/api/snapshots")
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => {
-        setSnapshots(data);
-        setLoading(false);
-        if (data.length > 0 && !base) setBase(data[0].name);
-      })
-      .catch(() => setLoading(false));
+  const loadSnapshots = async () => {
+    const data = await api.getSnapshots();
+    setSnapshots(data || []);
+    setLoading(false);
+    if (data && data.length > 0 && !base) setBase(data[0].name);
   };
 
   useEffect(() => { loadSnapshots(); }, []);
@@ -70,7 +66,7 @@ export function DiffView() {
 
   const deleteSnapshot = async (name: string) => {
     if (!confirm(`Delete snapshot "${name}"?`)) return;
-    await apiFetch(`/api/snapshots/${encodeURIComponent(name)}`, { method: "DELETE" });
+    await api.deleteSnapshot(name);
     loadSnapshots();
     if (base === name) setBase("");
   };

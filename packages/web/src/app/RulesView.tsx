@@ -5,7 +5,8 @@ import {
   Code2, Layers, Network, FileWarning, Lock, AlertTriangle, Save, Eye, EyeOff,
 } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
-import { apiFetch } from "../lib/api.js";
+import { useRules as useRulesQuery } from "../services/queries.js";
+import { api } from "../services/api-client.js";
 
 interface CustomRule {
   id: string;
@@ -91,7 +92,6 @@ const SEV_COLORS: Record<string, string> = { error: "#ef4444", warning: "#f97316
 export function RulesView() {
   const navigate = useNavigate();
   const [rules, setRules] = useState<CustomRule[]>([]);
-  const [loading, setLoading] = useState(true);
   const [validation, setValidation] = useState<ValidationReport | null>(null);
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -99,16 +99,12 @@ export function RulesView() {
   const [jsonText, setJsonText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    apiFetch("/api/rules")
-      .then((r) => r.ok ? r.json() : { rules: [] })
-      .then((d) => {
-        setRules(d.rules || []);
-        setJsonText(JSON.stringify(d.rules || [], null, 2));
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+  const rulesQuery = useRulesQuery();
+  const loading = rulesQuery.isLoading;
+  if (!rules.length && rulesQuery.data?.rules?.length) {
+    setRules(rulesQuery.data.rules);
+    setJsonText(JSON.stringify(rulesQuery.data.rules, null, 2));
+  }
 
   const saveRules = async (next: CustomRule[]) => {
     setSaving(true);
