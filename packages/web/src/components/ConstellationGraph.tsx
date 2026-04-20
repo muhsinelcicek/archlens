@@ -196,22 +196,22 @@ export function ConstellationGraph({ nodes, edges, selectedId, onNodeClick, onNo
                 <path
                   d={path}
                   fill="none"
-                  stroke={isHighlighted ? "#a78bfa" : "#6366f1"}
+                  stroke={isHighlighted ? "var(--color-accent)" : "var(--color-accent-dim)"}
                   strokeWidth={isHighlighted ? 3 : 1.5}
                   opacity={isHighlighted ? 0.8 : 0.3}
                   filter="url(#glow)"
                 />
                 {/* Flow particles — ALWAYS active, showing dependency direction */}
-                <circle r={isHighlighted ? 3 : 2} fill="#818cf8" opacity={isHighlighted ? 0.9 : 0.5} filter="url(#glow)">
+                <circle r={isHighlighted ? 3 : 2} fill="var(--color-accent)" opacity={isHighlighted ? 0.9 : 0.5} filter="url(#glow)">
                   <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={path} />
                 </circle>
                 {/* Second particle (staggered) for denser flow */}
-                <circle r={isHighlighted ? 2.5 : 1.5} fill="#a78bfa" opacity={isHighlighted ? 0.7 : 0.3} filter="url(#glow)">
+                <circle r={isHighlighted ? 2.5 : 1.5} fill="var(--color-accent-dim)" opacity={isHighlighted ? 0.7 : 0.3} filter="url(#glow)">
                   <animateMotion dur={`${dur2}s`} repeatCount="indefinite" path={path} begin={`${dur / 2}s`} />
                 </circle>
                 {/* Third particle on highlighted edges for extra density */}
                 {isHighlighted && (
-                  <circle r="2" fill="#c4b5fd" opacity={0.6} filter="url(#glow)">
+                  <circle r="2" fill="var(--color-accent)" opacity={0.6} filter="url(#glow)">
                     <animateMotion dur={`${dur * 0.8}s`} repeatCount="indefinite" path={path} begin={`${dur / 3}s`} />
                   </circle>
                 )}

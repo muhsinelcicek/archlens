@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./app/App.js";
-import { Dashboard } from "./app/Dashboard.js";
+import { Dashboard } from "./app/DashboardClean.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { PageLoader } from "./components/PageLoader.js";
 import { initTheme } from "./lib/theme.js";
