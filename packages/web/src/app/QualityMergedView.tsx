@@ -195,7 +195,7 @@ export function QualityMergedView() {
                 )}
 
                 <Card padding="md">
-                  <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase mb-3">Module Metrics</h3>
+                  <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase mb-3">Module Instability</h3>
                   <div className="space-y-1.5">
                     {coupling.modules.sort((a: any, b: any) => b.instability - a.instability).map((m: any) => (
                       <div key={m.moduleName} className="flex items-center gap-3 text-xs">
@@ -206,6 +206,35 @@ export function QualityMergedView() {
                     ))}
                   </div>
                 </Card>
+
+                {/* Consistency */}
+                {consistency && (consistency as any).moduleScores?.length > 0 && (
+                  <Card padding="md">
+                    <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase mb-3">Cross-Cutting Consistency</h3>
+                    <p className="text-xs text-[var(--color-text-secondary)] mb-3">{(consistency as any).summary}</p>
+                    <div className="space-y-1.5">
+                      {(consistency as any).moduleScores.sort((a: any, b: any) => a.overall - b.overall).map((m: any) => (
+                        <div key={m.module} className="flex items-center gap-3 text-xs">
+                          <span className="font-mono text-[var(--color-text-primary)] w-40 truncate">{m.module}</span>
+                          <ProgressBar value={m.errorHandling} label="Err" showValue size="xs" />
+                          <ProgressBar value={m.logging} label="Log" showValue size="xs" />
+                          <span className="font-bold w-8 text-right" style={{ color: m.overall >= 80 ? "#34d399" : "#fbbf24" }}>{m.overall}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(consistency as any).issues?.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-[var(--color-border-subtle)]">
+                        <div className="text-[10px] text-[var(--color-text-muted)] uppercase mb-2">Issues ({(consistency as any).issues.length})</div>
+                        {(consistency as any).issues.slice(0, 5).map((issue: any, i: number) => (
+                          <div key={i} className="flex items-start gap-2 text-[10px] py-0.5">
+                            <Badge variant={issue.severity === "major" ? "warning" : "default"} size="xs">{issue.severity}</Badge>
+                            <span className="text-[var(--color-text-secondary)]">{issue.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                )}
               </>
             ) : <div className="text-center py-16 text-[var(--color-text-muted)]">No coupling data</div>}
           </div>
