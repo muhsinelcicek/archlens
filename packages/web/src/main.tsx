@@ -14,7 +14,7 @@ const ArchitectureMergedView = lazy(() => import("./app/ArchitectureMergedView.j
 const FlowsView = lazy(() => import("./app/FlowsView.js").then((m) => ({ default: m.FlowsView })));
 const InsightsView = lazy(() => import("./app/InsightsView.js").then((m) => ({ default: m.InsightsView })));
 const QualityMergedView = lazy(() => import("./app/QualityMergedView.js").then((m) => ({ default: m.QualityMergedView })));
-const SimulatorView = lazy(() => import("./app/SimulatorView.js").then((m) => ({ default: m.SimulatorView })));
+const SimulatorView = lazy(() => import("./features/simulator/SimulatorPage.js").then((m) => ({ default: m.SimulatorPage })));
 const SettingsMergedView = lazy(() => import("./app/SettingsMergedView.js").then((m) => ({ default: m.SettingsMergedView })));
 
 initTheme();
