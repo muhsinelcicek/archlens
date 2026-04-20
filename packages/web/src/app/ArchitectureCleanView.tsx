@@ -24,6 +24,7 @@ import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore, type ArchModel } from "../lib/store.js";
 import { SigmaGraph, type SigmaGraphHandle, type GraphNode, type GraphEdge, type ImpactResult, type NodeQualityData } from "../components/SigmaGraph.js";
+import { ConstellationGraph, type ConstellationNode, type ConstellationEdge } from "../components/ConstellationGraph.js";
 import { useAllAnalysis } from "../services/queries.js";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -232,17 +233,40 @@ export function ArchitectureCleanView() {
 
       {/* ── Graph: full space ── */}
       <div className="flex-1 min-h-0 relative">
-        <SigmaGraph
-          ref={graphRef}
-          nodes={graphData.nodes}
-          edges={graphData.edges}
-          onNodeClick={handleNodeClick}
-          onNodeDoubleClick={handleNodeDoubleClick}
-          impactMode={impactMode}
-          qualityData={qualityData || undefined}
-          showQualityAlerts={riskOverlay}
-          className="h-full"
-        />
+        {/* System level: Constellation Graph (HTML/SVG, no Sigma.js) */}
+        {currentLevel.level === "system" && model && (
+          <ConstellationGraph
+            nodes={model.modules.map((m) => ({
+              id: m.name,
+              label: m.name,
+              layer: m.layer,
+              fileCount: m.fileCount,
+              symbolCount: m.symbols.length,
+              score: quality?.modules?.find((q: any) => q.moduleName === m.name)?.score,
+              language: m.language,
+            }))}
+            edges={graphData.edges.map((e) => ({ source: e.source, target: e.target, weight: e.weight || 1 }))}
+            selectedId={selectedNode}
+            onNodeClick={handleNodeClick}
+            onNodeDoubleClick={handleNodeDoubleClick}
+            showRisk={riskOverlay}
+          />
+        )}
+
+        {/* Module level: Sigma.js force graph (file dependencies) */}
+        {currentLevel.level === "module" && (
+          <SigmaGraph
+            ref={graphRef}
+            nodes={graphData.nodes}
+            edges={graphData.edges}
+            onNodeClick={handleNodeClick}
+            onNodeDoubleClick={handleNodeDoubleClick}
+            impactMode={impactMode}
+            qualityData={qualityData || undefined}
+            showQualityAlerts={riskOverlay}
+            className="h-full"
+          />
+        )}
 
         {/* Impact result overlay */}
         {impactMode && impactResult && (
