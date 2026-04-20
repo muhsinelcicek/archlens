@@ -186,21 +186,33 @@ export function ConstellationGraph({ nodes, edges, selectedId, onNodeClick, onNo
             const midY = (y1 + y2) / 2;
             const path = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
 
+            // Stagger animation so particles don't all start at same point
+            const dur = 2 + (i % 3) * 0.7;  // 2s, 2.7s, 3.4s variety
+            const dur2 = dur + 1.2;           // second particle offset
+
             return (
               <g key={i}>
-                {/* Glow layer — always glowing, brighter on highlight */}
+                {/* Edge line — always glowing */}
                 <path
                   d={path}
                   fill="none"
                   stroke={isHighlighted ? "#a78bfa" : "#6366f1"}
                   strokeWidth={isHighlighted ? 3 : 1.5}
-                  opacity={isHighlighted ? 0.8 : 0.35}
+                  opacity={isHighlighted ? 0.8 : 0.3}
                   filter="url(#glow)"
                 />
-                {/* Animated dot */}
+                {/* Flow particles — ALWAYS active, showing dependency direction */}
+                <circle r={isHighlighted ? 3 : 2} fill="#818cf8" opacity={isHighlighted ? 0.9 : 0.5} filter="url(#glow)">
+                  <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={path} />
+                </circle>
+                {/* Second particle (staggered) for denser flow */}
+                <circle r={isHighlighted ? 2.5 : 1.5} fill="#a78bfa" opacity={isHighlighted ? 0.7 : 0.3} filter="url(#glow)">
+                  <animateMotion dur={`${dur2}s`} repeatCount="indefinite" path={path} begin={`${dur / 2}s`} />
+                </circle>
+                {/* Third particle on highlighted edges for extra density */}
                 {isHighlighted && (
-                  <circle r="3" fill="#c4b5fd" filter="url(#glow)">
-                    <animateMotion dur="2s" repeatCount="indefinite" path={path} />
+                  <circle r="2" fill="#c4b5fd" opacity={0.6} filter="url(#glow)">
+                    <animateMotion dur={`${dur * 0.8}s`} repeatCount="indefinite" path={path} begin={`${dur / 3}s`} />
                   </circle>
                 )}
               </g>
