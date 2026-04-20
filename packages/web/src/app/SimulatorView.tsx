@@ -114,6 +114,7 @@ export function SimulatorView() {
   const [showLoadTests, setShowLoadTests] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [rightTab, setRightTab] = useState<"inspector" | "insights">("inspector");
+  const [rightPanelOpen, setRightPanelOpen] = useState(false); // collapsed by default
   const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
 
   // Simulation refs
@@ -395,6 +396,7 @@ export function SimulatorView() {
       setConnectFrom(null);
     } else {
       setSelectedIds(new Set([id]));
+      setRightPanelOpen(true); // auto-open inspector when node selected
     }
   };
 
@@ -1008,17 +1010,16 @@ export function SimulatorView() {
         </div>
       )}
 
-      {/* ══ KPI Bar ══ */}
+      {/* ══ KPI Strip (compact, inline with canvas top) ══ */}
       {running && globalStats && (
-        <div className="grid grid-cols-7 gap-2 border-b border-[var(--color-border-default)] bg-deep px-5 py-2">
-          <Kpi icon={<TrendingUp className="h-3 w-3" />} label="Throughput" value={`${Math.round(globalStats.totalRequests / Math.max(1, uptime))}`} unit="r/s" color="#60a5fa" />
-          <Kpi icon={<CheckCircle2 className="h-3 w-3" />} label="Success" value={`${(globalStats.successRate * 100).toFixed(1)}%`} color={globalStats.successRate >= 0.99 ? "#34d399" : "#f97316"} />
-          <Kpi icon={<Gauge className="h-3 w-3" />} label="Avg" value={`${Math.round(globalStats.avgLatencyMs)}`} unit="ms" color="#a78bfa" />
-          <Kpi icon={<Gauge className="h-3 w-3" />} label="P95" value={`${Math.round(globalStats.p95LatencyMs)}`} unit="ms" color={globalStats.p95LatencyMs < 300 ? "#34d399" : "#f97316"} />
-          <Kpi icon={<Gauge className="h-3 w-3" />} label="P99" value={`${Math.round(globalStats.p99LatencyMs)}`} unit="ms" color={globalStats.p99LatencyMs < 500 ? "#34d399" : "#ef4444"} />
-          <Kpi icon={<XCircle className="h-3 w-3" />} label="Errors" value={globalStats.totalErrors.toLocaleString()} color={globalStats.totalErrors > 0 ? "#ef4444" : "#34d399"} />
-          <Kpi icon={<DollarSign className="h-3 w-3" />} label="~Month" value={`$${Math.round(globalStats.monthlyCostEstimate).toLocaleString()}`} color={globalStats.monthlyCostEstimate > budgetLimit ? "#ef4444" : "#fbbf24"} />
-          <Kpi icon={<DollarSign className="h-3 w-3" />} label="Budget" value={`$${(budgetLimit / 1000).toFixed(1)}K`} color={globalStats.monthlyCostEstimate > budgetLimit ? "#ef4444" : "#34d399"} />
+        <div className="flex items-center gap-4 border-b border-[var(--color-border-default)] bg-deep/80 px-5 py-1.5 text-[10px] overflow-x-auto">
+          <span className="font-mono font-bold text-blue-400">{Math.round(globalStats.totalRequests / Math.max(1, uptime))} r/s</span>
+          <span className="font-mono" style={{ color: globalStats.successRate >= 0.99 ? "#34d399" : "#f97316" }}>{(globalStats.successRate * 100).toFixed(1)}%</span>
+          <span className="text-[var(--color-text-muted)]">P95:<span className="font-mono ml-0.5" style={{ color: globalStats.p95LatencyMs < 300 ? "#34d399" : "#f97316" }}>{Math.round(globalStats.p95LatencyMs)}ms</span></span>
+          <span className="text-[var(--color-text-muted)]">P99:<span className="font-mono ml-0.5" style={{ color: globalStats.p99LatencyMs < 500 ? "#34d399" : "#ef4444" }}>{Math.round(globalStats.p99LatencyMs)}ms</span></span>
+          <span className="font-mono" style={{ color: globalStats.totalErrors > 0 ? "#ef4444" : "#34d399" }}>{globalStats.totalErrors} err</span>
+          <span className="font-mono text-amber-400">${Math.round(globalStats.monthlyCostEstimate).toLocaleString()}/mo</span>
+          <span className={`font-bold ${globalStats.sloMet ? "text-emerald-400" : "text-red-400"}`}>SLO {globalStats.sloMet ? "✓" : "✗"}</span>
         </div>
       )}
 
@@ -1312,9 +1313,22 @@ export function SimulatorView() {
           )}
         </div>
 
-        {/* ─ Right: Inspector + Insights ─ */}
-        <aside className="w-80 border-l border-[var(--color-border-default)] bg-surface overflow-y-auto flex-shrink-0">
-          <div className="flex border-b border-[var(--color-border-default)]">
+        {/* ─ Right panel toggle ─ */}
+        {!rightPanelOpen && (
+          <button
+            onClick={() => setRightPanelOpen(true)}
+            className="absolute top-1/2 right-0 z-30 -translate-y-1/2 bg-surface border border-[var(--color-border-default)] border-r-0 rounded-l-lg px-1 py-6 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* ─ Right: Inspector + Insights (collapsible) ─ */}
+        <aside className={`border-l border-[var(--color-border-default)] bg-surface overflow-y-auto flex-shrink-0 transition-all duration-200 ${rightPanelOpen ? "w-80" : "w-0 overflow-hidden"}`}>
+          <div className="flex border-b border-[var(--color-border-default)] min-w-[320px]">
+            <button onClick={() => setRightPanelOpen(false)} className="px-2 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="Close panel">
+              <ChevronDown className="h-3 w-3 rotate-90" />
+            </button>
             <button
               onClick={() => setRightTab("inspector")}
               className={`flex-1 px-3 py-2 text-[10px] uppercase font-semibold ${rightTab === "inspector" ? "text-archlens-300 border-b-2 border-archlens-400" : "text-[var(--color-text-muted)]"}`}
