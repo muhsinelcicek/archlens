@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useStore, type ArchModel } from "../lib/store.js";
+import { apiFetch } from "../lib/api.js";
 import { SigmaGraph, type SigmaGraphHandle, type GraphNode, type GraphEdge, type ImpactResult, type NodeQualityData } from "../components/SigmaGraph.js";
 import { DependencyMatrix } from "../components/DependencyMatrix.js";
 import { FeatureTracer } from "../components/FeatureTracer.js";
@@ -116,6 +118,80 @@ function buildModuleGraph(model: ArchModel, moduleName: string): { nodes: GraphN
 
 // ─── Code Panel ──────────────────────────────────────────────────────
 
+/**
+ * RiskOverview — mini risk dashboard inside the detail panel.
+ * Fetches data from the parent component's analysisData (via context-free fetch).
+ */
+function RiskOverview({ moduleName }: { moduleName: string }) {
+  const [data, setData] = useState<Record<string, number> | null>(null);
+  const navigate = useNavigate();
+  const { simulatorSnapshot } = useStore();
+
+  useEffect(() => {
+    Promise.all([
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/hotspots").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([q, c, h, s, d]) => {
+      const qScore = q?.modules?.find((m: any) => m.moduleName === moduleName)?.score ?? 80;
+      const inst = c?.modules?.find((m: any) => m.moduleName === moduleName)?.instability ?? 0.5;
+      const hotspot = h?.hotspots?.filter((x: any) => x.module === moduleName).reduce((a: number, x: any) => Math.max(a, x.riskScore), 0) ?? 0;
+      const secCount = s?.issues?.filter((i: any) => i.filePath?.includes(moduleName)).length ?? 0;
+      const deadCount = d?.byModule?.find((m: any) => m.module === moduleName)?.count ?? 0;
+      const simInc = simulatorSnapshot?.topIncidents?.filter((i) => i.nodeLabel.includes(moduleName)).length ?? 0;
+      setData({
+        quality: qScore,
+        coupling: Math.round((1 - inst) * 100),
+        hotspot: 100 - hotspot,
+        security: Math.max(0, 100 - secCount * 20),
+        deadcode: Math.max(0, 100 - deadCount * 3),
+        simulator: Math.max(0, 100 - simInc * 25),
+      });
+    });
+  }, [moduleName, simulatorSnapshot]);
+
+  if (!data) return null;
+
+  const overall = Math.round(Object.values(data).reduce((a, b) => a + b, 0) / Object.keys(data).length);
+  const riskColor = overall >= 80 ? "#34d399" : overall >= 60 ? "#fbbf24" : overall >= 40 ? "#f97316" : "#ef4444";
+  const riskLabel = overall >= 80 ? "Healthy" : overall >= 60 ? "Attention" : overall >= 40 ? "Warning" : "Critical";
+
+  const bars: Array<{ label: string; value: number; color: string }> = [
+    { label: "Quality", value: data.quality, color: data.quality >= 70 ? "#34d399" : "#f97316" },
+    { label: "Coupling", value: data.coupling, color: data.coupling >= 60 ? "#34d399" : "#f97316" },
+    { label: "Hotspot", value: data.hotspot, color: data.hotspot >= 60 ? "#34d399" : "#f97316" },
+    { label: "Security", value: data.security, color: data.security >= 80 ? "#34d399" : "#ef4444" },
+    { label: "Dead Code", value: data.deadcode, color: data.deadcode >= 80 ? "#34d399" : "#fbbf24" },
+    { label: "Simulator", value: data.simulator, color: data.simulator >= 80 ? "#34d399" : "#f97316" },
+  ];
+
+  return (
+    <div className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] uppercase font-semibold text-[var(--color-text-muted)]">Risk Overview</span>
+        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${riskColor}20`, color: riskColor }}>{overall}/100 {riskLabel}</span>
+      </div>
+      <div className="space-y-1">
+        {bars.map((b) => (
+          <div key={b.label} className="flex items-center gap-2 text-[9px]">
+            <span className="w-14 text-[var(--color-text-muted)] truncate">{b.label}</span>
+            <div className="flex-1 h-1.5 rounded-full bg-elevated overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${b.value}%`, backgroundColor: b.color }} />
+            </div>
+            <span className="w-6 text-right font-mono" style={{ color: b.color }}>{b.value}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-1.5 mt-2">
+        <button onClick={() => navigate("/simulator")} className="text-[9px] px-2 py-1 rounded bg-archlens-500/10 text-archlens-300 border border-archlens-500/20 hover:bg-archlens-500/20">Simulate</button>
+        <button onClick={() => navigate("/quality")} className="text-[9px] px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20">Fix Issues</button>
+      </div>
+    </div>
+  );
+}
+
 function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId: string; level: ViewLevel }) {
   // Check if selectedId is a file path (has extension) — show code viewer regardless of level
   const isFilePath = selectedId.includes("/") && /\.\w+$/.test(selectedId);
@@ -201,6 +277,9 @@ function CodePanel({ model, selectedId, level }: { model: ArchModel; selectedId:
             ))}
           </div>
         </div>
+
+        {/* Risk Overview */}
+        <RiskOverview moduleName={mod.name} />
 
         {/* Dependencies */}
         <div className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
@@ -450,26 +529,104 @@ export function ArchitectureView() {
   const [impactResult, setImpactResult] = useState<ImpactResult | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [bottomTab, setBottomTab] = useState<"trace" | "matrix">("trace");
-  const [showQualityAlerts, setShowQualityAlerts] = useState(false);
   const [leftTab, setLeftTab] = useState<"insights" | "files">("insights");
   const [qualityData, setQualityData] = useState<NodeQualityData | null>(null);
 
-  // Fetch quality data on mount
+  // Overlay modes
+  type OverlayMode = "default" | "risk" | "quality" | "hotspots" | "security" | "coupling" | "deadcode" | "debt" | "simulator";
+  const [overlayMode, setOverlayMode] = useState<OverlayMode>("default");
+  const showQualityAlerts = overlayMode === "quality";
+
+  // All analysis data (fetched once on mount)
+  const [analysisData, setAnalysisData] = useState<{
+    quality: any; hotspots: any; security: any; coupling: any; deadcode: any; techdebt: any;
+  }>({ quality: null, hotspots: null, security: null, coupling: null, deadcode: null, techdebt: null });
+
+  const { simulatorSnapshot } = useStore();
+
+  // Fetch ALL analysis data on mount
   useEffect(() => {
-    fetch("/api/quality")
-      .then((r) => r.ok ? r.json() : null)
-      .then((report) => {
-        if (!report) return;
+    Promise.all([
+      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/hotspots").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
+      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([q, h, s, c, d, td]) => {
+      setAnalysisData({ quality: q, hotspots: h, security: s, coupling: c, deadcode: d, techdebt: td });
+      // Build quality overlay data (backward compat)
+      if (q) {
         const qd: NodeQualityData = {};
-        for (const mod of report.modules) {
+        for (const mod of q.modules) {
           const criticals = mod.issues.filter((i: any) => i.severity === "critical").length;
           const majors = mod.issues.filter((i: any) => i.severity === "major").length;
           qd[mod.moduleName] = { score: mod.score, issues: mod.issues.length, critical: criticals, major: majors };
         }
         setQualityData(qd);
-      })
-      .catch(() => {});
+      }
+    });
   }, []);
+
+  // Build overlay data based on selected mode
+  const overlayNodeData = useMemo((): NodeQualityData | null => {
+    if (overlayMode === "default") return null;
+    if (overlayMode === "quality") return qualityData;
+    if (!model) return null;
+
+    const data: NodeQualityData = {};
+    for (const mod of model.modules) {
+      switch (overlayMode) {
+        case "risk": {
+          // Weighted risk from all sources
+          const qScore = analysisData.quality?.modules?.find((m: any) => m.moduleName === mod.name)?.score ?? 80;
+          const inst = analysisData.coupling?.modules?.find((m: any) => m.moduleName === mod.name)?.instability ?? 0.5;
+          const hSpot = analysisData.hotspots?.hotspots?.filter((h: any) => h.module === mod.name).reduce((a: number, h: any) => Math.max(a, h.riskScore), 0) ?? 0;
+          const risk = Math.round(100 - (qScore * 0.3 + (1 - inst) * 100 * 0.2 + (100 - hSpot) * 0.2 + 80 * 0.3));
+          data[mod.name] = { score: 100 - risk, issues: risk, critical: risk > 70 ? 1 : 0, major: risk > 50 ? 1 : 0 };
+          break;
+        }
+        case "hotspots": {
+          const maxRisk = analysisData.hotspots?.hotspots?.filter((h: any) => h.module === mod.name).reduce((a: number, h: any) => Math.max(a, h.riskScore), 0) ?? 0;
+          data[mod.name] = { score: 100 - maxRisk, issues: maxRisk, critical: maxRisk > 70 ? 1 : 0, major: maxRisk > 40 ? 1 : 0 };
+          break;
+        }
+        case "security": {
+          const issues = analysisData.security?.issues?.filter((i: any) => i.filePath?.startsWith(mod.path || mod.name)) || [];
+          const score = issues.length === 0 ? 100 : Math.max(0, 100 - issues.length * 15);
+          data[mod.name] = { score, issues: issues.length, critical: issues.filter((i: any) => i.severity === "critical").length, major: issues.filter((i: any) => i.severity === "high").length };
+          break;
+        }
+        case "coupling": {
+          const modData = analysisData.coupling?.modules?.find((m: any) => m.moduleName === mod.name);
+          const inst = modData?.instability ?? 0.5;
+          const score = Math.round((1 - inst) * 100);
+          data[mod.name] = { score, issues: Math.round(inst * 100), critical: inst > 0.8 ? 1 : 0, major: inst > 0.6 ? 1 : 0 };
+          break;
+        }
+        case "deadcode": {
+          const modDead = analysisData.deadcode?.byModule?.find((m: any) => m.module === mod.name);
+          const count = modDead?.count ?? 0;
+          const score = Math.max(0, 100 - count * 2);
+          data[mod.name] = { score, issues: count, critical: count > 30 ? 1 : 0, major: count > 10 ? 1 : 0 };
+          break;
+        }
+        case "debt": {
+          const items = analysisData.techdebt?.items || [];
+          const score = items.length > 0 ? Math.max(0, 100 - items.length * 10) : 100;
+          data[mod.name] = { score, issues: items.length, critical: 0, major: items.length > 3 ? 1 : 0 };
+          break;
+        }
+        case "simulator": {
+          const inc = simulatorSnapshot?.topIncidents?.filter((i) => i.nodeLabel.includes(mod.name)) || [];
+          const score = inc.length === 0 ? 100 : Math.max(0, 100 - inc.length * 20);
+          data[mod.name] = { score, issues: inc.length, critical: inc.filter((i) => i.severity >= 80).length, major: inc.filter((i) => i.severity >= 60).length };
+          break;
+        }
+      }
+    }
+    return data;
+  }, [overlayMode, model, qualityData, analysisData, simulatorSnapshot]);
 
   const currentLevel = breadcrumbs[breadcrumbs.length - 1];
 
@@ -728,13 +885,21 @@ export function ArchitectureView() {
             <Target className="h-3.5 w-3.5" />
             Impact
           </button>
-          <button
-            onClick={() => setShowQualityAlerts(!showQualityAlerts)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${showQualityAlerts ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-elevated text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"}`}
+          <select
+            value={overlayMode}
+            onChange={(e) => setOverlayMode(e.target.value as OverlayMode)}
+            className="rounded-lg bg-elevated border border-[var(--color-border-default)] px-2 py-1.5 text-[11px] text-[var(--color-text-primary)] outline-none cursor-pointer hover:border-archlens-500/40"
           >
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Quality
-          </button>
+            <option value="default">🎨 Default</option>
+            <option value="risk">🔥 Risk Heatmap</option>
+            <option value="quality">📊 Quality</option>
+            <option value="hotspots">🔴 Hotspots</option>
+            <option value="security">🛡️ Security</option>
+            <option value="coupling">🔗 Coupling</option>
+            <option value="deadcode">💀 Dead Code</option>
+            <option value="debt">💰 Tech Debt</option>
+            <option value="simulator">🎮 Simulator</option>
+          </select>
         </div>
 
         {/* Graph — Full height */}
@@ -746,8 +911,8 @@ export function ArchitectureView() {
             onNodeClick={handleNodeClick}
             onNodeDoubleClick={handleNodeDoubleClick}
             impactMode={impactMode}
-            qualityData={qualityData || undefined}
-            showQualityAlerts={showQualityAlerts}
+            qualityData={overlayNodeData || qualityData || undefined}
+            showQualityAlerts={overlayMode !== "default"}
             className="h-full"
           />
         </div>
