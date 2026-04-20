@@ -902,8 +902,8 @@ export function ArchitectureView() {
           </select>
         </div>
 
-        {/* Graph — Full height */}
-        <div className="flex-1 min-h-0">
+        {/* Graph — Full height + topology badges */}
+        <div className="flex-1 min-h-0 relative">
           <SigmaGraph
             ref={graphRef}
             nodes={graphData.nodes}
@@ -915,6 +915,39 @@ export function ArchitectureView() {
             showQualityAlerts={overlayMode !== "default"}
             className="h-full"
           />
+
+          {/* Topology warning badges overlay */}
+          {currentLevel.level === "system" && (
+            <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 pointer-events-none">
+              {(() => {
+                const warnings: Array<{ label: string; color: string; count: number }> = [];
+                // SPOF: modules with only 1 file (fragile)
+                const tinyModules = model.modules.filter((m) => m.fileCount <= 1 && m.symbols.length > 0);
+                if (tinyModules.length > 0) warnings.push({ label: "SPOF", color: "#ef4444", count: tinyModules.length });
+                // God modules: 300+ symbols
+                const godModules = model.modules.filter((m) => m.symbols.length > 300);
+                if (godModules.length > 0) warnings.push({ label: "GOD MODULE", color: "#f97316", count: godModules.length });
+                // Circular deps
+                const circularCount = analysisData.coupling?.circularDependencies?.length || 0;
+                if (circularCount > 0) warnings.push({ label: "CIRCULAR", color: "#fbbf24", count: circularCount });
+                // Security issues
+                const secCount = analysisData.security?.totalIssues || 0;
+                if (secCount > 0) warnings.push({ label: "VULNERABILITIES", color: "#ef4444", count: secCount });
+                // Simulator incidents
+                const simInc = simulatorSnapshot?.incidentCount || 0;
+                if (simInc > 0) warnings.push({ label: "SIM INCIDENTS", color: "#a78bfa", count: simInc });
+
+                if (warnings.length === 0) return null;
+                return warnings.map((w, i) => (
+                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[9px] font-bold uppercase pointer-events-auto"
+                    style={{ backgroundColor: `${w.color}20`, color: w.color, border: `1px solid ${w.color}40` }}>
+                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px]" style={{ backgroundColor: `${w.color}30` }}>{w.count}</span>
+                    {w.label}
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Bottom Panel */}
