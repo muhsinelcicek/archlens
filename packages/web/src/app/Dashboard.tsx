@@ -333,7 +333,7 @@ export function Dashboard() {
         {/* Circular health score */}
         {!healthLoading && quality && (
           <div
-            className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-5 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer hover:border-[#3a3a4a] transition-colors"
+            className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-5 backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
             onClick={() => navigate("/quality")}
           >
             <ScoreRing score={qualityScore} size={100} />
@@ -470,7 +470,7 @@ export function Dashboard() {
               return (
                 <div
                   key={idx}
-                  className="group flex items-center gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer transition-all hover:border-[#3a3a4a] hover:bg-hover"
+                  className="group flex items-center gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer transition-all hover:border-[var(--color-border-strong)] hover:bg-hover"
                   onClick={() => navigate(item.link)}
                 >
                   {/* Severity badge */}

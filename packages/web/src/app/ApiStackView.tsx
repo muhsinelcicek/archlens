@@ -229,7 +229,7 @@ export function ApiStackView() {
                       <span className="font-semibold text-sm text-[var(--color-text-primary)]">{groupName}</span>
                       {mod?.layer && (
                         <span
-                          className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${layerColors[mod.layer.toLowerCase()] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[#3a3a4a]"}`}
+                          className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${layerColors[mod.layer.toLowerCase()] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[var(--color-border-strong)]"}`}
                         >
                           {mod.layer}
                         </span>
@@ -306,7 +306,7 @@ export function ApiStackView() {
                   >
                     <div className="flex items-center gap-2 mb-1.5">
                       <span
-                        className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[category] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[#3a3a4a]"}`}
+                        className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[category] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[var(--color-border-strong)]"}`}
                       >
                         {category}
                       </span>
@@ -377,7 +377,7 @@ export function ApiStackView() {
                       <span className="text-sm text-[var(--color-text-primary)] font-medium truncate">{entry.name}</span>
                       <span className="text-xs text-[var(--color-text-secondary)] font-mono">{entry.version || "-"}</span>
                       <span
-                        className={`inline-flex self-center w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[entry.category] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[#3a3a4a]"}`}
+                        className={`inline-flex self-center w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${categoryColors[entry.category] || "bg-[var(--color-border-default)] text-[var(--color-text-secondary)] border-[var(--color-border-strong)]"}`}
                       >
                         {entry.category}
                       </span>

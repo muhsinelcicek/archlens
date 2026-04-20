@@ -314,7 +314,7 @@ export function SettingsView() {
               <button
                 key={exp.id}
                 onClick={exp.action}
-                className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] p-4 text-left hover:bg-hover hover:border-[#3a3a4a] transition-all group"
+                className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] p-4 text-left hover:bg-hover hover:border-[var(--color-border-strong)] transition-all group"
               >
                 <div className="rounded-lg p-2.5 bg-[var(--color-border-subtle)] group-hover:bg-[var(--color-border-default)] transition-colors" style={{ color: accent }}>
                   {exp.icon}
@@ -466,7 +466,7 @@ export function SettingsView() {
               href="https://github.com/user/archlens"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[#3a3a4a] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
             >
               <GitBranch className="h-3.5 w-3.5" /> GitHub
               <ExternalLink className="h-3 w-3" />
@@ -475,7 +475,7 @@ export function SettingsView() {
               href="https://github.com/user/archlens/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[#3a3a4a] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
             >
               <Shield className="h-3.5 w-3.5" /> Report Issue
               <ExternalLink className="h-3 w-3" />

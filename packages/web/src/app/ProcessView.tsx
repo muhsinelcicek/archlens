@@ -222,7 +222,7 @@ function SystemMap({ model, processes, highlightedModules }: {
                           onMouseLeave={() => setHoveredModule(null)}
                         >
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: c }} />
-                          <span className="text-[9px] font-mono text-[#9898b0] truncate max-w-[100px]">{m.name}</span>
+                          <span className="text-[9px] font-mono text-[var(--color-text-secondary)] truncate max-w-[100px]">{m.name}</span>
                           {(epCount > 0 || procCount > 0) && (
                             <span className="text-[7px] text-[var(--color-text-muted)] ml-auto whitespace-nowrap">
                               {epCount > 0 && <span>{epCount}ep</span>}
@@ -362,7 +362,7 @@ function VerticalTimeline({ process, modules, cfg }: {
 
               {/* Symbol ref badge */}
               {step.symbolRef && (
-                <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[#6a6a80]">
+                <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-[var(--color-text-muted)]">
                   <Hash className="h-2.5 w-2.5" /> {step.symbolRef}
                 </div>
               )}
@@ -550,7 +550,7 @@ function ProcessCard({ process, isExpanded, onToggle, modules, viewMode }: {
           </div>
           <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 line-clamp-1">{process.description}</p>
           {/* Data flow summary */}
-          <div className="text-[9px] text-[#6a6a80] mt-1 font-mono flex items-center gap-1">
+          <div className="text-[9px] text-[var(--color-text-muted)] mt-1 font-mono flex items-center gap-1">
             <GitBranch className="h-2.5 w-2.5 flex-shrink-0" />
             {flowSummary}
           </div>
@@ -749,7 +749,7 @@ export function ProcessView() {
           {/* Sort button */}
           <button
             onClick={cycleSortKey}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--color-border-default)] text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[#3a3a4a] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--color-border-default)] text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
           >
             <ArrowUpDown className="h-3 w-3" />
             Sort: {sortKey === "name" ? "Name" : sortKey === "steps" ? "Steps" : "Category"}

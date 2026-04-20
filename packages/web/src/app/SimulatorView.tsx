@@ -1087,21 +1087,21 @@ export function SimulatorView() {
             }}
           >
             {/* Zoom controls (bottom-left) */}
-            <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1 bg-elevated/90 backdrop-blur rounded-lg border border-[#2a2a3a] p-1">
-              <button onClick={canvas.zoomOut} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]"><ZoomOut className="h-3.5 w-3.5" /></button>
-              <span className="text-[10px] font-mono text-[#8888a0] w-10 text-center">{Math.round(canvas.transform.scale * 100)}%</span>
-              <button onClick={canvas.zoomIn} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]"><ZoomIn className="h-3.5 w-3.5" /></button>
-              <div className="w-px h-4 bg-[#2a2a3a]" />
-              <button onClick={() => canvas.fitToView(nodes, canvasRef.current?.clientWidth || 800, canvasRef.current?.clientHeight || 600)} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]" title="Fit to view"><Maximize2 className="h-3.5 w-3.5" /></button>
-              <button onClick={canvas.resetZoom} className="p-1.5 rounded hover:bg-hover text-[#8888a0] hover:text-[#e4e4ed]" title="Reset zoom"><Crosshair className="h-3.5 w-3.5" /></button>
-              <div className="w-px h-4 bg-[#2a2a3a]" />
-              <button onClick={() => canvas.setSnapEnabled(!canvas.snapEnabled)} className={`p-1.5 rounded ${canvas.snapEnabled ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Snap to grid"><Grid3x3 className="h-3.5 w-3.5" /></button>
-              <button onClick={() => setShowMinimap(!showMinimap)} className={`p-1.5 rounded ${showMinimap ? "text-archlens-300 bg-archlens-500/15" : "text-[#5a5a70]"}`} title="Mini-map"><MapIcon className="h-3.5 w-3.5" /></button>
+            <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1 bg-elevated/90 backdrop-blur rounded-lg border border-[var(--color-border-default)] p-1">
+              <button onClick={canvas.zoomOut} className="p-1.5 rounded hover:bg-hover text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"><ZoomOut className="h-3.5 w-3.5" /></button>
+              <span className="text-[10px] font-mono text-[var(--color-text-secondary)] w-10 text-center">{Math.round(canvas.transform.scale * 100)}%</span>
+              <button onClick={canvas.zoomIn} className="p-1.5 rounded hover:bg-hover text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"><ZoomIn className="h-3.5 w-3.5" /></button>
+              <div className="w-px h-4 bg-[var(--color-border-default)]" />
+              <button onClick={() => canvas.fitToView(nodes, canvasRef.current?.clientWidth || 800, canvasRef.current?.clientHeight || 600)} className="p-1.5 rounded hover:bg-hover text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" title="Fit to view"><Maximize2 className="h-3.5 w-3.5" /></button>
+              <button onClick={canvas.resetZoom} className="p-1.5 rounded hover:bg-hover text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" title="Reset zoom"><Crosshair className="h-3.5 w-3.5" /></button>
+              <div className="w-px h-4 bg-[var(--color-border-default)]" />
+              <button onClick={() => canvas.setSnapEnabled(!canvas.snapEnabled)} className={`p-1.5 rounded ${canvas.snapEnabled ? "text-archlens-300 bg-archlens-500/15" : "text-[var(--color-text-muted)]"}`} title="Snap to grid"><Grid3x3 className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setShowMinimap(!showMinimap)} className={`p-1.5 rounded ${showMinimap ? "text-archlens-300 bg-archlens-500/15" : "text-[var(--color-text-muted)]"}`} title="Mini-map"><MapIcon className="h-3.5 w-3.5" /></button>
             </div>
 
             {/* Mini-map (bottom-right) */}
             {showMinimap && nodes.length > 0 && (
-              <div className="absolute bottom-3 right-3 z-20 w-40 h-24 bg-elevated/90 backdrop-blur rounded-lg border border-[#2a2a3a] overflow-hidden">
+              <div className="absolute bottom-3 right-3 z-20 w-40 h-24 bg-elevated/90 backdrop-blur rounded-lg border border-[var(--color-border-default)] overflow-hidden">
                 <svg viewBox={`${Math.min(...nodes.map(n => n.x)) - 20} ${Math.min(...nodes.map(n => n.y)) - 20} ${Math.max(...nodes.map(n => n.x)) - Math.min(...nodes.map(n => n.x)) + 200} ${Math.max(...nodes.map(n => n.y)) - Math.min(...nodes.map(n => n.y)) + 120}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                   {edges.map((e) => {
                     const s = nodes.find((n) => n.id === e.source);
@@ -1185,7 +1185,7 @@ export function SimulatorView() {
                       width: 140,
                       cursor: draggingId === n.id ? "grabbing" : "grab",
                       borderRadius: 10,
-                      backgroundColor: n.alive ? "var(--color-elevated)" : "#0f0f16",
+                      backgroundColor: n.alive ? "var(--color-elevated)" : "var(--color-deep)",
                       border: `2px solid ${isTraceActive ? "#22d3ee" : color}`,
                       boxShadow: isTraceActive ? "0 0 24px rgba(34,211,238,0.5)" : (running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none"),
                       opacity: tracing && !isTraced ? 0.3 : (n.alive ? 1 : 0.5),

@@ -523,7 +523,7 @@ export function OnboardView() {
                       <div className="text-xs text-[var(--color-text-muted)] tabular-nums">
                         {mods.reduce((a, m) => a + m.fileCount, 0)} files
                       </div>
-                      <div className="text-[10px] text-[#3a3a4a] tabular-nums">
+                      <div className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
                         {mods.reduce((a, m) => a + m.lineCount, 0).toLocaleString()} lines
                       </div>
                     </div>
@@ -707,7 +707,7 @@ export function OnboardView() {
                         </div>
                       </div>
 
-                      <ArrowRight className="h-3 w-3 text-[#3a3a4a] flex-shrink-0" />
+                      <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)] flex-shrink-0" />
 
                       {/* Steps */}
                       {proc.steps.slice(0, 6).map((step, i) => {
@@ -740,7 +740,7 @@ export function OnboardView() {
                         </span>
                       )}
 
-                      <ArrowRight className="h-3 w-3 text-[#3a3a4a] flex-shrink-0" />
+                      <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)] flex-shrink-0" />
 
                       {/* Output */}
                       <div className="flex-shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5">
@@ -784,7 +784,7 @@ export function OnboardView() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Quality Score */}
               <div
-                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[var(--color-border-strong)] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={qualityScore} size={72} />
@@ -796,7 +796,7 @@ export function OnboardView() {
 
               {/* Coupling */}
               <div
-                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[var(--color-border-strong)] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={couplingHealth} size={72} />
@@ -810,7 +810,7 @@ export function OnboardView() {
 
               {/* Security */}
               <div
-                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[var(--color-border-strong)] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={securityScore} size={72} />
@@ -824,7 +824,7 @@ export function OnboardView() {
 
               {/* Architecture Patterns */}
               <div
-                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[#3a3a4a] hover:scale-[1.02]"
+                className="rounded-xl border border-[var(--color-border-default)] bg-elevated p-4 flex flex-col items-center cursor-pointer transition-all hover:border-[var(--color-border-strong)] hover:scale-[1.02]"
                 onClick={() => navigate("/quality")}
               >
                 <ScoreRing score={patternCompliance} size={72} />
@@ -905,7 +905,7 @@ export function OnboardView() {
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">{card.description}</p>
               </div>
               <ArrowRight
-                className="h-4 w-4 text-[#3a3a4a] group-hover:text-[var(--color-text-secondary)] transition-all group-hover:translate-x-1 flex-shrink-0"
+                className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-secondary)] transition-all group-hover:translate-x-1 flex-shrink-0"
               />
             </button>
           ))}
@@ -913,7 +913,7 @@ export function OnboardView() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────── */}
-      <div className="text-center text-[10px] text-[#3a3a4a] pt-2 pb-4">
+      <div className="text-center text-[10px] text-[var(--color-text-muted)] pt-2 pb-4">
         ArchLens v{model.project.version} &middot; Analyzed {new Date(model.project.analyzedAt).toLocaleDateString()} &middot; {model.stats.totalLines.toLocaleString()} lines of code
       </div>
     </div>

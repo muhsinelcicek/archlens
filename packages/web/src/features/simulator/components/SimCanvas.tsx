@@ -153,7 +153,7 @@ export const SimCanvas = forwardRef<HTMLDivElement, Props>(function SimCanvas(pr
               onMouseDown={(e) => props.onNodeMouseDown(e, n.id)}
               onClick={(e) => props.onNodeClick(e, n.id)}
               className={`absolute select-none transition-shadow ${isSelected ? "ring-2 ring-archlens-400" : ""} ${connectFrom === n.id ? "ring-2 ring-emerald-400" : ""}`}
-              style={{ left: n.x, top: n.y, width: 140, cursor: draggingId === n.id ? "grabbing" : "grab", borderRadius: 10, backgroundColor: n.alive ? "var(--color-elevated)" : "#0f0f16", border: `2px solid ${color}`, boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none", opacity: n.alive ? 1 : 0.5 }}
+              style={{ left: n.x, top: n.y, width: 140, cursor: draggingId === n.id ? "grabbing" : "grab", borderRadius: 10, backgroundColor: n.alive ? "var(--color-elevated)" : "var(--color-deep)", border: `2px solid ${color}`, boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none", opacity: n.alive ? 1 : 0.5 }}
             >
               <div className="flex items-center gap-2 p-2">
                 <div className="rounded-md p-1" style={{ backgroundColor: `${color}20`, color }}><Icon className="h-3.5 w-3.5" /></div>

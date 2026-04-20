@@ -190,7 +190,7 @@ export function HotspotsView() {
             })}
           </svg>
           {hoveredFile && (
-            <div className="absolute top-2 right-2 rounded-lg bg-[var(--color-border-subtle)] border border-[#3a3a4a] px-3 py-2 text-xs pointer-events-none shadow-lg">
+            <div className="absolute top-2 right-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-strong)] px-3 py-2 text-xs pointer-events-none shadow-lg">
               <div className="font-mono text-[var(--color-text-primary)]">{hoveredFile.split("/").pop()}</div>
               <div className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[300px]">{hoveredFile}</div>
             </div>
