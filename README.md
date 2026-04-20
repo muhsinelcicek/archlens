@@ -168,4 +168,6 @@ pnpm dev
 
 ## License
 
-MIT
+[MIT License](LICENSE) — Copyright (c) 2026 Muhsin Elçiçek
+
+Free to use, modify, and distribute.
