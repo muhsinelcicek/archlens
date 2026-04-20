@@ -255,8 +255,8 @@ export function ConstellationGraph({ nodes, edges, selectedId, onNodeClick, onNo
                 className="rounded-xl p-3 transition-all duration-200"
                 style={{
                   backgroundColor: "var(--color-surface)",
-                  border: `1px solid ${isSelected ? color : "rgba(255,255,255,0.06)"}`,
-                  boxShadow: `0 0 ${glowIntensity}px ${isSelected ? color : healthColor}40, inset 0 1px 0 rgba(255,255,255,0.04)`,
+                  border: `1px solid ${isSelected ? color : "var(--color-border-default)"}`,
+                  boxShadow: `0 0 ${glowIntensity}px ${isSelected ? color : healthColor}40`,
                   transform: isHovered ? "translateY(-2px)" : "none",
                 }}
               >

@@ -185,7 +185,7 @@ export const SimCanvas = forwardRef<HTMLDivElement, Props>(function SimCanvas(pr
               onMouseDown={(e) => props.onNodeMouseDown(e, n.id)}
               onClick={(e) => props.onNodeClick(e, n.id)}
               className={`absolute select-none transition-shadow ${isSelected ? "ring-2 ring-archlens-400" : ""} ${connectFrom === n.id ? "ring-2 ring-emerald-400" : ""}`}
-              style={{ left: n.x, top: n.y, width: 140, cursor: draggingId === n.id ? "grabbing" : "grab", borderRadius: 12, backgroundColor: n.alive ? "var(--color-surface)" : "var(--color-deep)", border: `1px solid ${isSelected ? color : "rgba(255,255,255,0.06)"}`, boxShadow: `0 0 ${running && n.utilization > 0.5 ? 20 : 8}px ${color}${running && n.utilization > 0.5 ? "50" : "25"}, inset 0 1px 0 rgba(255,255,255,0.04)`, opacity: n.alive ? 1 : 0.4 }}
+              style={{ left: n.x, top: n.y, width: 140, cursor: draggingId === n.id ? "grabbing" : "grab", borderRadius: 12, backgroundColor: n.alive ? "var(--color-surface)" : "var(--color-deep)", border: `1px solid ${isSelected ? color : "var(--color-border-default)"}`, boxShadow: `0 0 ${running && n.utilization > 0.5 ? 20 : 8}px ${color}${running && n.utilization > 0.5 ? "50" : "25"}`, opacity: n.alive ? 1 : 0.4 }}
             >
               <div className="flex items-center gap-2 p-2">
                 <div className="rounded-md p-1" style={{ backgroundColor: `${color}15`, color, boxShadow: `0 0 6px ${color}40` }}><Icon className="h-3.5 w-3.5" /></div>

@@ -63,23 +63,23 @@ export const themes: Record<string, Theme> = {
     name: "Light",
     isDark: false,
     colors: {
-      void: "#ffffff",
-      deep: "#fafafa",
-      surface: "#fafafa",
-      elevated: "#ffffff",
-      hover: "#f4f4f5",
-      borderSubtle: "#f4f4f5",
-      borderDefault: "#e4e4e7",
-      dim: "#d4d4d8",
-      textPrimary: "#09090b",
-      textSecondary: "#3f3f46",
-      textMuted: "#71717a",
+      void: "#f0f0f5",              // soft gray-blue (not pure white)
+      deep: "#e8e8f0",              // canvas/graph area — visible contrast
+      surface: "#f5f5fa",           // sidebar, panels
+      elevated: "#ffffff",          // cards pop on gray bg
+      hover: "#eaeaf2",
+      borderSubtle: "#e0e0ea",
+      borderDefault: "#d0d0dd",     // stronger borders for visibility
+      dim: "#b0b0c0",
+      textPrimary: "#1a1a2e",       // deep indigo-black
+      textSecondary: "#4a4a60",
+      textMuted: "#7a7a90",
       accent: "#7c3aed",
       accentDim: "#6d28d9",
-      accentGlow: "rgba(124,58,237,0.1)",
+      accentGlow: "rgba(124,58,237,0.15)",
     },
-    graphBg: "radial-gradient(circle at 50% 30%, rgba(124,58,237,0.03) 0%, transparent 70%), #fafafa",
-    graphGrid: "radial-gradient(circle, #e4e4e7 0.5px, transparent 0.5px)",
+    graphBg: "radial-gradient(circle at 50% 30%, rgba(124,58,237,0.05) 0%, transparent 70%), #e8e8f0",
+    graphGrid: "radial-gradient(circle, #d0d0dd 0.6px, transparent 0.6px)",
   },
 };
 
