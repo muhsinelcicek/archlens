@@ -116,25 +116,57 @@ export const SimCanvas = forwardRef<HTMLDivElement, Props>(function SimCanvas(pr
 
       {/* Transform container */}
       <div style={{ transform: `translate(${canvas.transform.offsetX}px, ${canvas.transform.offsetY}px) scale(${canvas.transform.scale})`, transformOrigin: "0 0", position: "relative", minWidth: 3000, minHeight: 2000 }}>
-        {/* SVG edges */}
+        {/* SVG edges — Constellation style */}
         <svg className="absolute inset-0 pointer-events-none" style={{ width: 3000, height: 2000 }}>
           <defs>
-            <marker id="sim-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4a4a5e" /></marker>
-            <marker id="sim-arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa" /></marker>
+            <filter id="sim-glow">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="sim-glow-fail">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
-          {edges.map((e) => {
+          {edges.map((e, idx) => {
             const ep = getEdgePath(e);
             if (!ep) return null;
             const src = nodes.find(n => n.id === e.source);
             const tgt = nodes.find(n => n.id === e.target);
             const isActive = running && src?.alive && (src.incomingRate || 0) > 0;
             const isFail = running && (!tgt?.alive || (tgt && tgt.utilization > 1));
-            const color = isFail ? "#ef4444" : isActive ? "#a78bfa" : "var(--color-border-default)";
+
+            // Constellation: always glow, always flow
+            const edgeColor = isFail ? "#ef4444" : isActive ? "#a78bfa" : "#6366f1";
             const sw = isActive ? Math.min(5, 1 + (src!.incomingRate || 0) / 500) : 1.5;
+            const opacity = isFail ? 0.7 : isActive ? 0.7 : 0.3;
+            const dur = 2 + (idx % 3) * 0.7;
+
             return (
               <g key={e.id}>
-                <path d={ep.path} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={isFail ? "6 3" : undefined} markerEnd={isActive ? "url(#sim-arrow-active)" : "url(#sim-arrow)"} opacity={isActive ? 0.75 : 0.4} />
-                {isActive && !isFail && <circle r="3" fill="#c4b5fd"><animateMotion dur={`${Math.max(0.5, 3 / speed)}s`} repeatCount="indefinite" path={ep.path} /></circle>}
+                {/* Edge line with glow */}
+                <path d={ep.path} fill="none" stroke={edgeColor} strokeWidth={sw}
+                  strokeDasharray={isFail ? "6 3" : undefined}
+                  opacity={opacity} filter={isFail ? "url(#sim-glow-fail)" : "url(#sim-glow)"} />
+
+                {/* Always-flowing particles (constellation style) */}
+                {!isFail && (
+                  <>
+                    <circle r={isActive ? 2.5 : 1.5} fill="#818cf8" opacity={isActive ? 0.7 : 0.35} filter="url(#sim-glow)">
+                      <animateMotion dur={`${isActive ? Math.max(0.5, 2 / speed) : dur}s`} repeatCount="indefinite" path={ep.path} />
+                    </circle>
+                    <circle r={isActive ? 2 : 1} fill="#a78bfa" opacity={isActive ? 0.5 : 0.2} filter="url(#sim-glow)">
+                      <animateMotion dur={`${isActive ? Math.max(0.8, 2.5 / speed) : dur + 1}s`} repeatCount="indefinite" path={ep.path} begin={`${dur / 2}s`} />
+                    </circle>
+                  </>
+                )}
+
+                {/* Failure: red pulse */}
+                {isFail && (
+                  <circle r="3" fill="#ef4444" opacity="0.6" filter="url(#sim-glow-fail)">
+                    <animateMotion dur="1.5s" repeatCount="indefinite" path={ep.path} />
+                  </circle>
+                )}
               </g>
             );
           })}
@@ -153,10 +185,10 @@ export const SimCanvas = forwardRef<HTMLDivElement, Props>(function SimCanvas(pr
               onMouseDown={(e) => props.onNodeMouseDown(e, n.id)}
               onClick={(e) => props.onNodeClick(e, n.id)}
               className={`absolute select-none transition-shadow ${isSelected ? "ring-2 ring-archlens-400" : ""} ${connectFrom === n.id ? "ring-2 ring-emerald-400" : ""}`}
-              style={{ left: n.x, top: n.y, width: 140, cursor: draggingId === n.id ? "grabbing" : "grab", borderRadius: 10, backgroundColor: n.alive ? "var(--color-elevated)" : "var(--color-deep)", border: `2px solid ${color}`, boxShadow: running && n.utilization > 0.5 ? `0 0 16px ${color}70` : "none", opacity: n.alive ? 1 : 0.5 }}
+              style={{ left: n.x, top: n.y, width: 140, cursor: draggingId === n.id ? "grabbing" : "grab", borderRadius: 12, backgroundColor: n.alive ? "var(--color-surface)" : "var(--color-deep)", border: `1px solid ${isSelected ? color : "rgba(255,255,255,0.06)"}`, boxShadow: `0 0 ${running && n.utilization > 0.5 ? 20 : 8}px ${color}${running && n.utilization > 0.5 ? "50" : "25"}, inset 0 1px 0 rgba(255,255,255,0.04)`, opacity: n.alive ? 1 : 0.4 }}
             >
               <div className="flex items-center gap-2 p-2">
-                <div className="rounded-md p-1" style={{ backgroundColor: `${color}20`, color }}><Icon className="h-3.5 w-3.5" /></div>
+                <div className="rounded-md p-1" style={{ backgroundColor: `${color}15`, color, boxShadow: `0 0 6px ${color}40` }}><Icon className="h-3.5 w-3.5" /></div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-semibold text-[var(--color-text-primary)] truncate">{n.label}</div>
                   <div className="text-[8px] text-[var(--color-text-muted)] uppercase">{n.type}{n.circuitBreaker.state === "open" ? " ⚡CB" : ""}</div>
