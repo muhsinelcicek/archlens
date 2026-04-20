@@ -16,6 +16,8 @@ export interface HotspotReport {
   totalFiles: number;
   riskiestModule: string;
   topRiskFiles: Hotspot[];
+  isShallowClone?: boolean;
+  shallowCloneWarning?: string;
 }
 
 /**
@@ -95,11 +97,19 @@ export class HotspotAnalyzer {
     }
     const riskiestModule = [...moduleRisk.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
 
+    // Detect shallow clone: if all files have same changeFrequency (usually 1)
+    const freqValues = new Set(hotspots.map((h) => h.changeFrequency));
+    const isShallowClone = freqValues.size === 1 && hotspots.length > 10;
+
     return {
       hotspots,
       totalFiles: filePaths.size,
       riskiestModule,
       topRiskFiles: hotspots.slice(0, 20),
+      isShallowClone,
+      shallowCloneWarning: isShallowClone
+        ? "Git history is limited (shallow clone). Hotspot analysis requires full git history for accurate results. Run 'git fetch --unshallow' for better accuracy."
+        : undefined,
     };
   }
 

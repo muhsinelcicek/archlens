@@ -123,14 +123,40 @@ export class DeadCodeDetector {
   }
 
   private isEntryPoint(sym: Symbol): boolean {
-    // Main functions, app entry points, test functions
     const name = sym.name.toLowerCase();
-    if (name === "main" || name === "app" || name.includes("program")) return true;
+    const baseName = sym.name.split(".").pop() || sym.name;
+
+    // Main / entry points
+    if (name === "main" || name === "app" || name.includes("program") || name.includes("startup")) return true;
+
+    // Annotated entry points
     if (sym.annotations?.some((a) => a.includes("@app.") || a.includes("@router.") || a.includes("@Test") || a.includes("@HttpGet") || a.includes("@HttpPost"))) return true;
-    // React components (PascalCase functions in tsx)
-    if (sym.filePath.endsWith(".tsx") && sym.kind === "function" && /^[A-Z]/.test(sym.name)) return true;
-    // API handlers
-    if (sym.annotations?.some((a) => /Controller|Route|Endpoint|Handler/.test(a))) return true;
+
+    // React components (PascalCase functions in tsx/jsx)
+    if ((sym.filePath.endsWith(".tsx") || sym.filePath.endsWith(".jsx")) && sym.kind === "function" && /^[A-Z]/.test(baseName)) return true;
+
+    // API handlers & controllers
+    if (sym.annotations?.some((a) => /Controller|Route|Endpoint|Handler|Middleware/.test(a))) return true;
+
+    // DI-registered patterns (C#, Java, Python) — these are called by the framework, not by user code
+    const diPatterns = /Builder$|Factory$|HostedService$|Subscriber$|Consumer$|Worker$|Validator$|Formatter$|Converter$|Serializer$|Middleware$|Filter$|Interceptor$|Provider$|Module$|Extension$|Configuration$|Options$|Settings$|Mapper$|Profile$|Seeder$/;
+    if (diPatterns.test(baseName)) return true;
+
+    // Interface implementations (often DI-registered)
+    if (baseName.startsWith("I") && baseName.length > 1 && /^[A-Z]/.test(baseName[1]) && sym.kind === "interface") return true;
+
+    // Migration files
+    if (sym.filePath.includes("Migration") || sym.filePath.includes("migration")) return true;
+
+    // Test files
+    if (sym.filePath.includes("__tests__") || sym.filePath.includes(".test.") || sym.filePath.includes(".spec.") || sym.filePath.includes("Test")) return true;
+
+    // Event handlers (domain events, integration events)
+    if (/Handler$|EventHandler$|DomainEvent$|IntegrationEvent$|Command$|Query$/.test(baseName)) return true;
+
+    // gRPC services
+    if (/Service$|ServiceBase$|ServiceImpl$/.test(baseName) && sym.kind === "class") return true;
+
     return false;
   }
 }

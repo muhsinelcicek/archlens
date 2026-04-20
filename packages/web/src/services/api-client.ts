@@ -123,6 +123,8 @@ export interface HotspotReport {
   riskiestModule: string;
   topRiskFiles: Array<{ filePath: string; changeFrequency: number; complexity: number; riskScore: number; module: string; authors: string[] }>;
   error?: string;
+  isShallowClone?: boolean;
+  shallowCloneWarning?: string;
 }
 
 export interface TechDebtReport {

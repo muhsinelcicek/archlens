@@ -113,7 +113,16 @@ export class PatternDeepAnalyzer {
     if (hasDomain && !hasAggregates) recommendations.push("Define Aggregate Roots with clear boundaries");
     if (hasDomain && !hasEvents) recommendations.push("Consider domain events for decoupling aggregates");
 
-    const score = (hasDomain ? 30 : 0) + (hasAggregates ? 25 : 0) + (hasEvents ? 20 : 0) + (domainViolations === 0 ? 25 : 0);
+    // More realistic scoring: require minimum evidence counts
+    const aggregateCount = evidence.filter((e) => e.type === "aggregate").length;
+    const voCount = evidence.filter((e) => e.type === "value-object").length;
+    const eventCount = evidence.filter((e) => e.type === "domain-event").length;
+    const baseScore = (hasDomain ? 20 : 0) + (hasAggregates ? 15 : 0) + (hasEvents ? 15 : 0) + (domainViolations === 0 ? 15 : 0);
+    // Depth bonus: more evidence = higher compliance, but diminishing returns
+    const depthBonus = Math.min(35, (aggregateCount * 3) + (voCount * 2) + (eventCount * 2));
+    // Violation penalty
+    const violationPenalty = violations.length * 5;
+    const score = Math.max(0, Math.min(100, baseScore + depthBonus - violationPenalty));
     const detected = hasDomain || hasAggregates;
 
     return {

@@ -717,15 +717,29 @@ export class QualityAnalyzer {
   }
 
   private calculateScore(issues: QualityIssue[], mod: Module): number {
-    let score = 100;
+    // Start at 85 (not 100) because we can't measure test coverage, docs, etc.
+    // 100 should be reserved for modules with zero issues AND verified test coverage
+    let score = 85;
+
+    // Issue penalties
     for (const issue of issues) {
       switch (issue.severity) {
-        case "critical": score -= 10; break;
-        case "major": score -= 5; break;
+        case "critical": score -= 12; break;
+        case "major": score -= 6; break;
         case "minor": score -= 2; break;
         case "info": score -= 0.5; break;
       }
     }
+
+    // Size penalty: very large modules get slight penalty (harder to maintain)
+    const symbolCount = mod.symbols.length;
+    if (symbolCount > 300) score -= 5;
+    else if (symbolCount > 200) score -= 3;
+    else if (symbolCount > 100) score -= 1;
+
+    // Bonus: very small, focused modules with no issues
+    if (issues.length === 0 && symbolCount < 20) score = Math.min(score, 90);
+
     return Math.max(0, Math.round(score));
   }
 }
