@@ -10,13 +10,13 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 | Type | How |
 |------|-----|
-| 🐛 **Bug reports** | [Open an issue](https://github.com/your-org/archlens/issues/new?template=bug_report.md) |
-| ✨ **Feature requests** | [Open an issue](https://github.com/your-org/archlens/issues/new?template=feature_request.md) |
+| 🐛 **Bug reports** | [Open an issue](https://github.com/muhsinelcicek/archlens/issues/new?template=bug_report.md) |
+| ✨ **Feature requests** | [Open an issue](https://github.com/muhsinelcicek/archlens/issues/new?template=feature_request.md) |
 | 📝 **Documentation** | Edit files in `docs/` and submit a PR |
 | 🧪 **Tests** | We always welcome more test coverage |
 | 🌐 **Translations** | Edit `packages/web/src/lib/i18n.ts` |
 | 🔌 **New language/framework parsers** | See [Adding a Parser](#adding-a-parser-or-framework) |
-| 💻 **Code** | Pick a [good first issue](https://github.com/your-org/archlens/labels/good%20first%20issue) |
+| 💻 **Code** | Pick a [good first issue](https://github.com/muhsinelcicek/archlens/labels/good%20first%20issue) |
 
 ## Development setup
 
@@ -29,7 +29,7 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 ### Setup
 
 ```bash
-git clone https://github.com/your-org/archlens.git
+git clone https://github.com/muhsinelcicek/archlens.git
 cd archlens
 pnpm install
 pnpm build
@@ -147,8 +147,8 @@ When reporting a bug, please include:
 
 ## Questions?
 
-- 💬 [GitHub Discussions](https://github.com/your-org/archlens/discussions)
-- 🐛 [Issues](https://github.com/your-org/archlens/issues)
-- 📧 archlens@example.com
+- 💬 [GitHub Discussions](https://github.com/muhsinelcicek/archlens/discussions)
+- 🐛 [Issues](https://github.com/muhsinelcicek/archlens/issues)
+- 📧 https://github.com/muhsinelcicek/archlens/issues
 
 Thanks for making ArchLens better! 💜

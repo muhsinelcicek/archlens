@@ -12,7 +12,7 @@ If you discover a security vulnerability in ArchLens, please report it responsib
 
 ### Where to report
 
-📧 **Email:** security@archlens.dev (or archlens@example.com if not yet set up)
+📧 **Email:** https://github.com/muhsinelcicek/archlens/issues
 
 **Please do NOT** open a public GitHub issue for security vulnerabilities.
 
