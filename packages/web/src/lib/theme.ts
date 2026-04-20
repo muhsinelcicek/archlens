@@ -88,16 +88,16 @@ export const themes: Record<string, Theme> = {
      ═══════════════════════════════════════════════════════════════ */
   midnight: {
     id: "midnight",
-    name: "Midnight Purple",
+    name: "Railway Dark",
     isDark: true,
     colors: {
-      void: "#06060a", deep: "#0a0a10", surface: "#101018", elevated: "#16161f", hover: "#1c1c28",
-      borderSubtle: "#1e1e2a", borderDefault: "#2a2a3a", dim: "#3f3f46",
-      textPrimary: "#e4e4ed", textSecondary: "#8888a0", textMuted: "#5a5a70",
-      accent: "#7c3aed", accentDim: "#5b21b6", accentGlow: "rgba(124,58,237,0.3)",
+      void: "#0a0a0f", deep: "#0f0f17", surface: "#16161f", elevated: "#1e1e2a", hover: "#262636",
+      borderSubtle: "rgba(255,255,255,0.04)", borderDefault: "rgba(255,255,255,0.08)", dim: "#3f3f46",
+      textPrimary: "#ededef", textSecondary: "#a1a1aa", textMuted: "#63636e",
+      accent: "#8b5cf6", accentDim: "#6d28d9", accentGlow: "rgba(139,92,246,0.3)",
     },
-    graphBg: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 60%), linear-gradient(to bottom, #06060a, #0a0a10)",
-    graphGrid: "radial-gradient(circle, #1a1a2e 0.8px, transparent 0.8px)",
+    graphBg: "radial-gradient(circle at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 60%), linear-gradient(135deg, #0a0a0f, #0f0f17)",
+    graphGrid: "radial-gradient(circle, rgba(255,255,255,0.04) 0.8px, transparent 0.8px)",
   },
 
   ocean: {

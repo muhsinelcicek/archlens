@@ -115,7 +115,7 @@ export function App() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: theme.colors.void, color: theme.colors.textPrimary }}>
       {/* ── Sidebar ── */}
-      <aside className="w-56 flex flex-col" style={{ backgroundColor: theme.colors.surface, borderRight: `1px solid ${theme.colors.borderSubtle}` }}>
+      <aside className="w-52 flex flex-col" style={{ backgroundColor: theme.colors.surface, borderRight: `1px solid ${theme.colors.borderSubtle}` }}>
         {/* Logo */}
         <div className="p-4 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2.5">
@@ -166,10 +166,10 @@ export function App() {
                   to={item.to}
                   end={item.end}
                   className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 ${
+                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all duration-150 ${
                       isActive
-                        ? "bg-archlens-500/12 text-archlens-300 shadow-sm shadow-archlens-500/5 border-l-2 border-archlens-400"
-                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-hover"
+                        ? "bg-white/[0.06] text-[var(--color-text-primary)]"
+                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-white/[0.03]"
                     }`
                   }
                 >
