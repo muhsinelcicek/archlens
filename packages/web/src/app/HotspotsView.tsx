@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flame, AlertTriangle, GitBranch, Activity, FileCode, Users } from "lucide-react";
 import { PageLoader, PageEmpty } from "../components/PageLoader.js";
-import { apiFetch } from "../lib/api.js";
+import { useHotspots } from "../services/queries.js";
 
 interface Hotspot {
   filePath: string;
@@ -25,17 +25,9 @@ type SortKey = "risk" | "changes" | "complexity" | "file";
 
 export function HotspotsView() {
   const navigate = useNavigate();
-  const [report, setReport] = useState<HotspotReport | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: report, isLoading: loading } = useHotspots();
   const [sortKey, setSortKey] = useState<SortKey>("risk");
   const [hoveredFile, setHoveredFile] = useState<string | null>(null);
-
-  useEffect(() => {
-    apiFetch("/api/hotspots")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { setReport(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
 
   const sorted = useMemo(() => {
     if (!report) return [];

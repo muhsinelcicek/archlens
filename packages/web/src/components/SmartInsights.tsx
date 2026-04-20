@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import type { ArchModel } from "../lib/store.js";
 import { Zap, AlertTriangle, CheckCircle2, TrendingDown, Skull, ShieldAlert, Box, ArrowRight } from "lucide-react";
-import { apiFetch } from "../lib/api.js";
+import { useAllAnalysis } from "../services/queries.js";
 
 interface Insight {
   type: "critical" | "warning" | "success" | "info";
@@ -18,22 +18,20 @@ interface ModuleRank {
 }
 
 export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onModuleSelect?: (name: string) => void }) {
-  const [insights, setInsights] = useState<Insight[]>([]);
-  const [moduleRanks, setModuleRanks] = useState<ModuleRank[]>([]);
+  const analysis = useAllAnalysis();
 
-  useEffect(() => {
-    Promise.all([
-      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/security").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null),
-    ]).then(([quality, deadcode, security, coupling]) => {
+  const { insights, moduleRanks } = useMemo(() => {
       const ins: Insight[] = [];
+      const ranks: ModuleRank[] = [];
+      const quality = analysis.quality as any;
+      const deadcode = analysis.deadcode as any;
+      const security = analysis.security as any;
+      const coupling = analysis.coupling as any;
 
       // Quality insights
       if (quality?.modules) {
         const sorted = [...quality.modules].sort((a: any, b: any) => a.score - b.score);
-        setModuleRanks(sorted.map((m: any) => ({ name: m.moduleName, score: m.score, issues: m.issues.length, layer: "" })));
+        ranks.push(...sorted.map((m: any) => ({ name: m.moduleName, score: m.score, issues: m.issues.length, layer: "" })));
 
         const worst = sorted[0];
         if (worst && worst.score < 50) {
@@ -74,9 +72,9 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
         if (critical > 0) {
           ins.push({ type: "critical", title: `${critical} critical security issue(s)`, detail: "Immediate attention required", action: "Review hardcoded secrets and injection risks" });
         } else if (high > 0) {
-          ins.push({ type: "warning", title: `${high} high security issue(s)`, detail: `Security score: ${security.score}/100` });
+          ins.push({ type: "warning", title: `${high} high security issue(s)`, detail: `Security score: ${security?.score || 0}/100` });
         } else {
-          ins.push({ type: "info", title: `${security.totalIssues} security findings`, detail: `Score: ${security.score}/100 — mostly medium/low severity` });
+          ins.push({ type: "info", title: `${security?.totalIssues || 0} security findings`, detail: `Score: ${security?.score || 0}/100 — mostly medium/low severity` });
         }
       }
 
@@ -100,9 +98,8 @@ export function SmartInsights({ model, onModuleSelect }: { model: ArchModel; onM
         ins.push({ type: "info", title: `Large project: ${model.modules.length} modules`, detail: `${model.stats.files} files, ${model.stats.totalLines.toLocaleString()} lines — microservice architecture detected` });
       }
 
-      setInsights(ins);
-    }).catch(() => {});
-  }, [model]);
+      return { insights: ins, moduleRanks: ranks };
+  }, [analysis.quality, analysis.deadcode, analysis.security, analysis.coupling, model]);
 
   const iconMap = {
     critical: <AlertTriangle className="h-3.5 w-3.5 text-red-400" />,

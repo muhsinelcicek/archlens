@@ -1,13 +1,12 @@
 import { useI18n } from "../lib/i18n.js";
-import { useState, useEffect } from "react";
-import { PageLoader } from "../components/PageLoader.js";
-import { PageEmpty } from "../components/PageLoader.js";
+import { useState } from "react";
+import { PageLoader, PageEmpty } from "../components/PageLoader.js";
 import {
   MessageSquare, ArrowRight, Box, CheckCircle2, AlertTriangle,
   Globe, Server, Zap, Radio, ChevronDown, ChevronRight,
   ArrowDown, Workflow, Send, Inbox,
 } from "lucide-react";
-import { apiFetch } from "../lib/api.js";
+import { useEventFlow } from "../services/queries.js";
 
 interface EventFlow { eventName: string; publisher: { module: string; symbol: string; filePath: string }; subscribers: Array<{ module: string; symbol: string; filePath: string }>; eventType: string; }
 interface BoundedContext { name: string; modules: string[]; entities: string[]; events: string[]; isClean: boolean; }
@@ -24,16 +23,12 @@ const patternIcons: Record<string, React.ReactNode> = {
 
 export function EventFlowView() {
   const { t } = useI18n();
-  const [report, setReport] = useState<EventFlowReport | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: _report, isLoading } = useEventFlow();
+  const report = _report as EventFlowReport | null;
   const [activeTab, setActiveTab] = useState<"overview" | "events" | "contexts">("overview");
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
-  useEffect(() => {
-    apiFetch("/api/eventflow").then((r) => r.ok ? r.json() : null).then((d) => { setReport(d); setLoading(false); }).catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <PageLoader message="Detecting event flows..." />;
+  if (isLoading) return <PageLoader message="Detecting event flows..." />;
   if (!report) return <PageEmpty message="No event flow data detected. Make sure the project has been analyzed." />;
 
   const integrationEvents = report.events.filter((e) => e.eventType === "integration");

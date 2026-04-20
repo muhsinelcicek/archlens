@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
 import { useStore } from "../lib/store.js";
 import { Printer, Download, FileText } from "lucide-react";
 import { PageLoader } from "../components/PageLoader.js";
-import { apiFetch } from "../lib/api.js";
+import { useAllAnalysis } from "../services/queries.js";
 
 interface QualityReport { projectScore: number; totalIssues: number; bySeverity: Record<string, number>; modules: any[]; }
 interface CouplingReport { overallHealth: { avgInstability: number; circularCount: number }; circularDependencies: any[]; modules: any[]; }
@@ -12,28 +11,10 @@ interface TechDebtReport { totalEstimatedHours: number; totalEstimatedCost: numb
 
 export function ReportView() {
   const { model } = useStore();
-  const [quality, setQuality] = useState<QualityReport | null>(null);
-  const [coupling, setCoupling] = useState<CouplingReport | null>(null);
-  const [security, setSecurity] = useState<SecurityReport | null>(null);
-  const [deadcode, setDeadcode] = useState<DeadCodeReport | null>(null);
-  const [techDebt, setTechDebt] = useState<TechDebtReport | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([q, c, s, d, td]) => {
-      setQuality(q); setCoupling(c); setSecurity(s); setDeadcode(d); setTechDebt(td);
-      setLoading(false);
-    });
-  }, []);
+  const { quality, coupling, security, deadcode, techdebt: techDebt, isLoading } = useAllAnalysis();
 
   if (!model) return null;
-  if (loading) return <PageLoader message="Generating report..." />;
+  if (isLoading) return <PageLoader message="Generating report..." />;
 
   const downloadJson = () => {
     const summary = {

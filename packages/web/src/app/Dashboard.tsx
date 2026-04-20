@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../lib/store.js";
 import { useI18n } from "../lib/i18n.js";
@@ -10,47 +10,10 @@ import {
   ShieldCheck, Skull, AlertTriangle, DollarSign, Activity,
   ArrowRight, ExternalLink, ChevronRight,
 } from "lucide-react";
-import { apiFetch } from "../lib/api.js";
+import { useAllAnalysis } from "../services/queries.js";
 
-/* ─── Types for API responses ──────────────────────────────── */
-
-interface QualityIssue {
-  id: string; rule: string; category: string; severity: string;
-  message: string; filePath: string; symbolRef?: string; line?: number; suggestion?: string;
-}
-interface ModuleQuality {
-  moduleName: string; score: number;
-  issues: QualityIssue[];
-  metrics: { totalSymbols: number; avgComplexity: number; maxMethodLines: number; godClasses: number; namingViolations: number; typeUnsafe: number; patternViolations: number };
-}
-interface QualityReport {
-  projectScore: number; totalIssues: number;
-  bySeverity: Record<string, number>; byCategory: Record<string, number>;
-  modules: ModuleQuality[]; architecturePatterns: Array<{ pattern: string; detected: boolean; compliance: number; violations: string[]; recommendations: string[] }>;
-  topIssues: QualityIssue[];
-}
-interface CouplingReport {
-  overallHealth: { avgInstability: number; avgAbstractness: number; avgDistance: number; circularCount: number; concreteRatio: number };
-  circularDependencies: Array<{ cycle: string[]; level: string; description: string }>;
-  modules: Array<{ moduleName: string; afferentCoupling: number; efferentCoupling: number; instability: number }>;
-}
-interface SecurityReport {
-  totalIssues: number;
-  bySeverity: Record<string, number>;
-  issues: Array<{ id: string; severity: string; title: string; description: string; filePath: string; line: number; recommendation: string }>;
-  score: number;
-}
-interface DeadCodeReport {
-  totalDead: number; totalSymbols: number; deadPercentage: number;
-  items: Array<{ uid: string; name: string; kind: string; filePath: string; line: number; reason: string; confidence: string }>;
-  byModule: Array<{ module: string; count: number }>;
-  estimatedCleanupLines: number;
-}
-interface TechDebtReport {
-  totalEstimatedHours: number; totalEstimatedCost: number; totalAnnualCost: number;
-  items: Array<{ category: string; description: string; estimatedCost: number; effort: string; severity: string }>;
-  quickWins: Array<{ category: string; description: string; estimatedCost: number }>;
-}
+/* Types from centralized service */
+import type { QualityReport, CouplingReport, SecurityReport, DeadCodeReport, TechDebtReport } from "../services/api-client.js";
 
 /* ─── Action item from combined analysis ───────────────────── */
 
@@ -261,34 +224,9 @@ export function Dashboard() {
   const { t } = useI18n();
   const navigate = useNavigate();
 
-  const [quality, setQuality] = useState<QualityReport | null>(null);
-  const [coupling, setCoupling] = useState<CouplingReport | null>(null);
-  const [security, setSecurity] = useState<SecurityReport | null>(null);
-  const [deadcode, setDeadcode] = useState<DeadCodeReport | null>(null);
-  const [techDebt, setTechDebt] = useState<TechDebtReport | null>(null);
-  const [healthLoading, setHealthLoading] = useState(true);
-  const [healthError, setHealthError] = useState<string | null>(null);
-
-  useEffect(() => {
-    Promise.all([
-      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/security").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/deadcode").then((r) => r.ok ? r.json() : null).catch(() => null),
-      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([q, c, s, d, td]) => {
-      if (q) setQuality(q);
-      if (c) setCoupling(c);
-      if (s) setSecurity(s);
-      if (d) setDeadcode(d);
-      if (td) setTechDebt(td);
-      if (!q && !c && !s && !d && !td) setHealthError("Could not load health data. Make sure the API server is running.");
-      setHealthLoading(false);
-    }).catch(() => {
-      setHealthError("Failed to connect to the API server.");
-      setHealthLoading(false);
-    });
-  }, []);
+  // React Query — cached, deduplicated fetching
+  const { quality, coupling, security, deadcode, techdebt: techDebt, isLoading: healthLoading } = useAllAnalysis();
+  const healthError = (!quality && !coupling && !healthLoading) ? "Could not load health data" : null;
 
   if (!model) return null;
 

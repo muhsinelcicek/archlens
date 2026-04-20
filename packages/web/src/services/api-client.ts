@@ -121,6 +121,8 @@ export interface HotspotReport {
   hotspots: Array<{ filePath: string; changeFrequency: number; complexity: number; riskScore: number; module: string; authors: string[] }>;
   totalFiles: number;
   riskiestModule: string;
+  topRiskFiles: Array<{ filePath: string; changeFrequency: number; complexity: number; riskScore: number; module: string; authors: string[] }>;
+  error?: string;
 }
 
 export interface TechDebtReport {

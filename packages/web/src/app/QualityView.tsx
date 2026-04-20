@@ -8,7 +8,7 @@ import {
   Bug, Code2, Box, Layers, GitBranch, ChevronDown, ChevronRight,
   Lightbulb, ArrowRight, ExternalLink, FileCode,
 } from "lucide-react";
-import { apiFetch } from "../lib/api.js";
+import { useQuality as _useQuality, useCoupling as _useCoupling, usePatterns as _usePatterns, useConsistency as _useConsistency, useTechDebt as _useTechDebt } from "../services/queries.js";
 
 interface QualityIssue {
   id: string; rule: string; category: string; severity: string;
@@ -43,7 +43,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export function QualityView() {
   const [report, setReport] = useState<QualityReport | null>(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
@@ -54,22 +53,19 @@ export function QualityView() {
   const [activeTab, setActiveTab] = useState<"quality" | "coupling" | "consistency" | "debt" | "health">("quality");
   const [techDebt, setTechDebt] = useState<any | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      apiFetch("/api/quality").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/patterns").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/coupling").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/consistency").then((r) => r.ok ? r.json() : null),
-      apiFetch("/api/techdebt").then((r) => r.ok ? r.json() : null),
-    ]).then(([q, p, c, con, td]) => {
-      if (q) setReport(q);
-      if (p) setDeepPatterns(p);
-      if (c) setCoupling(c);
-      if (con) setConsistency(con);
-      if (td) setTechDebt(td);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  // React Query — cached data
+  const qualityQuery = _useQuality();
+  const couplingQuery = _useCoupling();
+  const patternsQuery = _usePatterns();
+  const consistencyQuery = _useConsistency();
+  const techDebtQuery = _useTechDebt();
+
+  const loading = qualityQuery.isLoading;
+  if (!report && qualityQuery.data) setReport(qualityQuery.data as any);
+  if (!deepPatterns && patternsQuery.data) setDeepPatterns(patternsQuery.data as any);
+  if (!coupling && couplingQuery.data) setCoupling(couplingQuery.data as any);
+  if (!consistency && consistencyQuery.data) setConsistency(consistencyQuery.data as any);
+  if (!techDebt && techDebtQuery.data) setTechDebt(techDebtQuery.data as any);
 
   if (loading) return <PageLoader message="Analyzing code quality..." />;
   if (!report) return <PageEmpty message="No quality data available. Run 'archlens analyze' first." />;
