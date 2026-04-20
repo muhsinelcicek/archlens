@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Network, Boxes, Globe, Database } from "lucide-react";
-import { ArchitectureView } from "./ArchitectureView.js";
+import { ArchitectureCleanView } from "./ArchitectureCleanView.js";
 import { StructureView } from "./StructureView.js";
 import { ApiStackView } from "./ApiStackView.js";
 
@@ -62,7 +62,7 @@ export function ArchitectureMergedView() {
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden relative">
-        {tab === "graph" && <ArchitectureView />}
+        {tab === "graph" && <ArchitectureCleanView />}
         {tab === "modules" && (
           <div className="h-full overflow-auto">
             <div className="absolute top-2 left-4 z-30">
