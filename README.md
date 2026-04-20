@@ -9,7 +9,7 @@
 **The only code intelligence platform that combines brownfield analysis with distributed-system simulation.**
 
 [![CI](https://github.com/muhsinelcicek/archlens/actions/workflows/ci.yml/badge.svg)](https://github.com/muhsinelcicek/archlens/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-202%20passing-brightgreen)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-205%20passing-brightgreen)](#-testing)
 [![Languages](https://img.shields.io/badge/languages-8-6d28d9)](#-supported-languages--frameworks)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
@@ -171,12 +171,14 @@ graph LR
 </td><td width="50%" valign="top">
 
 ### 🎨 Interactive Web Dashboard
-- **15 pages** — Dashboard, Architecture, Insights, Processes, Events, Structure, API Stack, Quality, Hotspots, Diff, Rules, Report, Simulator, Onboard, Settings
-- **War Room layout** on Architecture page (VS Code-style)
-- **Sigma.js + WebGL** for 10k+ node graphs
-- **Shiki** syntax highlighting for 180+ languages
-- **5 themes** — Midnight Purple, Deep Ocean, Emerald Forest, Rose Gold, Light
-- **i18n** — English + Turkish (more coming)
+- **7 routes** — Dashboard, Architecture, Flows, Insights, Quality (8 tabs), Simulator, Settings
+- **ConstellationGraph** — Railway × Block Diagram hybrid: glowing nodes, always-flowing particles, layered layout
+- **Simulator** with 16 node types, incident detection, chaos engineering
+- **React Query** cached data fetching — no duplicate API calls
+- **Design system** — Card, Badge, ProgressBar, SlidePanel, TabBar components
+- **Framer Motion** animations — slide-in panels, staggered entrances
+- **2 themes** — Dark (default, Railway-inspired) + Light (soft gray-blue)
+- **i18n** — English + Turkish
 - **Executive PDF report** for stakeholders
 
 </td></tr>
@@ -184,40 +186,75 @@ graph LR
 
 ---
 
+## 🎬 Demo
+
+<!-- Replace with your actual video URL after recording -->
+<div align="center">
+
+https://github.com/user-attachments/assets/YOUR_VIDEO_ID_HERE
+
+*3-minute walkthrough: analyze a project, explore the architecture, run the simulator.*
+
+</div>
+
+> **To add your demo video:** Record a 3-minute walkthrough, then drag-drop the `.mp4` into a GitHub issue or PR description. Copy the generated URL and paste it above.
+
+---
+
 ## 📸 Screenshots
 
 <table>
 <tr>
-<td width="50%" align="center"><strong>Dashboard</strong><br/><sub>Health score, action items, live metrics</sub><br/><img src="docs/img/dashboard.png" alt="Dashboard" /></td>
-<td width="50%" align="center"><strong>Architecture</strong><br/><sub>War Room: graph + insights + code viewer</sub><br/><img src="docs/img/architecture.png" alt="Architecture View" /></td>
+<td width="50%" align="center">
+<strong>ConstellationGraph</strong><br/>
+<sub>Glowing nodes grouped by layer, always-flowing particles showing dependencies</sub><br/>
+<img src="docs/img/architecture.png" alt="Architecture — ConstellationGraph" />
+</td>
+<td width="50%" align="center">
+<strong>Simulator</strong><br/>
+<sub>M/M/c queueing, incident detection, chaos engineering, cost modeling</sub><br/>
+<img src="docs/img/simulator.png" alt="Simulator" />
+</td>
 </tr>
 <tr>
-<td width="50%" align="center"><strong>Simulator</strong><br/><sub>E-commerce template running · SLO OK</sub><br/><img src="docs/img/simulator.png" alt="Simulator" /></td>
-<td width="50%" align="center"><strong>Smart Insights</strong><br/><sub>AI-style narrative from 6 analyzers</sub><br/><img src="docs/img/insights.png" alt="Insights" /></td>
+<td width="50%" align="center">
+<strong>Dashboard</strong><br/>
+<sub>Health score, pulse bars, action items, simulator results</sub><br/>
+<img src="docs/img/dashboard.png" alt="Dashboard" />
+</td>
+<td width="50%" align="center">
+<strong>Smart Insights</strong><br/>
+<sub>AI-style narrative findings from all analyzers</sub><br/>
+<img src="docs/img/insights.png" alt="Insights" />
+</td>
 </tr>
 <tr>
-<td width="50%" align="center"><strong>Code Quality</strong><br/><sub>Score, patterns, coupling, tech debt</sub><br/><img src="docs/img/quality.png" alt="Quality" /></td>
-<td width="50%" align="center"><strong>Hotspots</strong><br/><sub>Git history × complexity risk quadrant</sub><br/><img src="docs/img/hotspots.png" alt="Hotspots" /></td>
+<td width="50%" align="center">
+<strong>Quality Overview</strong><br/>
+<sub>Score ring, severity breakdown, architecture patterns</sub><br/>
+<img src="docs/img/quality.png" alt="Quality" />
+</td>
+<td width="50%" align="center">
+<strong>Request Flows</strong><br/>
+<sub>Endpoint → handler → dependencies call chain (all languages)</sub><br/>
+<img src="docs/img/flows.png" alt="Request Flows" />
+</td>
 </tr>
 <tr>
-<td width="50%" align="center"><strong>Onboarding</strong><br/><sub>Auto-generated project tour</sub><br/><img src="docs/img/onboard.png" alt="Onboarding" /></td>
-<td width="50%" align="center"><strong>Business Processes</strong><br/><sub>Auto-detected flows with algorithms</sub><br/><img src="docs/img/processes.png" alt="Processes" /></td>
-</tr>
-<tr>
-<td width="50%" align="center"><strong>Event Flow</strong><br/><sub>Bounded contexts + communication patterns</sub><br/><img src="docs/img/events.png" alt="Events" /></td>
-<td width="50%" align="center"><strong>Structure</strong><br/><sub>Modules · Dependencies · ER Diagram</sub><br/><img src="docs/img/structure.png" alt="Structure" /></td>
-</tr>
-<tr>
-<td width="50%" align="center"><strong>API & Stack</strong><br/><sub>Endpoints by module · Tech radar</sub><br/><img src="docs/img/api-stack.png" alt="API Stack" /></td>
-<td width="50%" align="center"><strong>Architecture Diff</strong><br/><sub>Compare snapshots over time</sub><br/><img src="docs/img/diff.png" alt="Diff" /></td>
-</tr>
-<tr>
-<td width="50%" align="center"><strong>Custom Rules</strong><br/><sub>6 templates + JSON editor</sub><br/><img src="docs/img/rules.png" alt="Rules" /></td>
-<td width="50%" align="center"><strong>Executive Report</strong><br/><sub>Print-to-PDF for stakeholders</sub><br/><img src="docs/img/report.png" alt="Report" /></td>
+<td width="50%" align="center">
+<strong>Coupling & Consistency</strong><br/>
+<sub>Instability metrics, circular deps, cross-cutting concerns</sub><br/>
+<img src="docs/img/coupling.png" alt="Coupling" />
+</td>
+<td width="50%" align="center">
+<strong>Hotspots</strong><br/>
+<sub>Git change frequency × complexity (shallow clone aware)</sub><br/>
+<img src="docs/img/hotspots.png" alt="Hotspots" />
+</td>
 </tr>
 </table>
 
-> All screenshots are captured automatically via the Playwright script at `scripts/capture-screenshots.py`. To regenerate after UI changes, start the dev server and run it.
+> **Screenshots are placeholders** until you capture real ones. Start the dashboard (`archlens serve` + `pnpm dev`) and take screenshots of each page.
 
 ---
 
@@ -257,6 +294,10 @@ graph LR
 | **Cache specifics** | Hit rate slider, cache stampede penalty under overload |
 | **DB specifics** | Connection pool limit separate from capacity |
 | **AI root cause** | Automatically identifies bottlenecks, suggests scale actions |
+| **Incident detection** | 15 types: SPOF, CASCADE, OVERLOAD, 502, TOPOLOGY PRESSURE, HEALTH CHECK, etc. |
+| **FIX buttons** | One-click remediation: scale replicas, increase cooldown |
+| **Simulation report** | Export Markdown report with incident history + recommendations |
+| **16 node types** | Client, LB, API, Service, DB, Cache, Queue, CDN, Lambda, Gateway, Auth, Broker, Storage, DNS, Container, Monitoring |
 
 **Pre-built scenarios you can load with one click:**
 
@@ -566,7 +607,7 @@ For teams and organizations that need more.
 
 ## 🧪 Testing
 
-**202 tests** across 4 suites — all passing on every commit:
+**205 tests** across 4 suites — all passing on every commit:
 
 ```bash
 pnpm test            # 186 unit tests
