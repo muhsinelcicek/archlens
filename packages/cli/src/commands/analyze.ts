@@ -4,7 +4,7 @@ import fs from "node:fs";
 import chalk from "chalk";
 import ora from "ora";
 import boxen from "boxen";
-import { ProjectScanner, JsonExporter } from "@archlens/core";
+import { ProjectScanner, JsonExporter, MermaidGenerator, MarkdownGenerator } from "@archlens/core";
 
 export const analyzeCommand = new Command("analyze")
   .description("Analyze a project and build architecture model")
@@ -64,7 +64,6 @@ export const analyzeCommand = new Command("analyze")
       );
 
       // Save Mermaid diagrams
-      const { MermaidGenerator } = await import("@archlens/core");
       const mermaid = new MermaidGenerator(model);
       const diagrams = mermaid.generateFullReport();
 
@@ -76,7 +75,6 @@ export const analyzeCommand = new Command("analyze")
       }
 
       // Save Markdown report
-      const { MarkdownGenerator } = await import("@archlens/core");
       const markdown = new MarkdownGenerator(model);
       fs.writeFileSync(path.join(outputDir, "ARCHITECTURE.md"), markdown.generate());
 

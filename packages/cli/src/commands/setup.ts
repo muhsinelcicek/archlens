@@ -7,28 +7,12 @@ export const setupCommand = new Command("setup")
   .description("Configure MCP integration for AI coding tools (Claude Code, Cursor, etc.)")
   .option("--tool <tool>", "Target tool: claude, cursor, all", "all")
   .action(async (options) => {
-    const mcpServerPath = path.resolve(
-      path.dirname(new URL(import.meta.url).pathname),
-      "../../node_modules/@archlens/mcp/dist/index.js",
-    );
-
-    // Find the actual MCP server binary
-    let serverPath = mcpServerPath;
-    if (!fs.existsSync(serverPath)) {
-      // Try monorepo path
-      const monoPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../mcp/dist/index.js");
-      if (fs.existsSync(monoPath)) {
-        serverPath = monoPath;
-      } else {
-        // Try global
-        serverPath = "archlens-mcp";
-      }
-    }
-
+    // Single-binary approach: users globally install `archlens-studio`,
+    // and the MCP server is reachable via `archlens-studio mcp`.
     const mcpConfig = {
       archlens: {
-        command: "node",
-        args: [serverPath],
+        command: "archlens-studio",
+        args: ["mcp"],
       },
     };
 

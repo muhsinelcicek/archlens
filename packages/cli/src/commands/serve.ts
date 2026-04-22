@@ -2,8 +2,60 @@ import { Command } from "commander";
 import path from "node:path";
 import fs from "node:fs";
 import http from "node:http";
+import { fileURLToPath } from "node:url";
 import chalk from "chalk";
-import { QualityAnalyzer, DeadCodeDetector, SecurityScanner, TechDebtCalculator, EventFlowDetector, PatternDeepAnalyzer, CouplingAnalyzer, ConsistencyChecker, HotspotAnalyzer, DiffAnalyzer, CustomRuleEngine } from "@archlens/core";
+import { QualityAnalyzer, DeadCodeDetector, SecurityScanner, TechDebtCalculator, EventFlowDetector, PatternDeepAnalyzer, CouplingAnalyzer, ConsistencyChecker, HotspotAnalyzer, DiffAnalyzer, CustomRuleEngine, ProjectScanner, JsonExporter, MermaidGenerator, MarkdownGenerator } from "@archlens/core";
+
+const WEB_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "web");
+
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".map": "application/json",
+};
+
+function tryServeStatic(urlPath: string, res: http.ServerResponse): boolean {
+  if (!fs.existsSync(WEB_ROOT)) return false;
+
+  // SPA: serve index.html for root or unknown routes without extensions
+  const candidates: string[] = [];
+  if (urlPath === "/" || urlPath === "") {
+    candidates.push(path.join(WEB_ROOT, "index.html"));
+  } else {
+    const decoded = decodeURIComponent(urlPath);
+    const safe = path.normalize(decoded).replace(/^(\.\.[\/\\])+/, "");
+    const direct = path.join(WEB_ROOT, safe);
+    if (direct.startsWith(WEB_ROOT)) candidates.push(direct);
+    // SPA fallback for routes like /quality, /architecture
+    if (!path.extname(decoded)) {
+      candidates.push(path.join(WEB_ROOT, "index.html"));
+    }
+  }
+
+  for (const file of candidates) {
+    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+      const ext = path.extname(file).toLowerCase();
+      const type = MIME_TYPES[ext] ?? "application/octet-stream";
+      res.writeHead(200, { "Content-Type": type });
+      res.end(fs.readFileSync(file));
+      return true;
+    }
+  }
+  return false;
+}
 
 const ARCHLENS_HOME = path.join(process.env.HOME || "~", ".archlens");
 const REGISTRY_PATH = path.join(ARCHLENS_HOME, "registry.json");
@@ -272,7 +324,6 @@ export const serveCommand = new Command("serve")
             }
 
             // Analyze
-            const { ProjectScanner, JsonExporter, MermaidGenerator, MarkdownGenerator } = await import("@archlens/core");
             const scanner = new ProjectScanner();
             const model = await scanner.scan({ rootDir: localPath });
 
@@ -438,7 +489,6 @@ export const serveCommand = new Command("serve")
         if (!projectRoot) { res.writeHead(404); res.end("No project"); return; }
 
         try {
-          const { ProjectScanner, JsonExporter } = await import("@archlens/core");
           const scanner = new ProjectScanner();
           const newModel = await scanner.scan({ rootDir: projectRoot });
           const exporter = new JsonExporter(newModel);
@@ -773,11 +823,22 @@ export const serveCommand = new Command("serve")
         return;
       }
 
+      // Static assets fallback (bundled web dashboard)
+      if (req.method === "GET" && !url.pathname.startsWith("/api/")) {
+        if (tryServeStatic(url.pathname, res)) return;
+      }
+
       res.writeHead(404); res.end("Not found");
     });
 
     server.listen(port, () => {
-      console.log(chalk.cyan(`\n  ArchLens Dashboard API running on http://localhost:${port}`));
+      const hasWebUI = fs.existsSync(path.join(WEB_ROOT, "index.html"));
+      console.log(chalk.cyan(`\n  ArchLens running on http://localhost:${port}`));
+      if (hasWebUI) {
+        console.log(chalk.dim("  Dashboard UI: serving bundled web app"));
+      } else {
+        console.log(chalk.yellow("  ⚠ Web UI not bundled — API-only mode"));
+      }
       if (options.data) {
         console.log(chalk.dim(`  Single project: ${options.data}`));
       }
