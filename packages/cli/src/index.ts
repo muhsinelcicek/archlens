@@ -11,7 +11,7 @@ import { reviewCommand } from "./commands/review.js";
 const program = new Command();
 
 program
-  .name("archlens")
+  .name("archlens-studio")
   .description("ArchLens — Code Architecture Intelligence Platform")
   .version("0.1.0");
 

@@ -44,7 +44,7 @@ ArchLens runs **locally** on your machine and **does not** send your code anywhe
 
 ### Network exposure
 
-- `archlens serve` binds to `localhost:4848` by default — **do not expose to the internet without authentication**
+- `archlens-studio serve` binds to `localhost:4848` by default — **do not expose to the internet without authentication**
 - The web dashboard runs on `localhost:4849`
 - For team deployments, use a reverse proxy with authentication (nginx, Caddy, Cloudflare Access)
 
@@ -67,7 +67,7 @@ pnpm audit
 When analyzing untrusted code:
 
 - Use a containerized environment (Docker, devcontainer)
-- Don't run `archlens analyze` on code you wouldn't `git clone` first
+- Don't run `archlens-studio analyze` on code you wouldn't `git clone` first
 - Review the code's `package.json` / `requirements.txt` etc. before installing dependencies
 
 ## Security features in ArchLens
@@ -85,7 +85,7 @@ ArchLens includes a **security scanner** that detects common vulnerabilities in 
 Run security scan:
 
 ```bash
-archlens analyze .
+archlens-studio analyze .
 # Then visit http://localhost:4849/quality → Security tab
 ```
 

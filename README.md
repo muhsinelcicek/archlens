@@ -41,19 +41,19 @@ Analyze any codebase, visualize the architecture, simulate how it behaves under 
 ## Quick Start
 
 ```bash
-npm install -g archlens
+npm install -g archlens-studio
 
 cd your-project
-archlens analyze .
-archlens serve
+archlens-studio analyze .
+archlens-studio serve
 # → http://localhost:4848
 ```
 
 Or import a GitHub repo:
 
 ```bash
-archlens add https://github.com/dotnet/eShop
-archlens serve
+archlens-studio add https://github.com/dotnet/eShop
+archlens-studio serve
 ```
 
 ## Features
@@ -115,15 +115,15 @@ packages/
 
 | Command | Description |
 |---------|-------------|
-| `archlens analyze <path>` | Analyze a project |
-| `archlens serve` | Start the web dashboard |
-| `archlens add <github-url>` | Clone and analyze a GitHub repo |
-| `archlens list` | List analyzed projects |
-| `archlens remove <name>` | Remove a project |
-| `archlens export <format>` | Export as JSON or SVG |
-| `archlens review` | Print architecture review to terminal |
-| `archlens mcp` | Start MCP server |
-| `archlens setup` | Configure MCP for Claude Code / Cursor |
+| `archlens-studio analyze <path>` | Analyze a project |
+| `archlens-studio serve` | Start the web dashboard |
+| `archlens-studio add <github-url>` | Clone and analyze a GitHub repo |
+| `archlens-studio list` | List analyzed projects |
+| `archlens-studio remove <name>` | Remove a project |
+| `archlens-studio export <format>` | Export as JSON or SVG |
+| `archlens-studio review` | Print architecture review to terminal |
+| `archlens-studio mcp` | Start MCP server |
+| `archlens-studio setup` | Configure MCP for Claude Code / Cursor |
 
 ## MCP Integration
 
@@ -132,7 +132,7 @@ packages/
   "mcpServers": {
     "archlens": {
       "command": "npx",
-      "args": ["archlens", "mcp"]
+      "args": ["archlens-studio", "mcp"]
     }
   }
 }

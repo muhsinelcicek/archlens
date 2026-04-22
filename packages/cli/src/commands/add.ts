@@ -113,7 +113,7 @@ export const addCommand = new Command("add")
 
       console.log(chalk.cyan(`\n  ${model.stats.files} files | ${model.stats.symbols} symbols | ${model.stats.modules} modules | ${model.stats.totalLines.toLocaleString()} lines`));
       console.log(chalk.dim(`  ${localPath}`));
-      console.log(chalk.dim(`\n  Run ${chalk.white("archlens serve")} to view all projects in dashboard\n`));
+      console.log(chalk.dim(`\n  Run ${chalk.white("archlens-studio serve")} to view all projects in dashboard\n`));
 
     } catch (error) {
       spinner.fail(chalk.red(`Failed to add ${repoName}`));
@@ -135,7 +135,7 @@ export const listCommand = new Command("list")
 
     if (registry.length === 0) {
       console.log(chalk.dim("\n  No projects registered. Run:"));
-      console.log(chalk.white("  archlens add https://github.com/user/repo\n"));
+      console.log(chalk.white("  archlens-studio add https://github.com/user/repo\n"));
       return;
     }
 

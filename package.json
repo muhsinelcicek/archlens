@@ -1,9 +1,9 @@
 {
-  "name": "archlens",
+  "name": "archlens-studio-monorepo",
   "version": "0.1.0",
   "private": true,
   "description": "Code Architecture Intelligence Platform — See the forest, not just the trees",
-  "author": "ArchLens Team",
+  "author": "Muhsin Elçiçek",
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0",

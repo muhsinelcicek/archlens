@@ -345,7 +345,7 @@ export function SettingsView() {
                   mcpServers: {
                     archlens: {
                       command: "npx",
-                      args: ["archlens", "mcp"],
+                      args: ["archlens-studio", "mcp"],
                     },
                   },
                 }, null, 2);
@@ -362,7 +362,7 @@ export function SettingsView() {
   "mcpServers": {
     "archlens": {
       "command": "npx",
-      "args": ["archlens", "mcp"]
+      "args": ["archlens-studio", "mcp"]
     }
   }
 }`}
@@ -412,15 +412,15 @@ export function SettingsView() {
       <Section icon={<Monitor className="h-5 w-5" style={{ color: accent }} />} title="CLI Commands">
         <div className="space-y-1.5">
           {[
-            { cmd: "archlens analyze <path>", desc: "Analyze a project directory" },
-            { cmd: "archlens serve", desc: "Start the web dashboard on port 4848" },
-            { cmd: "archlens add <github-url>", desc: "Clone & analyze a GitHub repository" },
-            { cmd: "archlens list", desc: "List all analyzed projects" },
-            { cmd: "archlens remove <name>", desc: "Remove a project from the registry" },
-            { cmd: "archlens export <format>", desc: "Export analysis as JSON or SVG" },
-            { cmd: "archlens review", desc: "Print architecture review to terminal" },
-            { cmd: "archlens mcp", desc: "Start MCP server for AI tools" },
-            { cmd: "archlens setup", desc: "Configure MCP for Claude Code / Cursor" },
+            { cmd: "archlens-studio analyze <path>", desc: "Analyze a project directory" },
+            { cmd: "archlens-studio serve", desc: "Start the web dashboard on port 4848" },
+            { cmd: "archlens-studio add <github-url>", desc: "Clone & analyze a GitHub repository" },
+            { cmd: "archlens-studio list", desc: "List all analyzed projects" },
+            { cmd: "archlens-studio remove <name>", desc: "Remove a project from the registry" },
+            { cmd: "archlens-studio export <format>", desc: "Export analysis as JSON or SVG" },
+            { cmd: "archlens-studio review", desc: "Print architecture review to terminal" },
+            { cmd: "archlens-studio mcp", desc: "Start MCP server for AI tools" },
+            { cmd: "archlens-studio setup", desc: "Configure MCP for Claude Code / Cursor" },
           ].map((item) => (
             <div key={item.cmd} className="flex items-center justify-between rounded-lg bg-[var(--color-border-subtle)] px-3 py-2 group">
               <code className="text-xs font-mono" style={{ color: accent }}>{item.cmd}</code>
@@ -463,7 +463,7 @@ export function SettingsView() {
 
           <div className="flex gap-2 pt-2">
             <a
-              href="https://github.com/user/archlens"
+              href="https://github.com/muhsinelcicek/archlens"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
@@ -472,7 +472,7 @@ export function SettingsView() {
               <ExternalLink className="h-3 w-3" />
             </a>
             <a
-              href="https://github.com/user/archlens/issues"
+              href="https://github.com/muhsinelcicek/archlens/issues"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-border-subtle)] border border-[var(--color-border-default)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"

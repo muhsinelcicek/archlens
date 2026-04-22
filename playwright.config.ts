@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
  * ArchLens E2E Test Configuration
  *
  * Assumes:
- * - API server running on localhost:4848 (archlens serve)
+ * - API server running on localhost:4848 (archlens-studio serve)
  * - Web dev server running on localhost:4849 (pnpm --filter @archlens/web dev)
  * - At least one project registered
  */

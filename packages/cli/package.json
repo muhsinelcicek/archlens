@@ -1,12 +1,12 @@
 {
-  "name": "archlens",
+  "name": "archlens-studio",
   "version": "0.1.0",
-  "description": "ArchLens CLI — Analyze and visualize code architecture",
+  "description": "ArchLens — code architecture analysis + distributed system simulator. 8 languages, ConstellationGraph, MCP server.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "archlens": "./dist/index.js"
+    "archlens-studio": "./dist/index.js"
   },
   "publishConfig": {
     "access": "public"
@@ -17,13 +17,25 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/archlens/archlens"
+    "url": "https://github.com/muhsinelcicek/archlens"
   },
-  "homepage": "https://github.com/archlens/archlens#readme",
+  "homepage": "https://github.com/muhsinelcicek/archlens#readme",
   "bugs": {
-    "url": "https://github.com/archlens/archlens/issues"
+    "url": "https://github.com/muhsinelcicek/archlens/issues"
   },
-  "keywords": ["architecture", "code-analysis", "visualization", "static-analysis", "dependency-graph"],
+  "keywords": [
+    "architecture",
+    "code-analysis",
+    "visualization",
+    "static-analysis",
+    "dependency-graph",
+    "simulator",
+    "queueing-theory",
+    "mcp",
+    "developer-tools"
+  ],
+  "author": "Muhsin Elçiçek",
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   },

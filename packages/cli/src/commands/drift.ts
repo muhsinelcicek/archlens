@@ -14,7 +14,7 @@ export const driftCommand = new Command("drift")
     const modelPath = path.join(rootDir, ".archlens", "model.json");
 
     if (!fs.existsSync(modelPath)) {
-      console.error(chalk.red("No ArchLens index found. Run `archlens analyze` first."));
+      console.error(chalk.red("No ArchLens index found. Run `archlens-studio analyze` first."));
       process.exit(1);
     }
 

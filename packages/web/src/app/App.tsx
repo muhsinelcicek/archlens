@@ -105,8 +105,8 @@ export function App() {
         <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Connection Error</h2>
         <p className="text-[var(--color-text-muted)] text-sm">{error}</p>
         <div className="rounded-xl bg-surface border border-[var(--color-border-subtle)] p-4 text-left">
-          <code className="text-archlens-400 text-xs block">archlens analyze .</code>
-          <code className="text-archlens-400 text-xs block mt-1">archlens serve</code>
+          <code className="text-archlens-400 text-xs block">archlens-studio analyze .</code>
+          <code className="text-archlens-400 text-xs block mt-1">archlens-studio serve</code>
         </div>
       </div>
     );

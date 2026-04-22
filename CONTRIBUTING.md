@@ -124,7 +124,7 @@ ArchLens uses tree-sitter for AST parsing and a `FrameworkDetector` for regex-ba
 4. Wire it up in the `switch (ext)` block
 5. Add tests in `packages/core/src/__tests__/framework-detector.test.ts`
 
-Real-world testing: pick a representative repo, clone it, run `archlens analyze .`, verify endpoint count is reasonable.
+Real-world testing: pick a representative repo, clone it, run `archlens-studio analyze .`, verify endpoint count is reasonable.
 
 ## Code style
 

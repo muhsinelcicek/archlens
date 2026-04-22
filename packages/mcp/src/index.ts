@@ -40,7 +40,7 @@ server.tool(
   { detail_level: z.enum(["summary", "full"]).default("summary").describe("summary = stats + layers, full = includes module details") },
   async ({ detail_level }) => {
     const result = findAndLoadModel();
-    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found. Run `archlens analyze` first." }] };
+    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found. Run `archlens-studio analyze` first." }] };
     const { model } = result;
 
     const lines: string[] = [];
@@ -116,7 +116,7 @@ server.tool(
   },
   async ({ process_name, show_algorithms }) => {
     const result = findAndLoadModel();
-    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found. Run `archlens analyze` first." }] };
+    if (!result) return { content: [{ type: "text" as const, text: "No ArchLens index found. Run `archlens-studio analyze` first." }] };
     const { model } = result;
 
     const processes = (model.businessProcesses || []) as BusinessProcessInfo[];
