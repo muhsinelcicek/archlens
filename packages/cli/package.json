@@ -1,6 +1,6 @@
 {
   "name": "archlens-studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "ArchLens — code architecture analysis + distributed system simulator. 8 languages, ConstellationGraph, MCP server.",
   "type": "module",
   "main": "dist/index.js",

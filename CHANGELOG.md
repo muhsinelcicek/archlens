@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-22
+
+Closes the product's core loop: users can go from *analyze my code* to *simulate how it behaves under load* without hand-building the simulator scenario.
+
+### Added
+- **`archlens-studio simulate` CLI command** — reads `.archlens/model.json` and writes `.archlens/scenario.json` with an inferred topology (16 node types supported, keyword + layer + entity heuristics).
+- **Scenario generator** in `@archlens/core` (`generateScenario()`): pure function, deterministic, 11 unit tests. Keyword matching for cache/queue/broker/storage/auth/CDN/gateway/monitoring/lambda, layer-based fallback for presentation/api/application/domain/infrastructure, automatic load balancer when 2+ API-facing modules, database node when entities exist.
+- **Web dashboard**: `GET /api/scenario` endpoint + simulator banner "Load analyzed scenario" that auto-loads the generated topology into the canvas.
+- **Benchmark report**: `docs/benchmarks.md` + `docs/benchmarks.json` with a reproducible runner (`scripts/run-benchmarks.mjs`) that analyzes six popular OSS repos (eShop, FastAPI, Spring PetClinic, nestjs-realworld, gin-examples, actix-examples).
+
+### Measured
+- Every benchmark repo analyzed in under 900 ms (30–531 files, 103–1,647 symbols).
+- eShop produces a 17-node / 24-edge scenario with load balancer, database, cache and message broker wired up end-to-end.
+
+### Tests
+- 200 green (**+11 scenario-generator unit tests**): 147 core + 37 web + 16 CLI.
+
 ## [0.1.0] - 2026-04-22
 
 First public release. Published to npm as `archlens-studio`.
