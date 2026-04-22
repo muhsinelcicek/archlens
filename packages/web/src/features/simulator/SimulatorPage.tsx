@@ -34,6 +34,30 @@ export function SimulatorPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Analyzed-scenario banner — appears when `archlens-studio simulate` has produced a scenario.json */}
+      {sim.analyzedScenario && (
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+          <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
+            <span className="inline-flex h-2 w-2 rounded-full bg-archlens-400 animate-pulse" />
+            <span>
+              <strong className="text-[var(--color-text-primary)]">{sim.analyzedScenario.projectName}</strong>
+              <span className="text-[var(--color-text-muted)]"> · </span>
+              {sim.analyzedScenario.nodeCount} nodes, {sim.analyzedScenario.edgeCount} edges inferred from your code
+              <span className="text-[var(--color-text-muted)]"> · </span>
+              {sim.analyzedScenario.modules} modules
+              {sim.analyzedScenario.endpoints > 0 && ` · ${sim.analyzedScenario.endpoints} endpoints`}
+              {sim.analyzedScenario.entities > 0 && ` · ${sim.analyzedScenario.entities} entities`}
+            </span>
+          </div>
+          <button
+            onClick={() => sim.loadAnalyzedScenario()}
+            className="text-xs font-medium px-3 py-1.5 rounded-md bg-archlens-500 hover:bg-archlens-400 text-white transition-colors"
+          >
+            Load analyzed scenario
+          </button>
+        </div>
+      )}
+
       {/* Toolbar */}
       <SimToolbar
         running={sim.running}

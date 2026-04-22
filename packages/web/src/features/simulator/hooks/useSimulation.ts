@@ -28,6 +28,17 @@ export interface SavedScenario {
   trafficPattern: TrafficPattern;
 }
 
+export interface AnalyzedScenarioSummary {
+  projectName: string;
+  analyzedAt: string;
+  modules: number;
+  endpoints: number;
+  entities: number;
+  nodeCount: number;
+  edgeCount: number;
+  inferences: string[];
+}
+
 export function useSimulation() {
   const { model, setSimulatorSnapshot } = useStore();
 
@@ -326,6 +337,58 @@ export function useSimulation() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, [savedScenarios]);
 
+  // ─── Analyzed scenario — from `archlens-studio simulate` ──
+  const { activeProject } = useStore();
+  const [analyzedScenario, setAnalyzedScenario] = useState<AnalyzedScenarioSummary | null>(null);
+
+  useEffect(() => {
+    const qs = activeProject ? `?project=${encodeURIComponent(activeProject)}` : "";
+    fetch(`/api/scenario${qs}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || !data.source || !data.nodes) {
+          setAnalyzedScenario(null);
+          return;
+        }
+        setAnalyzedScenario({
+          projectName: data.source.projectName,
+          analyzedAt: data.source.analyzedAt,
+          modules: data.source.modules,
+          endpoints: data.source.endpoints,
+          entities: data.source.entities,
+          nodeCount: data.nodes.length,
+          edgeCount: data.edges.length,
+          inferences: data.inferences ?? [],
+        });
+      })
+      .catch(() => setAnalyzedScenario(null));
+  }, [activeProject]);
+
+  const loadAnalyzedScenario = useCallback(async () => {
+    const qs = activeProject ? `?project=${encodeURIComponent(activeProject)}` : "";
+    const res = await fetch(`/api/scenario${qs}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) return;
+
+    const freshNodes: SimNode[] = data.nodes.map((n: { id: string; type: NodeType; label: string; x: number; y: number }) =>
+      ({ ...makeDefaultNode(n.id, n.type, n.label, n.x, n.y) }),
+    );
+    const freshEdges: SimEdge[] = data.edges.map((e: { id: string; source: string; target: string; weight: number; latencyMs: number; retryEnabled?: boolean }) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      weight: e.weight,
+      latencyMs: e.latencyMs,
+      retryEnabled: e.retryEnabled ?? false,
+    }));
+
+    setNodes(freshNodes);
+    setEdges(freshEdges);
+    if (data.trafficPattern) setTrafficPattern(data.trafficPattern as TrafficPattern);
+    reset();
+  }, [activeProject, reset]);
+
   return {
     // State
     nodes, setNodes, edges, setEdges,
@@ -335,10 +398,12 @@ export function useSimulation() {
     budgetLimit,
     chaosEnabled, setChaosEnabled, chaosConfig, setChaosConfig,
     savedScenarios,
+    analyzedScenario,
 
     // Actions
     addNode, deleteNodes, updateNode, killNode, connectNodes, reset,
     loadTemplate, loadLoadTest, saveCurrent, loadSaved, deleteSaved,
+    loadAnalyzedScenario,
 
     // Templates & presets (for UI)
     templates: SCENARIO_TEMPLATES,

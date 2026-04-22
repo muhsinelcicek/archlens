@@ -208,6 +208,35 @@ export const serveCommand = new Command("serve")
         res.writeHead(404); res.end("Project not found"); return;
       }
 
+      // ─── Scenario endpoint (from `archlens-studio simulate`) ──
+      if (url.pathname === "/api/scenario") {
+        const resolveRoot = (): string | null => {
+          const projectName = url.searchParams.get("project");
+          if (projectName) {
+            const proj = registry.find((p) => p.name === projectName);
+            return proj?.localPath ?? null;
+          }
+          if (options.data) return path.dirname(options.data);
+          if (registry.length > 0) return registry[0].localPath;
+          return null;
+        };
+        const projectRoot = resolveRoot();
+        if (!projectRoot) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "no project resolved" }));
+          return;
+        }
+        const scenarioPath = path.join(projectRoot, ".archlens", "scenario.json");
+        if (!fs.existsSync(scenarioPath)) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "no scenario generated — run `archlens-studio simulate`" }));
+          return;
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(fs.readFileSync(scenarioPath, "utf-8"));
+        return;
+      }
+
       // ─── Legacy single-project endpoints ───────────────────
 
       if (url.pathname === "/api/model") {

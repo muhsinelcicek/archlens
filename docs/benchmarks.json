@@ -1,0 +1,222 @@
+{
+  "generatedAt": "2026-04-22T19:47:36.259Z",
+  "results": [
+    {
+      "repo": "eShop",
+      "language": "C#",
+      "url": "https://github.com/dotnet/eShop",
+      "status": "ok",
+      "timing": {
+        "cloneMs": 10702,
+        "analyzeMs": 689,
+        "simulateMs": 140
+      },
+      "stats": {
+        "files": 502,
+        "symbols": 1647,
+        "modules": 22,
+        "totalLines": 23335,
+        "apiEndpoints": 14,
+        "dbEntities": 10,
+        "businessProcesses": 4,
+        "techRadar": 72,
+        "topLanguages": [
+          "csharp (1782)",
+          "typescript (2)"
+        ],
+        "modelSizeKb": 1474
+      },
+      "scenario": {
+        "nodes": 17,
+        "edges": 24,
+        "trafficBaseline": 140,
+        "inferences": [
+          "17 nodes + 24 edges inferred from 22 modules",
+          "cache node added (detected in tech stack)",
+          "messagebroker node added (detected in tech stack)",
+          "database node added (10 entities detected)",
+          "load balancer added (9 API-facing modules)",
+          "traffic baseline = 140 req/s (14 endpoints × 10)"
+        ]
+      }
+    },
+    {
+      "repo": "spring-petclinic",
+      "language": "Java",
+      "url": "https://github.com/spring-projects/spring-petclinic",
+      "status": "ok",
+      "timing": {
+        "cloneMs": 2838,
+        "analyzeMs": 197,
+        "simulateMs": 130
+      },
+      "stats": {
+        "files": 30,
+        "symbols": 103,
+        "modules": 1,
+        "totalLines": 1857,
+        "apiEndpoints": 18,
+        "dbEntities": 6,
+        "businessProcesses": 2,
+        "techRadar": 3,
+        "topLanguages": [
+          "java (105)"
+        ],
+        "modelSizeKb": 120
+      },
+      "scenario": {
+        "nodes": 2,
+        "edges": 0,
+        "trafficBaseline": 180,
+        "inferences": [
+          "2 nodes + 0 edges inferred from 1 modules",
+          "database node added (6 entities detected)",
+          "traffic baseline = 180 req/s (18 endpoints × 10)"
+        ]
+      }
+    },
+    {
+      "repo": "fastapi",
+      "language": "Python",
+      "url": "https://github.com/tiangolo/fastapi",
+      "status": "ok",
+      "timing": {
+        "cloneMs": 3462,
+        "analyzeMs": 867,
+        "simulateMs": 135
+      },
+      "stats": {
+        "files": 531,
+        "symbols": 1622,
+        "modules": 4,
+        "totalLines": 33387,
+        "apiEndpoints": 435,
+        "dbEntities": 0,
+        "businessProcesses": 4,
+        "techRadar": 80,
+        "topLanguages": [
+          "python (1652)",
+          "typescript (25)"
+        ],
+        "modelSizeKb": 1440
+      },
+      "scenario": {
+        "nodes": 1,
+        "edges": 0,
+        "trafficBaseline": 4350,
+        "inferences": [
+          "1 nodes + 0 edges inferred from 4 modules",
+          "traffic baseline = 4350 req/s (435 endpoints × 10)"
+        ]
+      }
+    },
+    {
+      "repo": "nestjs-realworld",
+      "language": "TypeScript",
+      "url": "https://github.com/lujakob/nestjs-realworld-example-app",
+      "status": "ok",
+      "timing": {
+        "cloneMs": 1006,
+        "analyzeMs": 199,
+        "simulateMs": 130
+      },
+      "stats": {
+        "files": 35,
+        "symbols": 148,
+        "modules": 7,
+        "totalLines": 1171,
+        "apiEndpoints": 21,
+        "dbEntities": 5,
+        "businessProcesses": 1,
+        "techRadar": 32,
+        "topLanguages": [
+          "typescript (148)"
+        ],
+        "modelSizeKb": 165
+      },
+      "scenario": {
+        "nodes": 2,
+        "edges": 0,
+        "trafficBaseline": 210,
+        "inferences": [
+          "2 nodes + 0 edges inferred from 7 modules",
+          "database node added (5 entities detected)",
+          "traffic baseline = 210 req/s (21 endpoints × 10)"
+        ]
+      }
+    },
+    {
+      "repo": "gin-examples",
+      "language": "Go",
+      "url": "https://github.com/gin-gonic/examples",
+      "status": "ok",
+      "timing": {
+        "cloneMs": 1029,
+        "analyzeMs": 299,
+        "simulateMs": 132
+      },
+      "stats": {
+        "files": 59,
+        "symbols": 170,
+        "modules": 32,
+        "totalLines": 3454,
+        "apiEndpoints": 35,
+        "dbEntities": 0,
+        "businessProcesses": 2,
+        "techRadar": 41,
+        "topLanguages": [
+          "go (154)",
+          "typescript (43)"
+        ],
+        "modelSizeKb": 348
+      },
+      "scenario": {
+        "nodes": 4,
+        "edges": 3,
+        "trafficBaseline": 350,
+        "inferences": [
+          "4 nodes + 3 edges inferred from 32 modules",
+          "load balancer added (2 API-facing modules)",
+          "traffic baseline = 350 req/s (35 endpoints × 10)"
+        ]
+      }
+    },
+    {
+      "repo": "actix-examples",
+      "language": "Rust",
+      "url": "https://github.com/actix/examples",
+      "status": "ok",
+      "timing": {
+        "cloneMs": 1281,
+        "analyzeMs": 477,
+        "simulateMs": 135
+      },
+      "stats": {
+        "files": 165,
+        "symbols": 930,
+        "modules": 24,
+        "totalLines": 13364,
+        "apiEndpoints": 108,
+        "dbEntities": 3,
+        "businessProcesses": 2,
+        "techRadar": 0,
+        "topLanguages": [
+          "rust (963)",
+          "python (19)",
+          "typescript (2)"
+        ],
+        "modelSizeKb": 619
+      },
+      "scenario": {
+        "nodes": 3,
+        "edges": 2,
+        "trafficBaseline": 1080,
+        "inferences": [
+          "3 nodes + 2 edges inferred from 24 modules",
+          "database node added (3 entities detected)",
+          "traffic baseline = 1080 req/s (108 endpoints × 10)"
+        ]
+      }
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { driftCommand } from "./commands/drift.js";
 import { addCommand, listCommand, removeCommand } from "./commands/add.js";
 import { reviewCommand } from "./commands/review.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { simulateCommand } from "./commands/simulate.js";
 
 const program = new Command();
 
@@ -25,5 +26,6 @@ program.addCommand(listCommand);
 program.addCommand(removeCommand);
 program.addCommand(reviewCommand);
 program.addCommand(mcpCommand);
+program.addCommand(simulateCommand);
 
 program.parse();
